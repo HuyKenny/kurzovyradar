@@ -126,3 +126,48 @@ for (const chart of document.querySelectorAll<HTMLElement>('[data-chart]')) {
   chart.addEventListener('focusin', (e) => show(e.target as Element));
   chart.addEventListener('focusout', () => { tip.hidden = true; });
 }
+
+/* ---------- mini calculator ("Kurz za 30 vteřin") ---------- */
+for (const box of document.querySelectorAll<HTMLElement>('[data-mini-calc]')) {
+  const s = box.querySelector<HTMLInputElement>('[data-in="stake"]');
+  const o = box.querySelector<HTMLInputElement>('[data-in="odds"]');
+  const out = box.querySelector<HTMLElement>('[data-out]');
+  const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2 }).format(n)} Kč`;
+  const upd = () => {
+    if (!s || !o || !out) return;
+    const st = Number(s.value.replace(',', '.')), od = Number(o.value.replace(',', '.'));
+    if (!(st >= 0) || !(od > 1)) { out.textContent = 'Zadej sázku v Kč a kurz větší než 1.'; return; }
+    out.textContent = '';
+    out.appendChild(document.createTextNode('Když tip vyjde, dostaneš '));
+    const b = document.createElement('strong'); b.className = 'num'; b.textContent = kc(st * od); out.appendChild(b);
+    out.appendChild(document.createTextNode(` (zisk ${kc(st * od - st)}).`));
+  };
+  box.addEventListener('input', upd);
+  for (const b of box.querySelectorAll<HTMLElement>('[data-nojs]')) b.hidden = true;
+}
+
+/* ---------- "Kolik vyhraju?" on the match page ---------- */
+for (const f of document.querySelectorAll<HTMLFormElement>('form[data-win]')) {
+  const odds = JSON.parse(f.dataset.odds ?? '{}') as Record<string, number>;
+  const out = f.querySelector<HTMLElement>('[data-out]');
+  const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2 }).format(Math.round(n * 100) / 100)} Kč`;
+  const upd = () => {
+    if (!out) return;
+    const data = new FormData(f);
+    const st = Number(String(data.get('vklad') ?? '').replace(',', '.'));
+    const o = (odds[String(data.get('tip') ?? '')] ?? 0) / 1000;
+    out.textContent = '';
+    if (!(st >= 0)) { out.textContent = 'Zadej sázku v Kč.'; return; }
+    if (!(o > 1)) { out.textContent = 'Na tenhle výsledek teď kurz nemáme.'; return; }
+    const strong = (t: string) => { const b = document.createElement('strong'); b.className = 'num'; b.textContent = t; return b; };
+    out.appendChild(document.createTextNode('Když to vyjde, dostaneš '));
+    out.appendChild(strong(kc(st * o)));
+    out.appendChild(document.createTextNode(', z toho zisk '));
+    out.appendChild(strong(kc(st * o - st)));
+    out.appendChild(document.createTextNode('.'));
+  };
+  f.addEventListener('input', upd);
+  f.addEventListener('change', upd);
+  f.addEventListener('submit', (e) => { e.preventDefault(); upd(); });
+  for (const b of f.querySelectorAll<HTMLElement>('[data-nojs]')) b.hidden = true;
+}

@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import EventOdds from '../../components/EventOdds.astro';
+import Ticket from '../../components/Ticket.astro';
 import Icon from '../../components/Icon.astro';
 import { COMPETITIONS } from '../../config/competitions';
 import { upcoming, listable, cfg as getCfg, now as getNow } from '../../lib/data';
@@ -16,23 +16,24 @@ const events = f.length >= 2 ? listable(up, t, cfg).filter((e) => fold(`${e.home
 Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=120');
 ---
 <Base title={q ? `Hledání: ${q} | KurzovýRadar` : 'Hledání | KurzovýRadar'} description="Hledání týmů, soutěží a zápasů s kurzy." noindex crumbs={[{ name: 'Hledání', url: '/hledat/' }]}>
-  <div class="wrap pt-6 max-w-[980px]">
+  <div class="wrap pt-6">
     <h1 class="m-0">Hledání</h1>
+    <p class="mt-2 mb-0 text-ink-2">Napiš tým, soutěž nebo zemi, třeba „Sparta“ nebo „Premier League“.</p>
     <form action="/hledat/" method="get" role="search" class="mt-4 flex gap-2 max-w-[620px]">
       <label for="q-page" class="sr">Tým, soutěž nebo zápas</label>
       <div class="relative flex-1"><Icon name="search" size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
-        <input id="q-page" name="q" type="search" value={q} minlength="2" required placeholder="Tým, soutěž nebo zápas" class="w-full min-h-[48px] pl-10 pr-3 rounded-[11px] border border-line-2 bg-surface text-base" /></div>
+        <input id="q-page" name="q" type="search" value={q} minlength="2" required placeholder="Např. Sparta" class="field pl-10" /></div>
       <button class="btn" type="submit">Hledat</button>
     </form>
-    {q && f.length < 2 && <p class="mt-6 text-ink-2">Zadejte aspoň 2 znaky.</p>}
+    {q && f.length < 2 && <p class="mt-6 text-ink-2">Napiš aspoň 2 znaky.</p>}
     {comps.length > 0 && (
       <section class="mt-8"><h2 class="text-lg">Soutěže</h2>
         <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3">{comps.map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}</a></li>)}</ul></section>
     )}
     {f.length >= 2 && (
       <section class="mt-8"><h2 class="text-lg">Zápasy</h2>
-        {events.length ? <div class="grid gap-3 mt-3">{events.map((e) => <EventOdds ev={e} books={up.books} now={t} cfg={cfg} place="hledani" />)}</div>
-          : <p class="text-ink-2 mt-2">Žádný nadcházející zápas s kurzy neodpovídá hledání „{q}“.</p>}
+        {events.length ? <div class="grid gap-5 mt-4 lg:grid-cols-2">{events.map((e) => <Ticket ev={e} books={up.books} now={t} cfg={cfg} place="hledani" />)}</div>
+          : <p class="text-ink-2 mt-2">Na „{q}“ teď nemáme žádný zápas s kurzy. Zkus jen část názvu, třeba „Slavi“.</p>}
       </section>
     )}
   </div>

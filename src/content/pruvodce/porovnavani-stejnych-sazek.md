@@ -1,12 +1,19 @@
 ---
-title: Jak správně porovnávat stejné sázky
+title: Jak porovnávat kurzy, aby to dávalo smysl
 description: Kdy jsou dva kurzy opravdu srovnatelné – stejný zápas, trh, období, hranice i pravidla vyhodnocení. Na co si dát pozor při porovnávání kanceláří.
-lead: Dva kurzy jdou porovnat, jen když jde o úplně stejnou sázku. Jak to poznat.
+lead: Kdy jsou dva kurzy opravdu na stejnou sázku a na co si dát pozor.
 order: 3
 published: 2026-10-23
 updated: 2026-10-23
 checked: 2026-10-23
 ---
+
+<div class="strucne">
+
+**Stručně:** porovnávej jen úplně stejnou sázku: stejný zápas, stejné týmy ve stejném pořadí a stejná pravidla (třeba bez prodloužení).
+
+</div>
+
 
 Porovnání kurzů má smysl, jen když dvě kanceláře nabízejí **úplně stejnou sázku**. Liší-li se podmínky, vyšší kurz může znamenat jen jinou, rizikovější sázku.
 
@@ -32,6 +39,6 @@ Dnes porovnáváme jediný trh: **výsledek zápasu v základní hrací době (1
 
 ## Shoda a nejvyšší kurz
 
-U každého výsledku zvýrazníme **nejvyšší kurz z námi sledovaných kanceláří**. Pokud všechny nabízejí stejně, označíme to jako **shodu**. Tipsport a Chance běží na stejné platformě, takže jejich kurzy se často shodují. I to je užitečná informace: na tomto zápase si výběrem kanceláře nepolepšíte.
+U každého výsledku zvýrazníme **nejvyšší kurz z námi sledovaných kanceláří**. Pokud všechny nabízejí stejně, označíme to jako **shodu**. Tipsport a Chance běží na stejné platformě, takže jejich kurzy se často shodují. I to je užitečná informace: na tomto zápase si výběrem kanceláře nepolepšíš.
 
 Do porovnání nepočítáme kurzy, které jsou starší než naše hranice aktuálnosti nebo které kancelář pozastavila. Ty ukazujeme šedě jako poslední známé údaje.

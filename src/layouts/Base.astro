@@ -35,6 +35,8 @@ const graph = [
 const ld = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c');
 const topComps = COMPETITIONS.filter((c) => c.top);
 const robots = noindex || isDemo ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1';
+const navLink = 'px-3 py-2 rounded-[10px] no-underline font-display font-bold text-[1.02rem] min-h-[44px] inline-flex items-center whitespace-nowrap border-2';
+const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
 ---
 <!doctype html>
 <html lang="cs">
@@ -45,13 +47,14 @@ const robots = noindex || isDemo ? 'noindex, follow' : 'index, follow, max-image
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
   <meta name="robots" content={robots} />
-  <meta name="theme-color" content="#112039" />
+  <meta name="theme-color" content="#f6f4ee" />
   <meta name="color-scheme" content="light" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
-  <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/familjen-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/atkinson-latin.woff2" as="font" type="font/woff2" crossorigin />
   <meta property="og:type" content={ogType} />
   <meta property="og:site_name" content={SITE.name} />
   <meta property="og:locale" content={SITE.locale} />
@@ -68,44 +71,43 @@ const robots = noindex || isDemo ? 'noindex, follow' : 'index, follow, max-image
   <slot name="head" />
 </head>
 <body class="min-h-screen flex flex-col">
-  <a class="sr focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 bg-surface px-3 py-2 rounded-lg border border-line" href="#obsah">Přeskočit na obsah</a>
+  <a class="sr focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 bg-ticket px-3 py-2 rounded-lg border-2 border-ink" href="#obsah">Přeskočit na obsah</a>
   {isDemo && (
-    <div class="bg-warn-soft text-warn border-b border-[#f0d58a] text-sm font-semibold" role="status">
+    <div class="bg-warn-soft text-warn border-b-2 border-ink text-sm font-bold" role="status">
       <div class="wrap py-2 flex items-center gap-2"><Icon name="circle-alert" size={16} />Demonstrační data – smyšlené zápasy a kurzy pro vývoj webu. Nejsou to skutečné nabídky.</div>
     </div>
   )}
-  <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-line" data-header>
-    <div class="wrap flex items-center gap-3 min-h-[64px]">
+  <header class="sticky top-0 z-40 bg-paper/95 backdrop-blur border-b-2 border-ink" data-header>
+    <div class="wrap flex items-center gap-2 sm:gap-3 min-h-[64px]">
       <a href="/" class="no-underline shrink-0 rounded-lg" aria-label={`${SITE.name} – úvod`}><Logo /></a>
-      <nav class="hidden lg:flex items-center gap-1 ml-4" aria-label="Hlavní menu">
+      <nav class="hidden lg:flex items-center gap-1 ml-5" aria-label="Hlavní menu">
         {NAV.map((n) => {
           const on = path.startsWith(n.href);
           return <a href={n.href} aria-current={on ? 'page' : undefined}
-            class:list={['px-3 py-2 rounded-lg no-underline font-semibold text-[0.95rem] min-h-[44px] inline-flex items-center whitespace-nowrap', on ? 'text-blue-ink bg-blue-soft' : 'text-ink hover:bg-sunken hover:text-ink']}>{n.label}</a>;
+            class:list={[navLink, on ? 'bg-ink text-white border-ink hover:text-white' : 'border-transparent text-ink hover:border-ink hover:bg-ticket']}>{n.label}</a>;
         })}
       </nav>
-      <div class="ml-auto flex items-center gap-1.5">
+      <div class="ml-auto flex items-center gap-0.5 sm:gap-1.5">
         <form action="/hledat/" method="get" role="search" class="relative hidden lg:block" data-search>
           <label for="q-head" class="sr">Hledat tým, soutěž nebo zápas</label>
-          <Icon name="search" size={17} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
-          <input id="q-head" name="q" type="search" autocomplete="off" placeholder="Tým, soutěž, zápas…" minlength="2"
-            class="w-[260px] min-h-[42px] pl-9 pr-3 rounded-[10px] border border-line-2 bg-sunken text-[15px] placeholder:text-ink-3 focus:bg-surface" aria-controls="q-head-list" aria-expanded="false" aria-autocomplete="list" role="combobox" />
-          <ul id="q-head-list" role="listbox" hidden class="absolute right-0 top-[calc(100%+6px)] w-[360px] max-h-[70vh] overflow-auto card p-1.5 shadow-[var(--shadow-pop)]"></ul>
+          <Icon name="search" size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-2 pointer-events-none" />
+          <input id="q-head" name="q" type="search" autocomplete="off" placeholder="Najdi tým nebo soutěž" minlength="2"
+            class="field !min-h-[44px] w-[250px] pl-10 text-[16px]" aria-controls="q-head-list" aria-expanded="false" aria-autocomplete="list" role="combobox" />
+          <ul id="q-head-list" role="listbox" hidden class="absolute right-0 top-[calc(100%+8px)] w-[360px] max-h-[70vh] overflow-auto card p-1.5"></ul>
         </form>
-        <a href="/hledat/" class="lg:hidden btn btn--quiet min-w-[44px]" aria-label="Hledat"><Icon name="search" size={20} /></a>
-        <a href="/oblibene/" class="btn btn--quiet min-w-[44px] relative" aria-label="Oblíbené zápasy" data-fav-link>
-          <Icon name="star" size={20} /><span class="hidden sm:inline text-ink">Oblíbené</span>
-          <span data-fav-count hidden class="absolute -top-0.5 -right-0.5 sm:static min-w-[20px] h-5 px-1 rounded-full bg-blue text-white text-xs font-bold grid place-items-center num"></span>
+        <a href="/hledat/" class="lg:hidden btn btn--quiet min-w-[44px]" aria-label="Hledat"><Icon name="search" size={22} /></a>
+        <a href="/oblibene/" class="btn btn--quiet min-w-[44px] relative text-ink" aria-label="Oblíbené zápasy" data-fav-link>
+          <Icon name="star" size={22} /><span class="hidden sm:inline font-display">Oblíbené</span>
+          <span data-fav-count hidden class="absolute -top-0.5 -right-0.5 sm:static min-w-[22px] h-[22px] px-1 rounded-full bg-orange text-ink border-2 border-ink text-xs font-bold grid place-items-center num"></span>
         </a>
         <details class="lg:hidden relative" data-menu>
-          <summary class="btn btn--ghost btn--sm list-none [&::-webkit-details-marker]:hidden" aria-label="Menu"><Icon name="menu" size={20} /></summary>
-          <nav class="absolute right-0 top-[calc(100%+8px)] w-[min(88vw,320px)] card p-2 grid shadow-[var(--shadow-pop)]" aria-label="Menu">
-            {NAV.map((n) => <a class="px-4 py-3 rounded-lg no-underline text-ink font-semibold hover:bg-sunken" href={n.href}>{n.label}</a>)}
+          <summary class="btn btn--ghost btn--sm !px-2.5 list-none [&::-webkit-details-marker]:hidden" aria-label="Menu"><Icon name="menu" size={20} /><span class="hidden sm:inline">Menu</span></summary>
+          <nav class="absolute right-0 top-[calc(100%+10px)] w-[min(88vw,320px)] card p-2 grid" aria-label="Menu">
+            {NAV.map((n) => <a class="px-4 py-3 rounded-lg no-underline text-ink font-display font-bold text-lg hover:bg-green-soft" href={n.href}>{n.label}</a>)}
             <hr class="my-1 border-line" />
-            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-sunken" href="/fotbal/">Fotbal</a>
-            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-sunken" href="/hokej/">Hokej</a>
-            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-sunken" href="/kalkulacky/">Kalkulačky</a>
-            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-sunken" href="/metodika/">Metodika</a>
+            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/fotbal/">Fotbal</a>
+            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/hokej/">Hokej</a>
+            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/kalkulacky/">Kolik vyhraju? (kalkulačka)</a>
           </nav>
         </details>
       </div>
@@ -113,12 +115,12 @@ const robots = noindex || isDemo ? 'noindex, follow' : 'index, follow, max-image
   </header>
 
   {crumbs.length > 0 && (
-    <nav class="wrap pt-4 text-sm" aria-label="Drobečková navigace">
+    <nav class="wrap pt-4 text-[0.95rem]" aria-label="Drobečková navigace">
       <ol class="flex flex-wrap items-center gap-1 text-ink-2">
         <li><a href="/" class="text-ink-2">Úvod</a></li>
         {crumbs.map((c, i) => (
           <li class="flex items-center gap-1"><Icon name="chevron-right" size={14} class="text-ink-3" />
-            {i === crumbs.length - 1 ? <span aria-current="page" class="text-ink font-medium">{c.name}</span> : <a class="text-ink-2" href={c.url}>{c.name}</a>}</li>
+            {i === crumbs.length - 1 ? <span aria-current="page" class="text-ink font-bold">{c.name}</span> : <a class="text-ink-2" href={c.url}>{c.name}</a>}</li>
         ))}
       </ol>
     </nav>
@@ -126,44 +128,45 @@ const robots = noindex || isDemo ? 'noindex, follow' : 'index, follow, max-image
 
   <main id="obsah" class="flex-1"><slot /></main>
 
-  <footer class="mt-20 bg-navy text-[#c9d3e6]">
+  <footer class="mt-20 bg-night text-[#d6e4dc] border-t-2 border-ink">
     <div class="wrap pt-12 pb-8 grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
       <div>
         <Logo invert />
-        <p class="mt-4 max-w-[40ch] text-[15px]">Porovnání kurzů sledovaných sázkových kanceláří a vlastní historie jejich změn. Bez registrace.</p>
+        <p class="mt-4 max-w-[38ch]">Kurzy na fotbal a hokej přehledně a srozumitelně. Ukážeme, kolik zápas vyplácí a jak se kurz mění. Bez registrace.</p>
       </div>
-      <div><h2 class="text-white text-base mb-3">Kurzy</h2>
-        <ul class="grid gap-2 text-[15px]">
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/kurzy/">Srovnání kurzů</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/radar/">Radar pohybů</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/fotbal/">Fotbal</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/hokej/">Hokej</a></li>
-          {topComps.slice(0, 4).map((c) => <li><a class="text-[#c9d3e6] hover:text-white" href={`/souteze/${c.slug}/`}>{c.name}</a></li>)}
+      <div><h2 class="text-white text-lg mb-3">Kurzy</h2>
+        <ul class="grid gap-2">
+          <li><a class={footLink} href="/kurzy/">Všechny zápasy a kurzy</a></li>
+          <li><a class={footLink} href="/radar/">Pohyby kurzů</a></li>
+          <li><a class={footLink} href="/fotbal/">Fotbal</a></li>
+          <li><a class={footLink} href="/hokej/">Hokej</a></li>
+          {topComps.slice(0, 4).map((c) => <li><a class={footLink} href={`/souteze/${c.slug}/`}>{c.name}</a></li>)}
         </ul></div>
-      <div><h2 class="text-white text-base mb-3">Průvodce a nástroje</h2>
-        <ul class="grid gap-2 text-[15px]">
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/sazkove-kancelare/">Kde vsadit</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/pruvodce/">Průvodce kurzy</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/kalkulacky/">Kalkulačky</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/oblibene/">Oblíbené zápasy</a></li>
+      <div><h2 class="text-white text-lg mb-3">Jak na to</h2>
+        <ul class="grid gap-2">
+          <li><a class={footLink} href="/pruvodce/kurzy-pro-zacatecniky/">Kurzy pro začátečníky</a></li>
+          <li><a class={footLink} href="/pruvodce/">Všechny průvodce</a></li>
+          <li><a class={footLink} href="/kalkulacky/">Kolik vyhraju? (kalkulačka)</a></li>
+          <li><a class={footLink} href="/sazkove-kancelare/">Kde vsadit</a></li>
+          <li><a class={footLink} href="/oblibene/">Moje oblíbené zápasy</a></li>
         </ul></div>
-      <div><h2 class="text-white text-base mb-3">O webu</h2>
-        <ul class="grid gap-2 text-[15px]">
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/metodika/">Metodika a zdroje</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/o-nas/">O nás a kontakt</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/financovani/">Jak se financujeme</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/odpovedne-hrani/">Odpovědné hraní</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/soukromi/">Ochrana soukromí</a></li>
-          <li><a class="text-[#c9d3e6] hover:text-white" href="/cookies/">Cookies</a></li>
+      <div><h2 class="text-white text-lg mb-3">O webu</h2>
+        <ul class="grid gap-2">
+          <li><a class={footLink} href="/metodika/">Odkud bereme data</a></li>
+          <li><a class={footLink} href="/o-nas/">O nás a kontakt</a></li>
+          <li><a class={footLink} href="/financovani/">Jak se financujeme</a></li>
+          <li><a class={footLink} href="/odpovedne-hrani/">Odpovědné hraní</a></li>
+          <li><a class={footLink} href="/soukromi/">Ochrana soukromí</a></li>
+          <li><a class={footLink} href="/cookies/">Cookies</a></li>
         </ul></div>
     </div>
     <div class="wrap pb-10">
-      <div class="flex gap-4 items-start rounded-[14px] border border-[#2a3a57] bg-[#13233f] p-4">
-        <span class="shrink-0 grid place-items-center w-12 h-12 rounded-full border-2 border-white text-white font-extrabold">18+</span>
-        <p class="m-0 text-[15px]">Sázení je jen pro dospělé a může způsobit závislost. Kurz není předpověď výsledku a žádná sázka není jistá. Uvádíme jen kanceláře s povolením Ministerstva financí ČR. Pomoc: {HELP.naberteKurz.name} <a class="text-white" href={`tel:${HELP.naberteKurz.tel}`}>{HELP.naberteKurz.phone}</a> ({HELP.naberteKurz.note}), {HELP.linka.name} <a class="text-white" href={`tel:${HELP.linka.tel}`}>{HELP.linka.phone}</a> ({HELP.linka.note}).</p>
+      <div class="flex gap-4 items-start rounded-[14px] border-2 border-[#d6e4dc] p-4">
+        <span class="shrink-0 grid place-items-center w-12 h-12 rounded-full bg-orange text-ink border-2 border-ink font-display font-bold">18+</span>
+        <p class="m-0">Sázení je jen pro dospělé a může způsobit závislost. Kurz není předpověď a žádná sázka není jistá. Uvádíme jen kanceláře s povolením Ministerstva financí ČR. Potřebuješ pomoc? {HELP.naberteKurz.name} <a class="text-white" href={`tel:${HELP.naberteKurz.tel}`}>{HELP.naberteKurz.phone}</a> ({HELP.naberteKurz.note}), {HELP.linka.name} <a class="text-white" href={`tel:${HELP.linka.tel}`}>{HELP.linka.phone}</a> ({HELP.linka.note}).</p>
       </div>
-      <p class="mt-5 text-sm max-w-[95ch]">Odkazy na Tipsport, Chance a Allwyn jsou partnerské: když se přes ně někdo zaregistruje, můžeme dostat provizi. Na pořadí kurzů to vliv nemá – nejvyšší kurz určují jen data. <a class="text-white" href="/financovani/">Více o financování</a>.</p>
-      <p class="mt-3 text-sm">Provozovatel: {SITE.operator.name}, IČO {SITE.operator.ico}, {SITE.operator.vat} · <a class="text-white" href={`mailto:${SITE.email}`}>{SITE.email}</a> · © 2026 {SITE.name}</p>
+      <p class="mt-5 text-[0.95rem] max-w-[95ch]">Odkazy na Tipsport, Chance a Allwyn jsou partnerské: když se přes ně někdo zaregistruje, můžeme dostat provizi. Na to, který kurz ukážeme jako nejvyšší, to vliv nemá. <a class="text-white" href="/financovani/">Jak se financujeme</a>.</p>
+      <p class="mt-3 text-[0.95rem]">Provozovatel: {SITE.operator.name}, IČO {SITE.operator.ico}, {SITE.operator.vat} · <a class="text-white" href={`mailto:${SITE.email}`}>{SITE.email}</a> · © 2026 {SITE.name}</p>
     </div>
   </footer>
   <script src="../scripts/site.ts"></script>

@@ -1,0 +1,10 @@
+---
+// Illustrative icons and stickers made in Canva (public/img/canva/, listed in src/data/canva.json with their size).
+// Control icons stay Lucide (Icon.astro). An icon that is not in the manifest renders nothing.
+import manifest from '../data/canva.json';
+interface Props { name: string; size?: number; class?: string; alt?: string; eager?: boolean }
+const { name, size = 40, class: cls = '', alt = '', eager = false } = Astro.props;
+const m = (manifest as Record<string, { w: number; h: number; file: string }>)[name];
+const h = m ? Math.round((size * m.h) / m.w) : 0;
+---
+{m && <img src={`/img/canva/${m.file}`} width={size} height={h} alt={alt} aria-hidden={alt ? undefined : 'true'} loading={eager ? 'eager' : 'lazy'} decoding="async" class={`shrink-0 ${cls}`} />}

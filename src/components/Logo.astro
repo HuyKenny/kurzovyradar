@@ -1,20 +1,22 @@
 ---
-// Wordmark "KurzovýRadar" + own geometric symbol (radar quadrant with a sweep and a tracked blip). Same symbol = favicon.
+// Wordmark "KurzovýRadar". The symbol is replaced by the Canva logo once it exists (src/data/canva.json → "logo").
+import manifest from '../data/canva.json';
 interface Props { size?: 'md' | 'lg'; invert?: boolean }
 const { size = 'md', invert = false } = Astro.props;
-const px = size === 'lg' ? 40 : 32;
+const px = size === 'lg' ? 44 : 36;
+const canva = (manifest as Record<string, { file: string; w: number; h: number }>)['logo-symbol'];
 ---
-<span class="inline-flex items-center gap-2.5 select-none">
-  <svg width={px} height={px} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-    <rect width="32" height="32" rx="8" fill="#112039" />
-    <path d="M7 8A17 17 0 0 1 24 25" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2" />
-    <path d="M7 15A10 10 0 0 1 17 25" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2" />
-    <path d="M7 25L20.93 15.25A17 17 0 0 0 16.75 11.07Z" fill="#2457ff" fill-opacity=".6" />
-    <path d="M7 25L16.75 11.07" stroke="#8fb0ff" stroke-width="2" stroke-linecap="round" />
-    <circle cx="22.6" cy="9.4" r="2.6" fill="#3cc8bd" />
-    <circle cx="7" cy="25" r="2" fill="#fff" />
-  </svg>
-  <span class:list={['font-[750] tracking-[-0.025em] leading-none', size === 'lg' ? 'text-[1.6rem]' : 'text-[1.28rem]', invert ? 'text-white' : 'text-ink']}>
-    Kurzový<span class={invert ? 'text-[#8fb0ff]' : 'text-blue'}>Radar</span>
+<span class="inline-flex items-center gap-2 select-none">
+  {canva ? <img src={`/img/canva/${canva.file}`} width={px} height={Math.round((px * canva.h) / canva.w)} alt="" aria-hidden="true" /> : (
+    <svg width={px} height={px} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#0e6b47" stroke="#16201b" stroke-width="2" />
+      <path d="M7 8A17 17 0 0 1 24 25" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" />
+      <path d="M7 15A10 10 0 0 1 17 25" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" />
+      <path d="M7 25L16.75 11.07" stroke="#fff" stroke-width="2.4" stroke-linecap="round" />
+      <circle cx="22.6" cy="9.4" r="3" fill="#ff6b1a" stroke="#16201b" stroke-width="1.5" />
+    </svg>
+  )}
+  <span class:list={['font-display font-bold tracking-[-0.03em] leading-none', size === 'lg' ? 'text-[1.75rem]' : 'text-[1.25rem] sm:text-[1.4rem]', invert ? 'text-white' : 'text-ink']}>
+    Kurzový<span class={invert ? 'text-orange' : 'text-green'}>Radar</span>
   </span>
 </span>

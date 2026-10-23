@@ -1,0 +1,95 @@
+---
+// A match as a betting ticket: competition stub, the two teams, three prices named after who wins,
+// one plain sentence about the bookmakers, a "100 Kč → …" example and the latest recorded move.
+import { BOOK } from '../config/bookmakers';
+import { competitionBySlug } from '../config/competitions';
+import { ticketView, atBooks, STATE_TEXT } from '../lib/ticket';
+import { odds as fmt, kickoff, time, ago } from '../lib/format';
+import type { EventView, UpcomingSnapshot } from '../server/view';
+import type { Settings } from '../server/types';
+import BookLogo from './BookLogo.astro';
+import Icon from './Icon.astro';
+import CanvaIcon from './CanvaIcon.astro';
+import FavButton from './FavButton.astro';
+
+interface Props { ev: EventView; books: UpcomingSnapshot['books']; now: number; cfg: Settings; place?: string; showComp?: boolean; headingLevel?: 'h2' | 'h3' }
+const { ev, books, now, cfg, place = 'list', showComp = true, headingLevel = 'h3' } = Astro.props;
+const H = headingLevel;
+const v = ticketView(ev, books, now, cfg);
+const comp = competitionBySlug(ev.comp);
+const fav = v.favourite;
+const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 }).format(n)} Kč`;
+const showRows = v.books.length > 1 && !v.allSame;
+---
+<article class="ticket flex flex-col" data-event={ev.id}>
+  <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
+    <CanvaIcon name={ev.sport} size={20} />
+    {showComp ? <a href={`/souteze/${ev.comp}/`} class="text-ink no-underline hover:underline truncate">{ev.compName}</a> : <span>{ev.sport === 'hokej' ? 'Hokej' : 'Fotbal'}</span>}
+    <time class="ml-auto shrink-0 num normal-case tracking-normal text-[0.95rem]" datetime={new Date(ev.startAt * 1000).toISOString()}>{kickoff(ev.startAt, now)}</time>
+  </div>
+  <div class="px-4 pt-3 pb-3 flex items-start gap-2">
+    <H class="m-0 text-[1.3rem] leading-tight flex-1 min-w-0"><a href={ev.url} class="text-ink no-underline hover:underline decoration-2">{ev.home} <span class="text-ink-3 font-normal">vs</span> {ev.away}</a></H>
+    <FavButton ev={ev} />
+  </div>
+  {v.move && (
+    <p class="hand px-4 -mt-1 mb-2" title={`Zaznamenali jsme ${ago(v.move.at, now)}`}>
+      {v.move.to < v.move.from ? '↘' : '↗'} kurz na {v.move.outcome === 'x' ? 'remízu' : v.move.who} {v.move.to < v.move.from ? 'klesl' : 'stoupl'} z {fmt(v.move.from)}
+    </p>
+  )}
+  <div class="perf" aria-hidden="true"></div>
+  <div class="px-4 pt-4 pb-4 flex flex-col gap-3 flex-1">
+    {v.books.length === 0 ? (
+      <p class="m-0 text-ink-2">Kurzy teď nejsou v nabídce. {v.checkedAt ? '' : 'Zkontrolujeme je znovu za pár minut.'}</p>
+    ) : (
+      <>
+        <ul class="grid grid-cols-3 gap-2 list-none p-0 m-0" aria-label="Kurzy na výsledek zápasu">
+          {v.outcomes.map((o) => (
+            <li class="min-w-0">
+              {o.best ? (
+                <a href={`/go/${o.best.books[0]}/?e=${ev.id}&p=${place}`} rel="sponsored nofollow" class:list={['odd', !o.same && v.books.length > 1 && 'odd--best']}
+                  aria-label={`${o.who}: kurz ${fmt(o.best.odds)} ${atBooks(o.best.books)}. Otevře stránku kanceláře.`}>
+                  <span class="odd__who">{o.who}</span>
+                  <span class="odd__val">{fmt(o.best.odds)}</span>
+                  {!o.same && v.books.length > 1 && <span class="text-[0.75rem] font-bold text-green-ink">víc {BOOK[o.best.books[0]!].locative}</span>}
+                </a>
+              ) : (
+                <span class="odd odd--off"><span class="odd__who">{o.who}</span><span class="odd__val">–</span><span class="text-[0.75rem]">{STATE_TEXT[o.cells.find((c) => c.state !== 'missing')?.state ?? 'missing']}</span></span>
+              )}
+            </li>
+          ))}
+        </ul>
+        {v.allSame && (
+          <p class="m-0 flex flex-wrap items-center gap-2 text-[0.95rem] text-ink-2">
+            <span class="inline-flex gap-1">{v.books.map((b) => <BookLogo id={b} h={20} />)}</span>
+            Stejné kurzy {atBooks(v.books)}
+          </p>
+        )}
+        {v.books.length === 1 && (
+          <p class="m-0 flex items-center gap-2 text-[0.95rem] text-ink-2"><BookLogo id={v.books[0]!} h={20} />Kurz nabízí jen {BOOK[v.books[0]!].name}</p>
+        )}
+        {showRows && (
+          <table class="w-full text-[0.95rem]">
+            <caption class="sr">Kurzy podle kanceláří</caption>
+            <tbody>
+              {v.books.map((b) => (
+                <tr class="border-t border-line">
+                  <th scope="row" class="text-left py-1.5 pr-2 font-normal"><BookLogo id={b} h={20} /></th>
+                  {v.outcomes.map((o) => {
+                    const c = o.cells.find((x) => x.book === b)!;
+                    const top = o.best && c.odds === o.best.odds && c.current;
+                    return <td class:list={['num text-center py-1.5', top ? 'font-bold' : 'text-ink-2']}>{c.current && c.odds ? fmt(c.odds) : '–'}<span class="sr"> ({o.who})</span></td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div class="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-1">
+          {fav?.best && <p class="m-0 text-[0.95rem]"><span class="text-ink-2">100 Kč na {fav.outcome === 'x' ? 'remízu' : fav.who}</span> <span aria-hidden="true">→</span><span class="sr">vyplatí</span> <strong class="num">{kc(100 * fav.best.odds / 1000)}</strong></p>}
+          <a href={ev.url} class="font-bold no-underline inline-flex items-center gap-1 min-h-[40px]">Jak se kurz vyvíjel<Icon name="arrow-right" size={16} /></a>
+        </div>
+      </>
+    )}
+  </div>
+  {v.checkedAt && <p class="sr">Kurzy zkontrolovány v {time(v.checkedAt)}.</p>}
+</article>

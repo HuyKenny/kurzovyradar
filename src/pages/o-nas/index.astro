@@ -18,7 +18,7 @@ const d = new Date('2026-10-23');
   <h2>Kdo připravuje obsah</h2>
   <p>Texty a recenze připravuje {SITE.editor}. U každého článku uvádíme datum poslední aktualizace a kontroly faktů a u recenzí i zdroje. Kurzy, grafy a shrnutí u zápasů vznikají automaticky z uložených dat podle pravidel v <a href="/metodika/">metodice</a>.</p>
   <h2>Chyba v datech?</h2>
-  <p>Pokud najdete nesprávně spárovaný zápas nebo chybný údaj, napište nám na <a href={`mailto:${SITE.email}`}>{SITE.email}</a> s odkazem na stránku.</p>
+  <p>Když najdeš špatně spárovaný zápas nebo chybný údaj, napiš nám na <a href={`mailto:${SITE.email}`}>{SITE.email}</a> s odkazem na stránku.</p>
   <h2>Fotografie</h2>
   <p>Ilustrační fotografie stadionů a hal jsou z <a href="https://www.pexels.com/" rel="nofollow noopener">Pexels</a> a nezobrazují konkrétní zápasy. Autoři:</p>
   <ul>{Object.values(photos).map((p) => <li><a href={p.url} rel="nofollow noopener">{p.author}</a></li>)}</ul>

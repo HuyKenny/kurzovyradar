@@ -9,14 +9,15 @@ import { BOOK, type FeedBook } from '../config/bookmakers';
 import { odds as fmt, dateTime, time, dateShort } from '../lib/format';
 
 export interface Series { book: FeedBook; points: { at: number; odds: number; enabled: boolean }[] }
-interface Props { series: Series[]; from: number; to: number; gaps?: { from: number; to: number }[]; label: string; id: string }
-const { series, from, to, gaps = [], label, id } = Astro.props;
+interface Props { series: Series[]; from: number; to: number; gaps?: { from: number; to: number }[]; label: string; id: string; w?: number; h?: number }
+// Draw at the size it is shown (mobile and desktop variants), so axis text stays ~13 px instead of scaling with the viewBox.
+const { series, from, to, gaps = [], label, id, w = 680, h = 280 } = Astro.props;
 
 const STYLE: Record<FeedBook, { color: string; dash?: string; marker: 'circle' | 'square' }> = {
-  tipsport: { color: '#2457ff', marker: 'circle' },
-  chance: { color: '#d4590f', dash: '6 4', marker: 'square' },
+  tipsport: { color: '#1f6fe0', marker: 'circle' },
+  chance: { color: '#0e6b47', dash: '6 4', marker: 'square' },
 };
-const W = 420, H = 210, L = 44, R = 10, T = 12, B = 28;
+const W = w, H = h, L = 46, R = 10, T = 12, B = 28;
 const vals = series.flatMap((s) => s.points.map((p) => p.odds));
 const lo = Math.min(...vals), hi = Math.max(...vals);
 // Clean y range around the data (odds steps of 0.05 / 0.1 / 0.25 …)
@@ -53,14 +54,14 @@ const overlap = series.length > 1 && series.every((s) => sig(s) === sig(series[0
   <div class="relative">
     <svg viewBox={`0 0 ${W} ${H}`} class="w-full h-auto block" role="img" aria-labelledby={`${id}-t`}>
       <title id={`${id}-t`}>{label}. Podrobné hodnoty jsou v tabulce pod grafem.</title>
-      {gaps.map((g) => <rect x={x(Math.max(g.from, from))} y={T} width={Math.max(2, x(Math.min(g.to, to)) - x(Math.max(g.from, from)))} height={H - T - B} fill="#eef2f8" />)}
+      {gaps.map((g) => <rect x={x(Math.max(g.from, from))} y={T} width={Math.max(2, x(Math.min(g.to, to)) - x(Math.max(g.from, from)))} height={H - T - B} fill="#eeebe2" />)}
       {yTicks.map((v) => (
         <g>
-          <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="#e3e8f0" stroke-width="1" />
-          <text x={L - 8} y={y(v) + 4} text-anchor="end" font-size="12.5" fill="#46546d" class="num">{fmt(v)}</text>
+          <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="#e4dfd2" stroke-width="1" />
+          <text x={L - 8} y={y(v) + 4} text-anchor="end" font-size="13" fill="#4a554f" class="num">{fmt(v)}</text>
         </g>
       ))}
-      {xTicks.map((t) => <text x={x(t)} y={H - 10} text-anchor="middle" font-size="12.5" fill="#46546d">{xLabel(t)}</text>)}
+      {xTicks.map((t) => <text x={x(t)} y={H - 10} text-anchor="middle" font-size="13" fill="#4a554f">{xLabel(t)}</text>)}
       {series.map((s) => (
         <path d={path(s)} fill="none" stroke={STYLE[s.book].color} stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray={STYLE[s.book].dash} />
       ))}
@@ -68,7 +69,7 @@ const overlap = series.length > 1 && series.every((s) => sig(s) === sig(series[0
         const st = STYLE[s.book];
         const tip = `${BOOK[s.book].name}: ${fmt(p.odds)} · ${dateTime(p.at)}${p.enabled ? '' : ' · pozastaveno'}`;
         return (
-          <g data-p={tip} tabindex="0" role="img" aria-label={tip} class="outline-none focus-visible:[&>*:first-child]:fill-[#e9efff]">
+          <g data-p={tip} tabindex="0" role="img" aria-label={tip} class="outline-none focus-visible:[&>*:first-child]:fill-[#ffe7d6]">
             <circle cx={x(p.at)} cy={y(p.odds)} r="11" fill="transparent" />
             {st.marker === 'circle'
               ? <circle cx={x(p.at)} cy={y(p.odds)} r="4.5" fill={st.color} stroke="#fff" stroke-width="2" />
@@ -87,7 +88,7 @@ const overlap = series.length > 1 && series.every((s) => sig(s) === sig(series[0
         {BOOK[s.book].name} <span class="sr">({STYLE[s.book].marker === 'circle' ? 'plná čára, kruhy' : 'čárkovaná čára, čtverce'})</span>
       </span>
     ))}
-    {gaps.length > 0 && <span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-3 bg-[#eef2f8] border border-line" aria-hidden="true"></span>výpadek dat</span>}
+    {gaps.length > 0 && <span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-3 bg-[#eeebe2] border border-line" aria-hidden="true"></span>výpadek dat</span>}
     {overlap && <span class="basis-full">Čáry se překrývají: obě kanceláře měly stejné kurzy.</span>}
   </figcaption>
 </figure>

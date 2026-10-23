@@ -1,12 +1,19 @@
 ---
-title: Co znamená pohyb kurzu
+title: Co znamená, když kurz klesne nebo stoupne
 description: Proč kancelář mění kurzy, co znamená pokles nebo růst kurzu a proč samotný pohyb neprozrazuje výhodnou sázku.
-lead: Proč kurzy klesají a rostou, a co se z jejich pohybu dá a nedá vyčíst.
+lead: Proč kancelář mění kurzy a co z toho (ne)plyne pro tvoji sázku.
 order: 2
 published: 2026-10-23
 updated: 2026-10-23
 checked: 2026-10-23
 ---
+
+<div class="strucne">
+
+**Stručně:** když kurz klesne, kancelář za ten výsledek vyplácí méně, protože mu víc věří. Není to tip a neznamená to, že to vyjde.
+
+</div>
+
 
 Kurz není pevně daný. Kancelář ho od vypsání zápasu až do jeho začátku mění, a to i několikrát denně. KurzovýRadar tyto změny ukládá a v [radaru](/radar/) ukazuje ty největší.
 

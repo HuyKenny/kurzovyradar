@@ -2,10 +2,11 @@
 // Editorial page frame: title, lead, author + fact-check line, body, related links. Article JSON-LD from real dates.
 import Base, { type Crumb } from '../layouts/Base.astro';
 import Photo from './Photo.astro';
+import CanvaIcon from './CanvaIcon.astro';
 import { SITE } from '../config/site';
 import { date } from '../lib/format';
-interface Props { title: string; metaTitle: string; description: string; lead?: string; crumbs: Crumb[]; published?: Date; updated?: Date; checked?: Date; photo?: boolean; schemaType?: string; noindex?: boolean }
-const { title, metaTitle, description, lead, crumbs, published, updated, checked, photo = false, schemaType = 'Article', noindex = false } = Astro.props;
+interface Props { title: string; metaTitle: string; description: string; lead?: string; crumbs: Crumb[]; published?: Date; updated?: Date; checked?: Date; photo?: boolean; schemaType?: string; noindex?: boolean; art?: string }
+const { title, metaTitle, description, lead, crumbs, published, updated, checked, photo = false, schemaType = 'Article', noindex = false, art } = Astro.props;
 const url = new URL(Astro.url.pathname, SITE.url).href;
 const schema = published ? [{
   '@type': schemaType, headline: title, description, url, inLanguage: 'cs',
@@ -15,16 +16,19 @@ const schema = published ? [{
 ---
 <Base title={metaTitle} description={description} crumbs={crumbs} schema={schema} noindex={noindex} ogType={published ? 'article' : 'website'}>
   <article class="wrap pt-6">
-    <header class="max-w-[72ch]">
-      <h1 class="m-0">{title}</h1>
-      {lead && <p class="text-[1.12rem] text-ink-2 mt-3 mb-0">{lead}</p>}
+    <header class="max-w-[72ch] flex gap-5 items-start">
+      <div class="flex-1 min-w-0">
+      <h1 class="m-0 text-balance">{title}</h1>
+      {lead && <p class="text-[1.2rem] mt-3 mb-0">{lead}</p>}
       {(updated || checked) && (
-        <p class="text-sm text-ink-2 mt-4 mb-0">
+        <p class="text-[0.92rem] text-ink-2 mt-4 mb-0">
           {SITE.editor}{updated && <> · aktualizováno <time datetime={updated.toISOString().slice(0, 10)}>{date(updated.getTime() / 1000)}</time></>}{checked && <> · fakta zkontrolována <time datetime={checked.toISOString().slice(0, 10)}>{date(checked.getTime() / 1000)}</time></>}
         </p>
       )}
+      </div>
+      {art && <CanvaIcon name={art} size={120} eager class="hidden sm:block rotate-[3deg]" />}
     </header>
-    {photo && <div class="mt-6 rounded-[14px] overflow-hidden border border-line max-w-[880px] aspect-[16/6]"><Photo slot="pruvodce" sizes="(min-width: 900px) 880px, 100vw" class="h-full" /></div>}
+    {photo && <div class="mt-6 card p-2 max-w-[880px] rotate-[-0.6deg]"><div class="rounded-[8px] overflow-hidden border-2 border-ink aspect-[16/6]"><Photo slot="pruvodce" sizes="(min-width: 900px) 880px, 100vw" class="h-full" /></div></div>}
     <div class="prose mt-6"><slot /></div>
     <slot name="after" />
   </article>

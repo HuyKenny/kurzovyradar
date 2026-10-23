@@ -1,25 +1,26 @@
 ---
 import { getCollection } from 'astro:content';
 import Article from '../../components/Article.astro';
-import Icon from '../../components/Icon.astro';
+import CanvaIcon from '../../components/CanvaIcon.astro';
 export const prerender = true;
 const guides = (await getCollection('pruvodce')).sort((a, b) => a.data.order - b.data.order);
 ---
-<Article title="Průvodce kurzovým sázením" metaTitle="Průvodce kurzy – jak číst, porovnávat a sledovat kurzy | KurzovýRadar"
+<Article art="pruvodce" title="Jak na kurzy" metaTitle="Jak na kurzy – průvodce pro začátečníky i pokročilé | KurzovýRadar"
   description="Srozumitelní průvodci: jak fungují desetinné kurzy, co znamená pohyb kurzu, jak porovnávat stejné sázky a jak KurzovýRadar zpracovává data."
-  lead="Krátké a věcné vysvětlení kurzů. Žádné tipy ani zaručené strategie." crumbs={[{ name: 'Průvodce', url: '/pruvodce/' }]} photo>
+  lead="Krátké články, po kterých budeš kurzům rozumět. Začni prvním, zabere dvě minuty." crumbs={[{ name: 'Jak na kurzy', url: '/pruvodce/' }]}>
   <ul class="not-prose grid gap-3 sm:grid-cols-2 list-none p-0 max-w-[900px]">
     {guides.map((g) => (
-      <li><a href={`/pruvodce/${g.id}/`} class="card p-5 h-full flex flex-col no-underline text-ink hover:border-blue transition-colors">
-        <Icon name="book-open" size={20} class="text-teal" />
-        <h2 class="text-lg mt-3 mb-1">{g.data.title}</h2>
-        <p class="m-0 text-ink-2 text-[15px]">{g.data.lead}</p>
+      <li><a href={`/pruvodce/${g.id}/`} class="card p-5 h-full flex flex-col no-underline text-ink hover:bg-white">
+        <CanvaIcon name={`pruvodce-${g.id}`} size={64} />
+        {g.data.order === 0 && <span class="hand">začni tady ↓</span>}
+        <h2 class="text-xl mt-2 mb-1">{g.data.title}</h2>
+        <p class="m-0 text-ink-2">{g.data.lead}</p>
       </a></li>
     ))}
-    <li><a href="/kalkulacky/" class="card p-5 h-full flex flex-col no-underline text-ink hover:border-blue transition-colors">
-      <Icon name="calculator" size={20} class="text-teal" />
-      <h2 class="text-lg mt-3 mb-1">Kalkulačky kurzů</h2>
-      <p class="m-0 text-ink-2 text-[15px]">Výplata a zisk, implikovaná pravděpodobnost a srovnání dvou kurzů.</p>
+    <li><a href="/kalkulacky/" class="card p-5 h-full flex flex-col no-underline text-ink hover:bg-white">
+      <CanvaIcon name="kalkulacka" size={64} />
+      <h2 class="text-xl mt-3 mb-1">Kolik vyhraju?</h2>
+      <p class="m-0 text-ink-2">Kalkulačka: zadej sázku a kurz, spočítáme výhru i zisk.</p>
     </a></li>
   </ul>
 </Article>

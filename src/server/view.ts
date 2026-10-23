@@ -12,6 +12,8 @@ export interface OfferView {
   firstAt: number;
   minOdds: number;
   maxOdds: number;
+  /** Previous recorded price, only when the price changed in the last 24 h (for the ticket's hand note). */
+  prev?: { odds: number; at: number };
 }
 
 export interface BookOffers {
@@ -48,10 +50,11 @@ export interface UpcomingSnapshot {
 }
 
 export type WindowKey = '1h' | '6h' | '24h';
-export const WINDOWS: { key: WindowKey; label: string; seconds: number }[] = [
-  { key: '1h', label: '1 hodina', seconds: 3600 },
-  { key: '6h', label: '6 hodin', seconds: 6 * 3600 },
-  { key: '24h', label: '24 hodin', seconds: 86400 },
+/** label = chip text ("za hodinu"), since = "za poslední hodinu" phrase in sentences. */
+export const WINDOWS: { key: WindowKey; label: string; since: string; seconds: number }[] = [
+  { key: '1h', label: 'hodinu', since: 'za poslední hodinu', seconds: 3600 },
+  { key: '6h', label: '6 hodin', since: 'za posledních 6 hodin', seconds: 6 * 3600 },
+  { key: '24h', label: '24 hodin', since: 'za posledních 24 hodin', seconds: 86400 },
 ];
 
 export interface MoveItem {

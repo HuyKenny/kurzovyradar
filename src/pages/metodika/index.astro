@@ -8,9 +8,19 @@ export const prerender = true;
 const cfg = settings({});
 const d = new Date('2026-10-23');
 ---
-<Article title="Metodika a zdroje dat" metaTitle="Metodika – jak KurzovýRadar sleduje a porovnává kurzy | KurzovýRadar"
+<Article art="krok-kontrola" title="Odkud bereme data a jak počítáme" metaTitle="Metodika – jak KurzovýRadar sleduje a porovnává kurzy | KurzovýRadar"
   description="Které sázkové kanceláře sledujeme, jak často kurzy kontrolujeme, jak párujeme stejné sázky, jak počítáme změny a nejvyšší kurz a jak zacházíme s chybějícími daty."
-  lead="Přesně popisujeme, odkud čísla na webu pocházejí a jak je počítáme." crumbs={[{ name: 'Metodika', url: '/metodika/' }]} published={d} updated={d} checked={d}>
+  lead="Žádná čísla si nevymýšlíme. Tady je přesně, odkud jsou a jak s nimi pracujeme." crumbs={[{ name: 'Metodika', url: '/metodika/' }]} published={d} updated={d} checked={d}>
+  <div class="strucne">
+    <p><strong>Stručně:</strong></p>
+    <ul>
+      <li>Každých {cfg.importIntervalMin} minut načteme kurzy Tipsportu a Chance na vybrané fotbalové a hokejové zápasy.</li>
+      <li>Vedle sebe dáme jen úplně stejnou sázku. Zeleně označíme, kde se vyplatí víc.</li>
+      <li>Každou změnu kurzu si zapíšeme. Z toho jsou grafy a pohyby kurzů.</li>
+      <li>Když data chybí, napíšeme to. Nic nedopočítáváme a nedáváme tipy.</li>
+    </ul>
+  </div>
+
   <h2>Které kanceláře sledujeme</h2>
   <table>
     <thead><tr><th scope="col">Kancelář</th><th scope="col">Kurzy</th><th scope="col">Partnerství</th><th scope="col">Recenze</th></tr></thead>

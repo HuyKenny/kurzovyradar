@@ -6,27 +6,27 @@ import { BOOKMAKERS } from '../../config/bookmakers';
 import { reviewOf } from '../../config/reviews';
 export const prerender = true;
 const STATE = {
-  oddsFeed: { active: 'Kurzy sledujeme', none: 'Kurzy zatím nesledujeme' },
-  affiliate: { approved: 'Partner webu (provizní odkaz)', none: 'Bez spolupráce' },
-  review: { published: 'Recenze', draft: 'Recenze se připravuje', none: 'Recenzi zatím nemáme' },
+  oddsFeed: { active: 'Kurzy porovnáváme', none: 'Kurzy zatím neporovnáváme' },
+  affiliate: { approved: 'Spolupracujeme (partnerský odkaz)', none: 'Nespolupracujeme' },
+  review: { published: 'Má recenzi', draft: 'Recenze se připravuje', none: 'Recenzi zatím nemáme' },
 };
 ---
-<Article title="Kde vsadit: přehled sázkových kanceláří" metaTitle="Kde vsadit – přehled sázkových kanceláří s licencí v ČR | KurzovýRadar"
+<Article art="kancelar" title="Kde vsadit: přehled sázkových kanceláří" metaTitle="Kde vsadit – přehled sázkových kanceláří s licencí v ČR | KurzovýRadar"
   description="Přehled sázkových kanceláří Tipsport, Chance a Allwyn: provozovatel, licence Ministerstva financí, co nabízejí a které kurzy na KurzovémRadaru sledujeme."
-  lead="U každé kanceláře zvlášť uvádíme, jestli sledujeme její kurzy, jestli s ní spolupracujeme a jestli má recenzi. Tyto stavy spolu nesouvisí." crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]}>
+ lead="Všechny kanceláře tady mají českou licenci. U každé píšeme, jestli její kurzy porovnáváme a jestli s ní spolupracujeme." crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]}>
   <div class="not-prose grid gap-4 max-w-[980px]">
     {BOOKMAKERS.map((b) => {
       const r = reviewOf(b.id);
       return (
-        <section class="card p-5 grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-center">
+        <section class="ticket p-5 grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-center">
           <div><BookLogo id={b.id} h={34} lazy={false} /></div>
           <div>
             <h2 class="text-lg m-0">{b.name}</h2>
-            {r ? <p class="m-0 mt-1 text-ink-2 text-[15px]">{r.summary}</p> : <p class="m-0 mt-1 text-ink-2 text-[15px]">Kurzy ani spolupráci s touto kanceláří zatím nemáme. Uvádíme ji, aby byl přehled úplný.</p>}
+            {r ? <p class="m-0 mt-1 text-ink-2 text-[15px]">{r.summary}</p> : <p class="m-0 mt-1 text-ink-2 text-[15px]">Kurzy této kanceláře zatím nesledujeme a nespolupracujeme s ní. Uvádíme ji, aby byl přehled úplný.</p>}
             <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3 text-sm">
-              <li class:list={['badge', b.oddsFeed === 'active' ? 'badge--teal' : 'badge--tie']}><Icon name={b.oddsFeed === 'active' ? 'activity' : 'minus'} size={13} />{STATE.oddsFeed[b.oddsFeed]}</li>
-              <li class="badge badge--tie"><Icon name="shield-check" size={13} />{STATE.affiliate[b.affiliate]}</li>
-              <li class="badge badge--tie"><Icon name="book-open" size={13} />{STATE.review[b.review]}</li>
+              <li class:list={['badge', b.oddsFeed === 'active' ? 'badge--green' : 'badge--grey']}><Icon name={b.oddsFeed === 'active' ? 'activity' : 'minus'} size={13} />{STATE.oddsFeed[b.oddsFeed]}</li>
+              <li class="badge badge--grey"><Icon name="shield-check" size={13} />{STATE.affiliate[b.affiliate]}</li>
+              <li class="badge badge--grey"><Icon name="book-open" size={13} />{STATE.review[b.review]}</li>
             </ul>
           </div>
           <div class="flex md:flex-col gap-2">
@@ -37,5 +37,5 @@ const STATE = {
       );
     })}
   </div>
-  <p class="text-sm text-ink-2">Pořadí kanceláří je dané tím, jestli jejich kurzy sledujeme, a ne výší provize. Všechny uvedené kanceláře mají povolení Ministerstva financí ČR. Jak se web financuje, popisujeme na stránce <a href="/financovani/">Jak se financujeme</a>.</p>
+  <p class="text-sm text-ink-2">Pořadí určuje jen to, jestli kurzy kanceláře sledujeme, ne výše provize. Všechny uvedené kanceláře mají povolení Ministerstva financí ČR. Jak se web financuje, popisujeme na stránce <a href="/financovani/">Jak se financujeme</a>.</p>
 </Article>

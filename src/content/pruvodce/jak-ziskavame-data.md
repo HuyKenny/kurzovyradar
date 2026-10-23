@@ -1,18 +1,25 @@
 ---
-title: Jak KurzovýRadar získává a zpracovává data
+title: Odkud KurzovýRadar bere kurzy
 description: Odkud bereme kurzy, jak často je kontrolujeme, jak párujeme zápasy, jak ukládáme historii a co děláme, když data chybějí.
-lead: Odkud kurzy máme, jak často je kontrolujeme a co děláme, když data chybějí.
+lead: Které kanceláře sledujeme, jak často a co děláme, když data chybí.
 order: 5
 published: 2026-10-23
 updated: 2026-10-23
 checked: 2026-10-23
 ---
 
+<div class="strucne">
+
+**Stručně:** každých 15 minut načteme kurzy Tipsportu a Chance na fotbal a hokej, zapíšeme každou změnu a nic si nevymýšlíme.
+
+</div>
+
+
 KurzovýRadar nezobrazuje odhady ani tipy. Ukazuje kurzy, které jsme skutečně načetli od sledovaných kanceláří, a jejich změny, které jsme sami uložili.
 
 ## Které kanceláře sledujeme
 
-Kurzy dnes načítáme od **Tipsportu** a **Chance**. U dalších kanceláří, například Allwyn, Fortuna nebo Betano, kurzy zatím nesledujeme. Allwyn najdete v přehledu [Kde vsadit](/sazkove-kancelare/), jeho kurzy ale ve srovnání nejsou.
+Kurzy dnes načítáme od **Tipsportu** a **Chance**. U dalších kanceláří, například Allwyn, Fortuna nebo Betano, kurzy zatím nesledujeme. Allwyn najdeš v přehledu [Kde vsadit](/sazkove-kancelare/), jeho kurzy ale ve srovnání nejsou.
 
 ## Co přesně sledujeme
 

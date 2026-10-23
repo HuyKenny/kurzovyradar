@@ -22,7 +22,7 @@ export const HELP = {
 
 export const NAV = [
   { href: '/kurzy/', label: 'Kurzy' },
-  { href: '/radar/', label: 'Radar' },
+  { href: '/radar/', label: 'Pohyby kurzů' },
   { href: '/sazkove-kancelare/', label: 'Kde vsadit' },
-  { href: '/pruvodce/', label: 'Průvodce' },
+  { href: '/pruvodce/', label: 'Jak na kurzy' },
 ];

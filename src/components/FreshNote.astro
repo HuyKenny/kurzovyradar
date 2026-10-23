@@ -1,5 +1,5 @@
 ---
-// "When did we last check" line, shown above every odds list. Failing or stale books are named.
+// One plain line: when we last checked, how often we check; a bookmaker that failed is named in words.
 import { BOOK, FEED_BOOKS } from '../config/bookmakers';
 import { isFresh } from '../server/store/derive';
 import { time, dateTime } from '../lib/format';
@@ -8,13 +8,14 @@ import type { Settings } from '../server/types';
 import Icon from './Icon.astro';
 interface Props { books: UpcomingSnapshot['books']; now: number; cfg: Settings }
 const { books, now, cfg } = Astro.props;
-const stale = FEED_BOOKS.filter((b) => !isFresh(books[b], now, cfg));
 const ok = FEED_BOOKS.filter((b) => isFresh(books[b], now, cfg));
+const stale = FEED_BOOKS.filter((b) => !isFresh(books[b], now, cfg));
+const last = ok.length ? Math.max(...ok.map((b) => books[b]!.lastSuccessAt!)) : null;
 ---
-<p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-2 m-0">
-  <Icon name="clock" size={15} class="text-ink-3" />
-  {ok.length > 0 && <span>Kurzy {ok.map((b) => `${BOOK[b].name} ${time(books[b]!.lastSuccessAt!)}`).join(', ')} · kontrolujeme každých {cfg.importIntervalMin} min</span>}
+<p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-2 m-0">
+  <Icon name="clock" size={16} />
+  {last ? <span>Zkontrolováno v {time(last)}. Kurzy kontrolujeme každých {cfg.importIntervalMin} minut.</span> : <span>Kurzy se právě načítají.</span>}
   {stale.map((b) => (
-    <span class="badge badge--warn">{books[b]?.lastSuccessAt ? `${BOOK[b].name}: poslední známé údaje z ${dateTime(books[b]!.lastSuccessAt!)}, do srovnání je nezapočítáváme` : `${BOOK[b].name}: kurzy zatím nejsou k dispozici`}</span>
+    <span class="badge badge--warn">{books[b]?.lastSuccessAt ? `${BOOK[b].name} se teď nepodařilo zkontrolovat, poslední kurzy z ${dateTime(books[b]!.lastSuccessAt!)} jen ukazujeme` : `Kurzy ${BOOK[b].locative.replace(/^u /, '')} zatím nemáme`}</span>
   ))}
 </p>

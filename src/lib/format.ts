@@ -6,7 +6,7 @@ export const odds = (milli: number) => (milli / 1000).toFixed(2).replace('.', ',
 export const pct = (n: number, signed = true) => `${signed && n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(1).replace('.', ',')} %`;
 export const pct0 = (n: number) => `${Math.round(n * 100)} %`;
 export const int = (n: number) => new Intl.NumberFormat('cs-CZ').format(n);
-export const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(n)} Kč`;
+export const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(Math.round(n * 100) / 100)} Kč`;
 
 const parts = (s: number, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, ...o }).format(new Date(s * 1000));
 

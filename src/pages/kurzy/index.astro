@@ -16,70 +16,86 @@ const q = Astro.url.searchParams;
 // Only known values are honoured; anything else is ignored (no endless filter combinations).
 const sport = (q.get('sport') === 'fotbal' || q.get('sport') === 'hokej' ? q.get('sport') : '') as Sport | '';
 const comp = competitionBySlug(q.get('soutez') ?? '') ? q.get('soutez')! : '';
-const den = ['dnes', 'zitra', '7'].includes(q.get('den') ?? '') ? q.get('den')! : '';
+const den = ['dnes', 'zitra', 'vikend', '7'].includes(q.get('den') ?? '') ? q.get('den')! : '';
 const kancelar = isFeedBook(q.get('kancelar') ?? '') ? q.get('kancelar')! : '';
 const trh = q.get('trh') === '1x2' ? '1x2' : '';
 const page = Math.max(1, Math.min(20, Number(q.get('strana')) || 1));
-const PER = 40;
+const PER = 30;
 
+// Weekend = the coming Saturday and Sunday in Prague (today included when it is one of them).
+const weekend = new Set<string>();
+for (let d = 0; d < 7; d++) {
+  const s = t + d * 86400;
+  const w = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Prague', weekday: 'short' }).format(new Date(s * 1000));
+  if (w === 'Sat' || w === 'Sun') weekend.add(dayKey(s));
+  if (weekend.size === 2) break;
+}
 let events = listable(up, t, cfg);
 if (sport) events = events.filter((e) => e.sport === sport);
 if (comp) events = events.filter((e) => e.comp === comp);
 if (den === 'dnes') events = events.filter((e) => dayKey(e.startAt) === dayKey(t));
 if (den === 'zitra') events = events.filter((e) => dayKey(e.startAt) === dayKey(t + 86400));
+if (den === 'vikend') events = events.filter((e) => weekend.has(dayKey(e.startAt)));
 if (den === '7') events = events.filter((e) => e.startAt <= t + 7 * 86400);
 if (kancelar) events = events.filter((e) => (['1', 'x', '2'] as const).some((o) => isCurrent(e, kancelar as never, o, up.books, t, cfg)));
 const total = events.length;
 const shown = events.slice(0, page * PER);
 const filtered = !!(sport || comp || den || kancelar || trh || page > 1);
 const comps = COMPETITIONS.filter((c) => !sport || c.sport === sport);
+const link = (k: string, v: string) => { const p = new URLSearchParams(q); p.delete('strana'); if (v) p.set(k, v); else p.delete(k); if (k === 'sport') p.delete('soutez'); return `/kurzy/${p.size ? `?${p}` : ''}`; };
 const active: { label: string; key: string }[] = [
-  ...(sport ? [{ label: SPORTS[sport].name, key: 'sport' }] : []),
   ...(comp ? [{ label: competitionBySlug(comp)!.name, key: 'soutez' }] : []),
-  ...(den ? [{ label: den === 'dnes' ? 'Dnes' : den === 'zitra' ? 'Zítra' : 'Příštích 7 dní', key: 'den' }] : []),
-  ...(kancelar ? [{ label: `Nabízí ${BOOK[kancelar as 'tipsport'].name}`, key: 'kancelar' }] : []),
-  ...(trh ? [{ label: 'Výsledek zápasu (1X2)', key: 'trh' }] : []),
+  ...(kancelar ? [{ label: `Jen ${BOOK[kancelar as 'tipsport'].name}`, key: 'kancelar' }] : []),
+  ...(trh ? [{ label: 'Výsledek zápasu', key: 'trh' }] : []),
 ];
-const without = (key: string) => { const p = new URLSearchParams(q); p.delete(key); p.delete('strana'); return `/kurzy/${p.size ? `?${p}` : ''}`; };
 const more = new URLSearchParams(q); more.set('strana', String(page + 1));
+const DAYS = [['', 'Všechny dny'], ['dnes', 'Dnes'], ['zitra', 'Zítra'], ['vikend', 'Víkend'], ['7', '7 dní']] as const;
 Astro.response.headers.set('Cache-Control', cacheHeader());
-const sel = 'w-full min-h-[44px] rounded-[10px] border border-line-2 bg-surface px-3 text-[15px]';
 ---
-<Base title={filtered ? 'Srovnání kurzů – filtrovaný výběr | KurzovýRadar' : 'Srovnání kurzů na fotbal a hokej – Tipsport a Chance | KurzovýRadar'}
-  description="Kurzy Tipsportu a Chance na výsledek fotbalových a hokejových zápasů vedle sebe. Nejvyšší kurz zvýrazněný, shoda označená, čas poslední kontroly u každého zápasu."
+<Base title={filtered ? 'Kurzy – vybrané zápasy | KurzovýRadar' : 'Kurzy na fotbal a hokej – Tipsport a Chance vedle sebe | KurzovýRadar'}
+  description="Kurzy Tipsportu a Chance na fotbalové a hokejové zápasy vedle sebe. Uvidíš, kde vsazená stovka vyplatí víc a jak se kurz mění."
   canonical="/kurzy/" noindex={filtered} crumbs={[{ name: 'Kurzy', url: '/kurzy/' }]}>
   <div class="wrap pt-6">
-    <h1 class="m-0">Srovnání kurzů</h1>
-    <p class="text-ink-2 max-w-[70ch] mt-2">Kurzy na <strong class="text-ink">výsledek zápasu v základní hrací době (1X2)</strong> u sledovaných kanceláří. Zvýrazněný je vždy <strong class="text-ink">nejvyšší kurz z námi sledovaných kanceláří</strong>, starší nebo pozastavené kurzy do porovnání nepočítáme.</p>
+    <h1 class="m-0">Kurzy na fotbal a hokej</h1>
+    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">U každého zápasu vidíš, kolik kancelář vyplatí za výhru domácích, remízu a výhru hostů. Platí to pro výsledek po skončení řádné hrací doby, prodloužení se nepočítá.</p>
     <FreshNote books={up.books} now={t} cfg={cfg} />
 
-    <details class="card mt-5" open data-filters>
-      <summary class="flex items-center gap-2 px-4 min-h-[48px] font-semibold"><Icon name="sliders-horizontal" size={18} />Filtry{active.length > 0 && <span class="badge badge--best num">{active.length}</span>}</summary>
-      <form action="/kurzy/" method="get" data-autosubmit class="grid gap-3 p-4 pt-1 sm:grid-cols-2 lg:grid-cols-5 items-end">
-        <label class="grid gap-1 text-sm font-semibold">Sport
-          <select name="sport" class={sel}><option value="">Všechny</option>{(['fotbal', 'hokej'] as const).map((s) => <option value={s} selected={sport === s}>{SPORTS[s].name}</option>)}</select></label>
-        <label class="grid gap-1 text-sm font-semibold">Soutěž
-          <select name="soutez" class={sel}><option value="">Všechny</option>{comps.map((c) => <option value={c.slug} selected={comp === c.slug}>{c.name}</option>)}</select></label>
-        <label class="grid gap-1 text-sm font-semibold">Den
-          <select name="den" class={sel}><option value="">Celá nabídka</option><option value="dnes" selected={den === 'dnes'}>Dnes</option><option value="zitra" selected={den === 'zitra'}>Zítra</option><option value="7" selected={den === '7'}>Příštích 7 dní</option></select></label>
-        <label class="grid gap-1 text-sm font-semibold">Kancelář
-          <select name="kancelar" class={sel}><option value="">Kterákoli</option>{FEED_BOOKS.map((b) => <option value={b} selected={kancelar === b}>{BOOK[b].name}</option>)}</select></label>
-        <label class="grid gap-1 text-sm font-semibold">Trh
-          <select name="trh" class={sel}><option value="">Všechny podporované</option><option value="1x2" selected={trh === '1x2'}>Výsledek zápasu (1X2)</option></select></label>
-        <button class="btn sm:col-span-2 lg:col-span-5 justify-self-start" type="submit" data-nojs>Použít filtry</button>
+    <div class="mt-6 grid gap-3">
+      <nav class="seg" aria-label="Sport">
+        <a href={link('sport', '')} aria-current={!sport ? 'page' : undefined}>Vše</a>
+        {(['fotbal', 'hokej'] as const).map((s) => <a href={link('sport', s)} aria-current={sport === s ? 'page' : undefined}>{SPORTS[s].name}</a>)}
+      </nav>
+      <nav class="seg" aria-label="Den">
+        {DAYS.map(([v, l]) => <a href={link('den', v)} aria-current={den === v ? 'page' : undefined}>{l}</a>)}
+      </nav>
+      <form action="/kurzy/" method="get" data-autosubmit class="flex flex-wrap items-end gap-3">
+        {sport && <input type="hidden" name="sport" value={sport} />}
+        {den && <input type="hidden" name="den" value={den} />}
+        <label class="grid gap-1 font-bold text-[0.95rem] min-w-[220px]">Soutěž
+          <select name="soutez" class="field"><option value="">Všechny soutěže</option>{comps.map((c) => <option value={c.slug} selected={comp === c.slug}>{c.name}</option>)}</select></label>
+        <details class="self-center">
+          <summary class="font-bold min-h-[44px] inline-flex items-center gap-1"><Icon name="sliders-horizontal" size={17} />Další filtry</summary>
+          <div class="flex flex-wrap gap-3 mt-2">
+            <label class="grid gap-1 font-bold text-[0.95rem]">Kancelář
+              <select name="kancelar" class="field"><option value="">Kterákoli</option>{FEED_BOOKS.map((b) => <option value={b} selected={kancelar === b}>{BOOK[b].name}</option>)}</select></label>
+            <label class="grid gap-1 font-bold text-[0.95rem]">Typ sázky
+              <select name="trh" class="field"><option value="">Všechny, které porovnáváme</option><option value="1x2" selected={trh === '1x2'}>Výsledek zápasu (1X2)</option></select></label>
+          </div>
+        </details>
+        <button class="btn btn--sm" type="submit" data-nojs>Použít</button>
       </form>
-    </details>
+    </div>
 
     {active.length > 0 && (
       <div class="flex flex-wrap items-center gap-2 mt-4" aria-label="Aktivní filtry">
-        {active.map((a) => <a class="chip chip--on" href={without(a.key)} aria-label={`Zrušit filtr ${a.label}`}>{a.label}<Icon name="x" size={14} /></a>)}
+        {active.map((a) => <a class="chip chip--on" href={link(a.key, '')} aria-label={`Zrušit filtr ${a.label}`}>{a.label}<Icon name="x" size={15} /></a>)}
         <a class="btn btn--quiet btn--sm" href="/kurzy/">Zrušit vše</a>
       </div>
     )}
 
-    <p class="mt-5 mb-4 text-sm text-ink-2" role="status">{total ? `${total} ${total === 1 ? 'zápas' : total < 5 ? 'zápasy' : 'zápasů'} seřazených podle začátku` : ''}</p>
+    <p class="mt-6 mb-5 hand text-[1.35rem]" role="status">{total ? `${total} ${total === 1 ? 'zápas' : total < 5 ? 'zápasy' : 'zápasů'}, seřazeno podle začátku` : ''}</p>
     {shown.length ? <EventList events={shown} books={up.books} now={t} cfg={cfg} place="kurzy" />
-      : <p class="card p-5 m-0 text-ink-2">{up.events.length ? 'Pro zvolené filtry teď nemáme žádné kurzy. Zkuste filtr zrušit.' : 'Kurzy zatím nejsou k dispozici.'}</p>}
-    {shown.length < total && <p class="mt-6"><a class="btn btn--ghost" href={`/kurzy/?${more}`}>Zobrazit další zápasy</a></p>}
+      : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">{up.events.length ? 'Pro tenhle výběr teď nic nemáme.' : 'Kurzy se právě načítají.'}</p><p class="mt-2 mb-0">{up.events.length ? 'Zkus jiný den nebo soutěž.' : 'Zkus to prosím za pár minut.'}</p>{up.events.length > 0 && <a class="btn btn--ghost mt-4" href="/kurzy/">Ukázat všechny zápasy</a>}</div>}
+    {shown.length < total && <p class="mt-8"><a class="btn btn--ghost" href={`/kurzy/?${more}`}>Ukázat další zápasy</a></p>}
   </div>
 </Base>

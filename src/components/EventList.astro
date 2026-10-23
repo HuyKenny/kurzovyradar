@@ -1,6 +1,6 @@
 ---
-// Events grouped by Prague calendar day (h2 per day, h3 per match), soonest first.
-import EventOdds from './EventOdds.astro';
+// Matches grouped by Prague calendar day (h2 per day, h3 per ticket), soonest first.
+import Ticket from './Ticket.astro';
 import { dayKey, weekday, dateShort } from '../lib/format';
 import type { EventView, UpcomingSnapshot } from '../server/view';
 import type { Settings } from '../server/types';
@@ -10,15 +10,17 @@ const days = new Map<string, EventView[]>();
 for (const e of events) (days.get(dayKey(e.startAt)) ?? days.set(dayKey(e.startAt), []).get(dayKey(e.startAt))!).push(e);
 const title = (s: number) => {
   const k = dayKey(s);
-  const prefix = k === dayKey(now) ? 'Dnes' : k === dayKey(now + 86400) ? 'Zítra' : weekday(s).replace(/^./, (c) => c.toUpperCase());
-  return `${prefix} ${dateShort(s)}`;
+  const w = weekday(s);
+  const name = k === dayKey(now) ? 'Dnes' : k === dayKey(now + 86400) ? 'Zítra' : w.charAt(0).toUpperCase() + w.slice(1);
+  return `${name} ${dateShort(s)}`;
 };
+const n = (c: number) => `${c} ${c === 1 ? 'zápas' : c < 5 ? 'zápasy' : 'zápasů'}`;
 ---
-<div class="grid gap-8">
+<div class="grid gap-10">
   {[...days.values()].map((list) => (
     <section aria-label={title(list[0]!.startAt)}>
-      <h2 class="text-lg mb-3 flex items-baseline gap-2">{title(list[0]!.startAt)} <span class="text-sm font-medium text-ink-2 num">{list.length} {list.length === 1 ? 'zápas' : list.length < 5 ? 'zápasy' : 'zápasů'}</span></h2>
-      <div class="grid gap-3">{list.map((ev) => <EventOdds ev={ev} books={books} now={now} cfg={cfg} place={place} showComp={showComp} />)}</div>
+      <h2 class="text-[1.5rem] mb-4 flex items-baseline gap-3">{title(list[0]!.startAt)} <span class="hand text-[1.25rem]">{n(list.length)}</span></h2>
+      <div class="grid gap-5 lg:grid-cols-2">{list.map((ev) => <Ticket ev={ev} books={books} now={now} cfg={cfg} place={place} showComp={showComp} />)}</div>
     </section>
   ))}
 </div>

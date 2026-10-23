@@ -15,6 +15,8 @@ export interface Review {
   licence: string;
   web: string;
   summary: string;
+  /** Three plain-language bullets on top of the review. */
+  inShort: string[];
   facts: { label: string; value: string }[];
   features: string[];
   pros: string[];
@@ -31,6 +33,7 @@ export const REVIEWS: Review[] = [
     operator: 'Tipsport.net a.s.', ico: '28178653', seat: 'Politických vězňů 156/21, Beroun',
     licence: 'Kurzové sázky na pobočkách i na internetu (tipsport.cz), povolení Ministerstva financí ČR',
     web: 'tipsport.cz',
+    inShort: ['Velká česká kancelář s českou licencí, pobočkami i webem.', 'Její kurzy na fotbal a hokej u nás vidíš u každého zápasu.', 'Kurzy má většinou stejné jako Chance (patří do stejné skupiny).'],
     summary: 'Jedna z největších českých sázkových kanceláří zaměřených na kurzové sázky. Vznikla v roce 1991 v Berouně a online sázky nabízí od ledna 2009.',
     facts: [
       { label: 'Založení', value: '1991, Beroun' },
@@ -45,10 +48,10 @@ export const REVIEWS: Review[] = [
     ],
     pros: [
       'Nabídka zápasů pokrývá všechny soutěže, které na KurzovémRadaru sledujeme',
-      'U každého zápasu můžete porovnat kurz s Chance na stejnou sázku',
+      'U každého zápasu porovnáš kurz s Chance na stejnou sázku',
     ],
     limits: [
-      'Kurzy se s Chance často shodují, takže výběrem mezi nimi si obvykle nepolepšíte',
+      'Kurzy se s Chance často shodují, takže výběrem mezi nimi si obvykle nepolepšíš',
       'Živé přenosy jsou dostupné jen po registraci a ověření účtu',
     ],
     onSite: 'Kurzy Tipsportu sledujeme každých 15 minut a jsou součástí srovnání i radaru.',
@@ -64,6 +67,7 @@ export const REVIEWS: Review[] = [
     operator: 'CHANCE a.s.', ico: '28178815', seat: 'Politických vězňů 156, Beroun',
     licence: 'Kurzové sázky na pobočkách i na internetu (chance.cz), povolení Ministerstva financí ČR',
     web: 'chance.cz',
+    inShort: ['Česká kancelář s licencí, patří do skupiny Tipsport.', 'Její kurzy u nás porovnáváš s Tipsportem u každého zápasu.', 'Většinou nabízí stejné kurzy jako Tipsport, občas se liší.'],
     summary: 'Česká sázková kancelář, od roku 2013 součást skupiny Tipsport. Její jméno nese nejvyšší česká fotbalová soutěž Chance Liga.',
     facts: [
       { label: 'Skupina', value: 'Tipsport (od roku 2013)' },
@@ -75,7 +79,7 @@ export const REVIEWS: Review[] = [
       'Stejná sázková platforma jako Tipsport – stejné zápasy a trhy',
     ],
     pros: [
-      'Na stejnou sázku můžete rychle porovnat kurz s Tipsportem',
+      'Na stejnou sázku rychle porovnáš kurz s Tipsportem',
       'Kurzy občas nabízí odlišně od Tipsportu – takové rozdíly ukazuje náš radar',
     ],
     limits: [
@@ -93,6 +97,7 @@ export const REVIEWS: Review[] = [
     operator: 'Allwyn Česko a.s.', ico: '26493993', seat: 'Evropská 866/69, Praha 6 – Vokovice',
     licence: 'Kurzové sázky na internetu (allwyn.cz), povolení Ministerstva financí ČR; dále loterie a další hry',
     web: 'allwyn.cz',
+    inShort: ['Dřív Sazka. Loterie i kurzové sázky na jednom webu, česká licence.', 'Je to náš partner, ale jeho kurzy zatím nesledujeme.', 'Kurzy si u něj proto porovnej sám přímo na allwyn.cz.'],
     summary: 'Provozovatel loterií známý dříve pod jménem Sazka. Na webu allwyn.cz nabízí v sekci Sporty i kurzové sázky.',
     facts: [
       { label: 'Dříve', value: 'Sazka (přejmenování na Allwyn oznámeno v roce 2025)' },
@@ -106,7 +111,7 @@ export const REVIEWS: Review[] = [
       'Jeden web pro loterie i kurzové sázky',
     ],
     limits: [
-      'Kurzy Allwynu zatím nesledujeme, takže je na KurzovémRadaru neporovnáte',
+      'Kurzy Allwynu zatím nesledujeme, takže je na KurzovémRadaru neporovnáš',
     ],
     onSite: 'Allwyn je náš partner, jeho kurzy ale zatím nemáme připojené. Ve srovnání a v radaru proto chybí.',
     sources: [

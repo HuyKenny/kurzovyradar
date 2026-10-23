@@ -14,7 +14,11 @@ try {
   page.on('pageerror', (e) => console.error('PAGEERROR', e.message));
   page.on('console', (m) => { if (m.type() === 'error') console.error('CONSOLE', m.text()); });
   await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
-  const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  // html/body use overflow-x: clip, so also look for any element sticking out past the viewport.
+  const over = await page.evaluate(() => Math.max(document.documentElement.scrollWidth - window.innerWidth,
+    ...[...document.querySelectorAll('body *')].map((e) => { const r = e.getBoundingClientRect(); // inside a horizontal scroller (overflow-x: auto) is fine: only the box scrolls, not the page
+      let p = e.parentElement; while (p && !['auto', 'scroll'].includes(getComputedStyle(p).overflowX)) p = p.parentElement;
+      return r.width && !p && getComputedStyle(e).position !== 'fixed' ? Math.round(r.right - window.innerWidth) : 0; })));
   if (over > 0) console.error('HORIZONTAL OVERFLOW', over, 'px');
   if (full === 'full') await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } window.scrollTo(0, 0); });
   await new Promise((r) => setTimeout(r, 500));

@@ -77,6 +77,19 @@ export async function derive(db: Db, cfg: Settings, now: number): Promise<{ mete
     list.push({ at: h.at, odds: h.odds, enabled: !!h.enabled });
   }
 
+  // Last change of each offer that moved in 24 h: the value before it (enabled records only).
+  for (const ev of events.values()) {
+    for (const book of FEED_BOOKS) {
+      for (const [outcome, o] of Object.entries(ev.books[book]?.outcomes ?? {}) as [Outcome, OfferView][]) {
+        const h = byOffer.get(`${ev.id}|${book}|${outcome}`)?.filter((x) => x.enabled);
+        if (h && h.length >= 2 && h[h.length - 1]!.odds === o.odds && o.changedAt >= now - 86400) {
+          const before = [...h].reverse().find((x) => x.odds !== o.odds);
+          if (before) o.prev = { odds: before.odds, at: before.at };
+        }
+      }
+    }
+  }
+
   const tracked: TrackedOffer[] = [];
   const evList = [...events.values()];
   for (const ev of evList) {
