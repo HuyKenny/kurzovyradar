@@ -27,7 +27,15 @@ Stavy jsou v `src/config/bookmakers.ts` – tři nezávislá pole (`oddsFeed`, `
 
 - **Trh:** jen hlavní trh platformy `WINNER_3W` „Výsledek zápasu“ = **1X2 v základní hrací době** (fotbal 90 min, hokej 60 min). Cokoli jiného (`WINNER_2W`, speciály, dlouhodobé sázky) se nesrovnává (`src/server/normalize/markets.ts`).
 - **Proč ne další trhy:** `allEvents=true` v hromadném dotazu vrátil 3,3 MB za 80 zápasů (~40 kB/zápas), tj. ~40 MB na kancelář pro 7 dní. To je mimo paměť i rozumné CPU Workeru. Per-zápas dotazy by násobily počet volání API.
-- **Soutěže:** 26 vybraných fotbalových a hokejových soutěží (`src/config/competitions.ts`), ~210–230 zápasů na 7 dní.
+- **Soutěže:** 26 vybraných fotbalových a hokejových soutěží + 5 ženských lig (`src/config/competitions.ts`), ~210–250 zápasů na 7 dní.
+- **Muži × ženy:** feed má pro mužskou i ženskou ligu stejný `nameCompetition` (např. „1. španělská liga“). Pohlaví se proto bere z `idSport` (fotbal muži `-1`, ženy `295`, hokej muži `-2`; jiné se přeskočí). Zdrojová `idSport`/`idCompetition` se ukládají do `event_sources` (migrace `0002`).
+
+## Pro začátečníky (od 23. 10. 2026)
+
+- **„Dnes stojí za pozornost“** (homepage, `src/lib/picks.ts`, testy): max. 6 sázek, nejvýš 1 na zápas, jen dnes/zítra. Čtyři důvody, každý je zjištění z dat, ne předpověď: jedna kancelář změnila kurz a druhá má při pozdější kontrole starý (`one-moved`), rozdíl ≥ 1 % (`higher-elsewhere`), zapsaná změna ≥ 8 % (`big-move`), nové maximum ≥ 2 % nad zápisem před oknem (`new-high`). Pořadí: typ důvodu → velikost → dřívější začátek. Affiliate do výběru nevstupuje. Místo pro budoucí ověřený model = nový typ důvodu.
+- **Karta sázky** `BetCard.astro`, věty o výsledku a vyhodnocení `src/lib/market.ts` (hokej X = „Remíza po 60 minutách“), výplata vždy podmíněně a odděleně od čistého zisku.
+- **Odkazy nesou výsledek:** `?trh=1x2&vysledek=1|x|2&zpet=…#sazka` (`src/lib/links.ts`, `zpet` přes whitelist) → detail předvolí stejný výsledek v grafu, kalkulačce i blocích „Co musí nastat / Proč ji radar vybral / Kde je vyšší kurz“.
+- **Sledování bez účtu** (`src/scripts/follow.ts`, localStorage `kr-sledovane` v2): sporty, soutěže, zápasy, sázky. `/oblibene/` ukáže, co se změnilo od posledního zobrazení nebo uložení (`/api/events.json`, `/api/sledovane.json`).
 
 ## Architektura (`src/server/`)
 
