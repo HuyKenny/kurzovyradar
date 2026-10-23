@@ -1,6 +1,7 @@
 # KurzovýRadar.cz
 
 Srovnání kurzů sledovaných sázkových kanceláří a vlastní historie jejich změn: fotbal a hokej, bez registrace.
+Design „Sportovní tiket“ (od 23. 10. 2026): zápasy jako sázkové tikety, srozumitelné texty (tykání), viz `docs/ASSETS.md`.
 Živě na **https://kurzovyradar.cz** od 23. 10. 2026.
 
 - **Stack:** Astro 7 SSR na Cloudflare Workers (`@astrojs/cloudflare` 14), TypeScript, Tailwind 4, D1. Vlastní entry `src/worker.ts`: `fetch` → Astro + edge cache (stale-while-revalidate nad Cache API), `scheduled` → import kurzů.

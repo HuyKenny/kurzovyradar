@@ -2,7 +2,7 @@
 // Editorial page frame: title, lead, author + fact-check line, body, related links. Article JSON-LD from real dates.
 import Base, { type Crumb } from '../layouts/Base.astro';
 import Photo from './Photo.astro';
-import CanvaIcon from './CanvaIcon.astro';
+import Art from './Art.astro';
 import { SITE } from '../config/site';
 import { date } from '../lib/format';
 interface Props { title: string; metaTitle: string; description: string; lead?: string; crumbs: Crumb[]; published?: Date; updated?: Date; checked?: Date; photo?: boolean; schemaType?: string; noindex?: boolean; art?: string }
@@ -26,7 +26,7 @@ const schema = published ? [{
         </p>
       )}
       </div>
-      {art && <CanvaIcon name={art} size={120} eager class="hidden sm:block rotate-[3deg]" />}
+      {art && <Art name={art} size={120} eager class="hidden sm:block rotate-[3deg]" />}
     </header>
     {photo && <div class="mt-6 card p-2 max-w-[880px] rotate-[-0.6deg]"><div class="rounded-[8px] overflow-hidden border-2 border-ink aspect-[16/6]"><Photo slot="pruvodce" sizes="(min-width: 900px) 880px, 100vw" class="h-full" /></div></div>}
     <div class="prose mt-6"><slot /></div>

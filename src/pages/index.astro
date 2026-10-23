@@ -5,10 +5,10 @@ import Ticket from '../components/Ticket.astro';
 import MoveItem from '../components/MoveItem.astro';
 import BookLogo from '../components/BookLogo.astro';
 import Icon from '../components/Icon.astro';
-import CanvaIcon from '../components/CanvaIcon.astro';
+import Art from '../components/Art.astro';
 import HowOdds from '../components/HowOdds.astro';
 import Photo from '../components/Photo.astro';
-import canva from '../data/canva.json';
+import art from '../data/art.json';
 import { BOOKMAKERS } from '../config/bookmakers';
 import { COMPETITIONS } from '../config/competitions';
 import { upcoming, radar, listable, lastCheck, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
@@ -49,10 +49,10 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         <a href="/kurzy/" class="btn">Porovnat kurzy<Icon name="arrow-right" size={18} /></a>
         <a href="/radar/" class="btn btn--ghost">Otevřít radar</a>
       </div>
-      {checked && <p class="mt-6 mb-0 text-ink-2 flex flex-wrap items-center gap-x-2"><span class="inline-block w-2.5 h-2.5 rounded-full bg-green border-2 border-ink" aria-hidden="true"></span>Naposledy zkontrolováno v {time(checked)} · {int(events.length)} zápasů s kurzy{today ? `, z toho ${today} dnes` : ''}</p>}
+      {checked && <p class="mt-6 mb-0 text-ink-2 flex items-baseline gap-2"><span class="shrink-0 inline-block w-2.5 h-2.5 rounded-full bg-green border-2 border-ink" aria-hidden="true"></span><span>Naposledy zkontrolováno v {time(checked)} · {int(events.length)} zápasů s kurzy{today ? `, z toho ${today} dnes` : ''}</span></p>}
     </div>
     <div class="relative">
-      {'hero' in canva ? <CanvaIcon name="hero" size={520} eager class="w-full h-auto" alt="" />
+      {'hero' in art ? <Art name="hero" size={520} eager class="w-full h-auto" alt="" />
         : <div class="card p-2.5 rotate-[1.5deg]"><div class="rounded-[8px] overflow-hidden border-2 border-ink aspect-[4/3]"><Photo slot="hero" priority sizes="(min-width: 1024px) 520px, 100vw" class="h-full" /></div></div>}
       {ex?.v.favourite?.best && (
         <div class="ticket max-w-[340px] mx-auto lg:mx-0 lg:absolute lg:-bottom-6 lg:-left-6 rotate-[-2deg] p-4">
@@ -68,7 +68,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <section class="wrap mt-16" aria-labelledby="h-next">
     <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
       <div>
-        <h2 id="h-next" class="m-0 flex items-center gap-2"><CanvaIcon name={sport} size={34} />Nejbližší zápasy</h2>
+        <h2 id="h-next" class="m-0 flex items-center gap-2"><Art name={sport} size={34} />Nejbližší zápasy</h2>
         <p class="mt-2 mb-0 text-ink-2">Klikni na kurz a otevře se zápas u kanceláře. Zelený rámeček = tam vyplatí víc.</p>
       </div>
       <nav class="seg" aria-label="Sport">
@@ -84,7 +84,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <section class="wrap mt-16" aria-labelledby="h-moves">
     <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
       <div>
-        <h2 id="h-moves" class="m-0 flex items-center gap-2"><CanvaIcon name="radar" size={34} />Co se hýbe</h2>
+        <h2 id="h-moves" class="m-0 flex items-center gap-2"><Art name="radar" size={34} />Co se hýbe</h2>
         <p class="mt-2 mb-0 text-ink-2">Když kancelář změní kurz, zapíšeme si to. Tady jsou největší změny{win ? ` ${win.since}` : ''}.</p>
       </div>
       <a href="/radar/" class="font-bold inline-flex items-center gap-1 min-h-[44px]">Všechny pohyby kurzů<Icon name="arrow-right" size={16} /></a>
@@ -130,9 +130,9 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <section class="wrap mt-16" aria-labelledby="h-how">
     <h2 id="h-how" class="mb-6">Jak KurzovýRadar funguje</h2>
     <ol class="grid gap-5 md:grid-cols-3 list-none p-0 m-0">
-      <li class="card p-5"><CanvaIcon name="krok-kontrola" size={56} /><h3 class="mt-3 mb-1">1. Každých {cfg.importIntervalMin} minut kontrolujeme kurzy</h3><p class="m-0 text-ink-2">U Tipsportu a Chance na fotbal a hokej. Nemusíš nic obnovovat ani se registrovat.</p></li>
-      <li class="card p-5"><CanvaIcon name="krok-porovnani" size={56} /><h3 class="mt-3 mb-1">2. Dáme vedle sebe stejné sázky</h3><p class="m-0 text-ink-2">Jen stejný zápas a stejnou sázku. Kde kancelář vyplatí víc, označíme zeleně.</p></li>
-      <li class="card p-5"><CanvaIcon name="krok-historie" size={56} /><h3 class="mt-3 mb-1">3. Zapisujeme každou změnu</h3><p class="m-0 text-ink-2">Proto uvidíš, jestli kurz roste, nebo padá. Nic nedopočítáváme a nedáváme tipy.</p></li>
+      <li class="card p-5"><Art name="krok-kontrola" size={56} /><h3 class="mt-3 mb-1">1. Každých {cfg.importIntervalMin} minut kontrolujeme kurzy</h3><p class="m-0 text-ink-2">U Tipsportu a Chance na fotbal a hokej. Nemusíš nic obnovovat ani se registrovat.</p></li>
+      <li class="card p-5"><Art name="krok-porovnani" size={56} /><h3 class="mt-3 mb-1">2. Dáme vedle sebe stejné sázky</h3><p class="m-0 text-ink-2">Jen stejný zápas a stejnou sázku. Kde kancelář vyplatí víc, označíme zeleně.</p></li>
+      <li class="card p-5"><Art name="krok-historie" size={56} /><h3 class="mt-3 mb-1">3. Zapisujeme každou změnu</h3><p class="m-0 text-ink-2">Proto uvidíš, jestli kurz roste, nebo padá. Nic nedopočítáváme a nedáváme tipy.</p></li>
     </ol>
     <p class="mt-6"><a href="/metodika/">Podrobně: odkud bereme data</a></p>
   </section>
@@ -145,13 +145,13 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {guides.slice(0, 3).map((g) => (
         <a href={`/pruvodce/${g.id}/`} class="card p-5 no-underline text-ink hover:bg-white">
-          <CanvaIcon name={`pruvodce-${g.id}`} size={64} />
+          <Art name={`pruvodce-${g.id}`} size={64} />
           <h3 class="mt-3 mb-1">{g.data.title}</h3>
           <p class="m-0 text-ink-2">{g.data.lead}</p>
         </a>
       ))}
       <a href="/kalkulacky/" class="card p-5 no-underline text-ink hover:bg-white">
-        <CanvaIcon name="kalkulacka" size={64} />
+        <Art name="kalkulacka" size={64} />
         <h3 class="mt-3 mb-1">Kolik vyhraju?</h3>
         <p class="m-0 text-ink-2">Zadej sázku a kurz, spočítáme výhru i zisk.</p>
       </a>

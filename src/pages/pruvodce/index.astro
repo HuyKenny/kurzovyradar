@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Article from '../../components/Article.astro';
-import CanvaIcon from '../../components/CanvaIcon.astro';
+import Art from '../../components/Art.astro';
 export const prerender = true;
 const guides = (await getCollection('pruvodce')).sort((a, b) => a.data.order - b.data.order);
 ---
@@ -11,14 +11,14 @@ const guides = (await getCollection('pruvodce')).sort((a, b) => a.data.order - b
   <ul class="not-prose grid gap-3 sm:grid-cols-2 list-none p-0 max-w-[900px]">
     {guides.map((g) => (
       <li><a href={`/pruvodce/${g.id}/`} class="card p-5 h-full flex flex-col no-underline text-ink hover:bg-white">
-        <CanvaIcon name={`pruvodce-${g.id}`} size={64} />
+        <Art name={`pruvodce-${g.id}`} size={64} />
         {g.data.order === 0 && <span class="hand">začni tady ↓</span>}
         <h2 class="text-xl mt-2 mb-1">{g.data.title}</h2>
         <p class="m-0 text-ink-2">{g.data.lead}</p>
       </a></li>
     ))}
     <li><a href="/kalkulacky/" class="card p-5 h-full flex flex-col no-underline text-ink hover:bg-white">
-      <CanvaIcon name="kalkulacka" size={64} />
+      <Art name="kalkulacka" size={64} />
       <h2 class="text-xl mt-3 mb-1">Kolik vyhraju?</h2>
       <p class="m-0 text-ink-2">Kalkulačka: zadej sázku a kurz, spočítáme výhru i zisk.</p>
     </a></li>

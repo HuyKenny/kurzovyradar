@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import EventList from './EventList.astro';
 import FreshNote from './FreshNote.astro';
 import Photo from './Photo.astro';
-import CanvaIcon from './CanvaIcon.astro';
+import Art from './Art.astro';
 import { COMPETITIONS, SPORTS, type Sport } from '../config/competitions';
 import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
 
@@ -37,7 +37,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <div class="wrap pt-6">
     <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_340px] md:items-center">
       <div>
-        <h1 class="m-0 flex items-center gap-3"><CanvaIcon name={sport} size={52} eager />{TEXT.h1}</h1>
+        <h1 class="m-0 flex items-center gap-3"><Art name={sport} size={52} eager />{TEXT.h1}</h1>
         <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">{TEXT.lead}</p>
         <FreshNote books={up.books} now={t} cfg={cfg} />
       </div>

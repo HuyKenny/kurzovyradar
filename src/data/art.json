@@ -1,0 +1,82 @@
+{
+ "fotbal": {
+  "file": "fotbal.svg",
+  "w": 67,
+  "h": 67
+ },
+ "hokej": {
+  "file": "hokej.svg",
+  "w": 67,
+  "h": 67
+ },
+ "radar": {
+  "file": "radar.svg",
+  "w": 67,
+  "h": 67
+ },
+ "kalkulacka": {
+  "file": "kalkulacka.svg",
+  "w": 67,
+  "h": 67
+ },
+ "kancelar": {
+  "file": "kancelar.svg",
+  "w": 67,
+  "h": 67
+ },
+ "krok-kontrola": {
+  "file": "krok-kontrola.svg",
+  "w": 67,
+  "h": 67
+ },
+ "krok-porovnani": {
+  "file": "krok-porovnani.svg",
+  "w": 67,
+  "h": 67
+ },
+ "krok-historie": {
+  "file": "krok-historie.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce": {
+  "file": "pruvodce.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce-kurzy-pro-zacatecniky": {
+  "file": "pruvodce-kurzy-pro-zacatecniky.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce-desetinne-kurzy": {
+  "file": "pruvodce-desetinne-kurzy.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce-pohyb-kurzu": {
+  "file": "pruvodce-pohyb-kurzu.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce-porovnavani-stejnych-sazek": {
+  "file": "pruvodce-porovnavani-stejnych-sazek.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce-zakladni-hraci-doba-vs-prodlouzeni": {
+  "file": "pruvodce-zakladni-hraci-doba-vs-prodlouzeni.svg",
+  "w": 67,
+  "h": 67
+ },
+ "pruvodce-jak-ziskavame-data": {
+  "file": "pruvodce-jak-ziskavame-data.svg",
+  "w": 67,
+  "h": 67
+ },
+ "logo-symbol": {
+  "file": "logo-symbol.svg",
+  "w": 66,
+  "h": 66
+ }
+}

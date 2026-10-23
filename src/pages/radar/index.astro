@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import MoveItem from '../../components/MoveItem.astro';
 import BookLogo from '../../components/BookLogo.astro';
 import FreshNote from '../../components/FreshNote.astro';
-import CanvaIcon from '../../components/CanvaIcon.astro';
+import Art from '../../components/Art.astro';
 import { upcoming, radar, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { odds as fmt, pct, kickoff, dateTime } from '../../lib/format';
 import { WINDOWS, type WindowKey } from '../../server/view';
@@ -47,7 +47,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         <p class="text-[1.1rem] max-w-[60ch] mt-3 mb-3">Kancelář mění kurzy i několikrát denně. Každou změnu si zapíšeme. Tady jsou ty největší u zápasů, které ještě nezačaly.</p>
         <FreshNote books={up.books} now={t} cfg={cfg} />
       </div>
-      <CanvaIcon name="radar" size={110} class="hidden md:block" />
+      <Art name="radar" size={110} class="hidden md:block" />
     </div>
 
     <div class="mt-6 grid gap-3">

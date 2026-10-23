@@ -4,7 +4,7 @@ import Ticket from '../../components/Ticket.astro';
 import OddsChart, { type Series } from '../../components/OddsChart.astro';
 import BookLogo from '../../components/BookLogo.astro';
 import FavButton from '../../components/FavButton.astro';
-import CanvaIcon from '../../components/CanvaIcon.astro';
+import Art from '../../components/Art.astro';
 import { BOOK, FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
 import { SPORTS, competitionBySlug } from '../../config/competitions';
 import { E, upcoming, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
@@ -96,7 +96,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <div class="wrap pt-6">
     <article class="ticket">
       <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
-        <CanvaIcon name={ev.sport} size={22} />
+        <Art name={ev.sport} size={22} />
         <a href={`/souteze/${ev.comp}/`} class="text-ink no-underline hover:underline">{ev.compName}</a>
         <time class="ml-auto num normal-case tracking-normal text-base" datetime={new Date(ev.startAt * 1000).toISOString()}>{kickoff(ev.startAt, t)}</time>
       </div>
@@ -146,7 +146,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         </div>
 
         <form id="kalkulacka" method="get" action={`${ev.url}#kalkulacka`} class="bg-green-soft border-2 border-ink rounded-[14px] p-4 self-start grid gap-3" data-win data-odds={oddsData}>
-          <h2 class="text-[1.25rem] m-0 flex items-center gap-2"><CanvaIcon name="kalkulacka" size={28} />Kolik vyhraju?</h2>
+          <h2 class="text-[1.25rem] m-0 flex items-center gap-2"><Art name="kalkulacka" size={28} />Kolik vyhraju?</h2>
           <label class="grid gap-1 font-bold text-[0.95rem]">Vsadím (Kč)<input class="field num" name="vklad" inputmode="decimal" value={String(stake)} /></label>
           <fieldset class="m-0 p-0 border-0">
             <legend class="font-bold text-[0.95rem] mb-1">Na co</legend>
@@ -165,7 +165,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
 
     {enough && (
       <section class="mt-12" aria-labelledby="h-story">
-        <h2 id="h-story" class="flex items-center gap-2"><CanvaIcon name="radar" size={34} />Co se s kurzy dělo</h2>
+        <h2 id="h-story" class="flex items-center gap-2"><Art name="radar" size={34} />Co se s kurzy dělo</h2>
         <ul class="mt-3 grid gap-2 text-[1.08rem] max-w-[75ch] list-none p-0">
           {story.map((s) => <li class="flex gap-2"><span class="hand text-[1.3rem] leading-none" aria-hidden="true">→</span><span>{s}</span></li>)}
         </ul>

@@ -9,7 +9,7 @@ import type { EventView, UpcomingSnapshot } from '../server/view';
 import type { Settings } from '../server/types';
 import BookLogo from './BookLogo.astro';
 import Icon from './Icon.astro';
-import CanvaIcon from './CanvaIcon.astro';
+import Art from './Art.astro';
 import FavButton from './FavButton.astro';
 
 interface Props { ev: EventView; books: UpcomingSnapshot['books']; now: number; cfg: Settings; place?: string; showComp?: boolean; headingLevel?: 'h2' | 'h3' }
@@ -23,7 +23,7 @@ const showRows = v.books.length > 1 && !v.allSame;
 ---
 <article class="ticket flex flex-col" data-event={ev.id}>
   <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
-    <CanvaIcon name={ev.sport} size={20} />
+    <Art name={ev.sport} size={20} />
     {showComp ? <a href={`/souteze/${ev.comp}/`} class="text-ink no-underline hover:underline truncate">{ev.compName}</a> : <span>{ev.sport === 'hokej' ? 'Hokej' : 'Fotbal'}</span>}
     <time class="ml-auto shrink-0 num normal-case tracking-normal text-[0.95rem]" datetime={new Date(ev.startAt * 1000).toISOString()}>{kickoff(ev.startAt, now)}</time>
   </div>
