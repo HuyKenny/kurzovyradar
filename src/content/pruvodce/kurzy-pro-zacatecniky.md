@@ -10,7 +10,7 @@ checked: 2026-10-23
 
 <div class="strucne">
 
-**Stručně:** kurz říká, kolikrát se ti vsazené peníze vrátí, když tip vyjde. 100 Kč na kurz 1,85 = výplata 185 Kč.
+**Stručně:** kurz říká, kolikrát se ti vsazené peníze vrátí. Pokud sázka na kurz 1,85 vyhraje, ze 100 Kč dostaneš 185 Kč včetně vkladu, čistý zisk je 85 Kč.
 
 </div>
 
@@ -19,9 +19,9 @@ checked: 2026-10-23
 Na každý zápas vypíše sázková kancelář **kurzy**. Kurz je číslo, kterým se vynásobí tvoje sázka, když tip vyjde.
 
 - Vsadíš **100 Kč** na kurz **1,85**.
-- Tip vyjde → dostaneš **100 × 1,85 = 185 Kč**.
+- Pokud sázka vyhraje → dostaneš **100 × 1,85 = 185 Kč** včetně vkladu.
 - Z toho je 100 Kč tvůj vklad a **85 Kč čistý zisk**.
-- Tip nevyjde → vsazených 100 Kč je pryč.
+- Pokud sázka prohraje → vsazených 100 Kč je pryč.
 
 Spočítat si to můžeš v [kalkulačce Kolik vyhraju?](/kalkulacky/).
 

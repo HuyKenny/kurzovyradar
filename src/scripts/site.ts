@@ -1,47 +1,96 @@
-// Site-wide progressive enhancement: favourites (localStorage), header search suggestions, auto-submitting filters,
+// Site-wide progressive enhancement: following matches/bets/competitions (localStorage), header search suggestions, auto-submitting filters,
 // chart tooltips. Everything works without it; this only makes it quicker.
+import { load, save, nowS, type FollowBet } from './follow';
 
-/* ---------- favourites (stored only in this browser) ---------- */
-export interface Fav { id: number; url: string; home: string; away: string; startAt: number; comp: string }
-const FAV_KEY = 'kr-favs';
-export function readFavs(): Fav[] {
-  try { const v = JSON.parse(localStorage.getItem(FAV_KEY) ?? '[]'); return Array.isArray(v) ? (v as Fav[]) : []; } catch { return []; }
-}
-function writeFavs(list: Fav[]) {
-  try { localStorage.setItem(FAV_KEY, JSON.stringify(list.slice(-200))); } catch { /* private mode: nothing is kept */ }
-  document.dispatchEvent(new CustomEvent('kr:favs'));
-}
-function paintFavs() {
-  const list = readFavs();
-  const ids = new Set(list.map((f) => f.id));
+/* ---------- following (stored only in this browser, see follow.ts) ---------- */
+
+function paintFollow() {
+  const s = load();
+  const evIds = new Set(s.events.map((f) => f.id));
+  const betKeys = new Set(s.bets.map((b) => `${b.id}-${b.outcome}`));
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-fav]')) {
-    const on = ids.has(Number(b.dataset.fav));
+    const on = evIds.has(Number(b.dataset.fav));
     b.setAttribute('aria-pressed', String(on));
     const label = b.querySelector<HTMLElement>('[data-fav-label]');
-    if (label) label.textContent = on ? 'V oblíbených' : 'Do oblíbených';
-    b.setAttribute('aria-label', `${on ? 'Odebrat z oblíbených' : 'Přidat do oblíbených'}: ${b.dataset.home} – ${b.dataset.away}`);
+    if (label) label.textContent = on ? 'Sleduješ' : 'Sledovat zápas';
+    b.setAttribute('aria-label', `${on ? 'Přestat sledovat' : 'Sledovat'} zápas ${b.dataset.home} – ${b.dataset.away}`);
   }
-  for (const c of document.querySelectorAll<HTMLElement>('[data-fav-count]')) {
-    const n = list.filter((f) => f.startAt * 1000 > Date.now() - 3 * 3600_000).length;
-    c.hidden = n === 0;
-    c.textContent = String(n);
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-follow-bet]')) {
+    const d = betData(b);
+    const on = !!d && betKeys.has(`${d.id}-${d.outcome}`);
+    b.setAttribute('aria-pressed', String(on));
+    const label = b.querySelector<HTMLElement>('[data-follow-label]');
+    if (label) label.textContent = on ? 'Sleduješ změny' : 'Sledovat změny';
   }
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-follow-comp]')) {
+    const on = s.comps.some((c) => c.slug === b.dataset.followComp);
+    b.setAttribute('aria-pressed', String(on));
+    const label = b.querySelector<HTMLElement>('[data-follow-label]');
+    if (label) label.textContent = on ? 'Sleduješ soutěž' : 'Sledovat soutěž';
+  }
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-follow-sport]')) {
+    const on = s.sports.includes(b.dataset.followSport ?? '');
+    b.setAttribute('aria-pressed', String(on));
+    const label = b.querySelector<HTMLElement>('[data-follow-label]');
+    if (label) label.textContent = on ? `Sleduješ ${b.dataset.name}` : `Sledovat ${b.dataset.name}`;
+  }
+  const n = s.events.filter((f) => f.startAt * 1000 > Date.now() - 3 * 3600_000).length + s.bets.filter((f) => f.startAt * 1000 > Date.now() - 3 * 3600_000).length;
+  for (const c of document.querySelectorAll<HTMLElement>('[data-fav-count]')) { c.hidden = n === 0; c.textContent = String(n); }
 }
+
+/** A bet button carries its data as JSON; on the match page the outcome comes from the calculator's choice. */
+function betData(b: HTMLElement): Omit<FollowBet, 'seen'> & { odds: number | null } | null {
+  try {
+    const d = JSON.parse(b.dataset.followBet ?? 'null');
+    if (!d) return null;
+    if (d.pickFrom) {
+      const form = document.querySelector<HTMLFormElement>(d.pickFrom);
+      const o = (form?.querySelector<HTMLInputElement>('input[name=tip]:checked')?.value ?? d.outcome) as '1' | 'x' | '2';
+      return { ...d, outcome: o, label: d.labels?.[o] ?? '', odds: d.oddsBy?.[o] ?? null };
+    }
+    return d;
+  } catch { return null; }
+}
+
 document.addEventListener('click', (e) => {
-  const b = (e.target as Element | null)?.closest?.<HTMLButtonElement>('[data-fav]');
-  if (!b) return;
+  const t = e.target as Element | null;
+  const fav = t?.closest?.<HTMLButtonElement>('[data-fav]');
+  const bet = t?.closest?.<HTMLButtonElement>('[data-follow-bet]');
+  const comp = t?.closest?.<HTMLButtonElement>('[data-follow-comp]');
+  const sport = t?.closest?.<HTMLButtonElement>('[data-follow-sport]');
+  if (!fav && !bet && !comp && !sport) return;
   e.preventDefault();
-  const id = Number(b.dataset.fav);
-  const list = readFavs();
-  const i = list.findIndex((f) => f.id === id);
-  if (i >= 0) list.splice(i, 1);
-  else list.push({ id, url: b.dataset.url ?? '', home: b.dataset.home ?? '', away: b.dataset.away ?? '', startAt: Number(b.dataset.start), comp: b.dataset.comp ?? '' });
-  writeFavs(list);
+  const s = load();
+  if (fav) {
+    const id = Number(fav.dataset.fav);
+    const i = s.events.findIndex((f) => f.id === id);
+    if (i >= 0) s.events.splice(i, 1);
+    else {
+      let odds = {};
+      try { odds = JSON.parse(fav.dataset.odds ?? '{}'); } catch { /* none */ }
+      s.events.push({ id, url: fav.dataset.url ?? '', home: fav.dataset.home ?? '', away: fav.dataset.away ?? '', startAt: Number(fav.dataset.start), comp: fav.dataset.comp ?? '', seen: { at: nowS(), odds, via: 'ulozeni' } });
+    }
+  } else if (bet) {
+    const d = betData(bet);
+    if (!d) return;
+    const i = s.bets.findIndex((b) => b.id === d.id && b.outcome === d.outcome);
+    if (i >= 0) s.bets.splice(i, 1);
+    else s.bets.push({ id: d.id, outcome: d.outcome, url: d.url, home: d.home, away: d.away, startAt: d.startAt, comp: d.comp, sport: d.sport, label: d.label, seen: { at: nowS(), odds: d.odds, via: 'ulozeni' } });
+  } else if (comp) {
+    const slug = comp.dataset.followComp ?? '';
+    const i = s.comps.findIndex((c) => c.slug === slug);
+    if (i >= 0) s.comps.splice(i, 1); else s.comps.push({ slug, name: comp.dataset.name ?? slug });
+  } else if (sport) {
+    const v = sport.dataset.followSport ?? '';
+    s.sports = s.sports.includes(v) ? s.sports.filter((x) => x !== v) : [...s.sports, v];
+  }
+  save(s);
 });
-document.addEventListener('kr:favs', paintFavs);
-window.addEventListener('storage', (e) => { if (e.key === FAV_KEY) paintFavs(); });
-for (const b of document.querySelectorAll<HTMLButtonElement>('[data-fav]')) b.hidden = false; // shown only when JS can store them
-paintFavs();
+document.addEventListener('kr:follow', paintFollow);
+document.addEventListener('change', (e) => { if ((e.target as Element | null)?.matches?.('input[name=tip]')) paintFollow(); });
+window.addEventListener('storage', (e) => { if (e.key === 'kr-sledovane') paintFollow(); });
+for (const b of document.querySelectorAll<HTMLButtonElement>('[data-fav], [data-follow-bet], [data-follow-comp], [data-follow-sport]')) b.hidden = false; // shown only when JS can store them
+paintFollow();
 
 /* ---------- header search suggestions (combobox) ---------- */
 interface Hit { label: string; sub: string; url: string; kind: 'zápas' | 'soutěž' | 'tým' }
@@ -138,9 +187,9 @@ for (const box of document.querySelectorAll<HTMLElement>('[data-mini-calc]')) {
     const st = Number(s.value.replace(',', '.')), od = Number(o.value.replace(',', '.'));
     if (!(st >= 0) || !(od > 1)) { out.textContent = 'Zadej sázku v Kč a kurz větší než 1.'; return; }
     out.textContent = '';
-    out.appendChild(document.createTextNode('Když tip vyjde, dostaneš '));
+    out.appendChild(document.createTextNode('Pokud sázka vyhraje, dostaneš '));
     const b = document.createElement('strong'); b.className = 'num'; b.textContent = kc(st * od); out.appendChild(b);
-    out.appendChild(document.createTextNode(` (zisk ${kc(st * od - st)}).`));
+    out.appendChild(document.createTextNode(` včetně vkladu (čistý zisk ${kc(st * od - st)}).`));
   };
   box.addEventListener('input', upd);
   for (const b of box.querySelectorAll<HTMLElement>('[data-nojs]')) b.hidden = true;
@@ -160,9 +209,9 @@ for (const f of document.querySelectorAll<HTMLFormElement>('form[data-win]')) {
     if (!(st >= 0)) { out.textContent = 'Zadej sázku v Kč.'; return; }
     if (!(o > 1)) { out.textContent = 'Na tenhle výsledek teď kurz nemáme.'; return; }
     const strong = (t: string) => { const b = document.createElement('strong'); b.className = 'num'; b.textContent = t; return b; };
-    out.appendChild(document.createTextNode('Když to vyjde, dostaneš '));
+    out.appendChild(document.createTextNode('Pokud sázka vyhraje, dostaneš '));
     out.appendChild(strong(kc(st * o)));
-    out.appendChild(document.createTextNode(', z toho zisk '));
+    out.appendChild(document.createTextNode(' včetně vkladu. Čistý zisk je '));
     out.appendChild(strong(kc(st * o - st)));
     out.appendChild(document.createTextNode('.'));
   };
@@ -170,4 +219,30 @@ for (const f of document.querySelectorAll<HTMLFormElement>('form[data-win]')) {
   f.addEventListener('change', upd);
   f.addEventListener('submit', (e) => { e.preventDefault(); upd(); });
   for (const b of f.querySelectorAll<HTMLElement>('[data-nojs]')) b.hidden = true;
+}
+
+/* ---------- homepage strip: changes at followed bets/matches since the visitor last looked ---------- */
+const strip = document.querySelector<HTMLElement>('[data-follow-strip]');
+if (strip) {
+  const s = load();
+  const ids = [...new Set([...s.events.map((e) => e.id), ...s.bets.map((b) => b.id)])];
+  if (ids.length) {
+    fetch(`/api/events.json?ids=${ids.join(',')}`).then((r) => r.json() as Promise<{ events: { id: number; started: boolean; outcomes: Record<string, { odds: number | null }> }[] }>).then((d: { events: { id: number; started: boolean; outcomes: Record<string, { odds: number | null }> }[] }) => {
+      const by = new Map(d.events.map((e) => [e.id, e]));
+      let n = 0;
+      for (const b of s.bets) { const e = by.get(b.id); const now = e?.outcomes[b.outcome]?.odds; if (e && !e.started && b.seen && now && b.seen.odds && now !== b.seen.odds) n++; }
+      for (const f of s.events) {
+        const e = by.get(f.id);
+        if (!e || e.started || !f.seen) continue;
+        if ((['1', 'x', '2'] as const).some((o) => f.seen!.odds[o] && e.outcomes[o]?.odds && e.outcomes[o]!.odds !== f.seen!.odds[o])) n++;
+      }
+      if (!n) return;
+      const a = document.createElement('a');
+      a.href = '/oblibene/';
+      a.className = 'note-box flex items-center gap-2 no-underline text-ink font-bold';
+      a.textContent = `U ${n} ${n === 1 ? 'tvé sledované položky' : 'tvých sledovaných položek'} se od posledního zobrazení změnil kurz → podívat se`;
+      strip.appendChild(a);
+      strip.hidden = false;
+    }).catch(() => { /* nothing to show */ });
+  }
 }

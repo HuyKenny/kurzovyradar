@@ -10,7 +10,7 @@ checked: 2026-10-23
 
 <div class="strucne">
 
-**Stručně:** každých 15 minut načteme kurzy Tipsportu a Chance na fotbal a hokej, zapíšeme každou změnu a nic si nevymýšlíme.
+**Stručně:** každých 15 minut načteme kurzy Tipsportu a Chance na fotbal a hokej a zapíšeme, co se od minulé kontroly změnilo. Změny mezi kontrolami nevidíme a nic si nevymýšlíme.
 
 </div>
 
@@ -37,7 +37,7 @@ Kurzy dvou kanceláří dáme vedle sebe, jen když sedí sport, soutěž, oba �
 
 ## Historie
 
-Při každé kontrole porovnáme nové kurzy s uloženými. **Novou hodnotu do historie zapíšeme jen tehdy, když se kurz nebo jeho dostupnost změnila.** Z této historie počítáme radar a grafy. Podrobné záznamy uchováváme 30 dní po začátku zápasu.
+Při každé kontrole porovnáme nové kurzy s uloženými. **Novou hodnotu do historie zapíšeme jen tehdy, když se kurz nebo jeho dostupnost od minulé kontroly změnila.** Když kancelář kurz mezi dvěma kontrolami změní a zase vrátí, nevidíme to. Z této historie počítáme radar a grafy. Podrobné záznamy uchováváme 30 dní po začátku zápasu.
 
 ## Když data chybějí
 

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import EventList from '../../components/EventList.astro';
 import FreshNote from '../../components/FreshNote.astro';
+import Icon from '../../components/Icon.astro';
 import { COMPETITIONS, SPORTS, competitionBySlug } from '../../config/competitions';
 import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 
@@ -22,6 +23,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <p class="eyebrow m-0">{S.name} · {c.country}</p>
     <h1 class="mt-2 mb-0"><span class="inline-block px-3 rounded-[10px] border-2 border-ink" style={`background:${c.color}`}>{c.name}</span>: kurzy</h1>
     <p class="text-[1.1rem] max-w-[64ch] mt-3 mb-3">{c.intro} U každého zápasu vidíš kurz na výhru domácích, remízu a výhru hostů.</p>
+    <button type="button" hidden class="btn btn--ghost btn--sm mb-3" data-follow-comp={c.slug} data-name={c.name} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat soutěž</span></button>
     <FreshNote books={up.books} now={t} cfg={cfg} />
     <div class="mt-8">
       {events.length ? <EventList events={events} books={up.books} now={t} cfg={cfg} place={`soutez-${c.slug}`} showComp={false} />

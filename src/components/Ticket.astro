@@ -4,6 +4,7 @@
 import { BOOK } from '../config/bookmakers';
 import { competitionBySlug } from '../config/competitions';
 import { ticketView, atBooks, STATE_TEXT } from '../lib/ticket';
+import { betTarget } from '../lib/market';
 import { odds as fmt, kickoff, time, ago } from '../lib/format';
 import type { EventView, UpcomingSnapshot } from '../server/view';
 import type { Settings } from '../server/types';
@@ -29,11 +30,11 @@ const showRows = v.books.length > 1 && !v.allSame;
   </div>
   <div class="px-4 pt-3 pb-3 flex items-start gap-2">
     <H class="m-0 text-[1.3rem] leading-tight flex-1 min-w-0"><a href={ev.url} class="text-ink no-underline hover:underline decoration-2">{ev.home} <span class="text-ink-3 font-normal">vs</span> {ev.away}</a></H>
-    <FavButton ev={ev} />
+    <FavButton ev={ev} odds={Object.fromEntries(v.outcomes.filter((o) => o.best).map((o) => [o.outcome, o.best!.odds]))} />
   </div>
   {v.move && (
     <p class="hand px-4 -mt-1 mb-2" title={`Zaznamenali jsme ${ago(v.move.at, now)}`}>
-      {v.move.to < v.move.from ? '↘' : '↗'} kurz na {v.move.outcome === 'x' ? 'remízu' : v.move.who} {v.move.to < v.move.from ? 'klesl' : 'stoupl'} z {fmt(v.move.from)}
+      {v.move.to < v.move.from ? '↘' : '↗'} kurz na {betTarget(ev.sport, v.move.outcome, ev.home, ev.away)} {v.move.to < v.move.from ? 'klesl' : 'stoupl'} z {fmt(v.move.from)}
     </p>
   )}
   <div class="perf" aria-hidden="true"></div>
@@ -85,7 +86,7 @@ const showRows = v.books.length > 1 && !v.allSame;
           </table>
         )}
         <div class="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-1">
-          {fav?.best && <p class="m-0 text-[0.95rem]"><span class="text-ink-2">100 Kč na {fav.outcome === 'x' ? 'remízu' : fav.who}</span> <span aria-hidden="true">→</span><span class="sr">vyplatí</span> <strong class="num">{kc(100 * fav.best.odds / 1000)}</strong></p>}
+          {fav?.best && <p class="m-0 text-[0.95rem]"><span class="text-ink-2">{fav.outcome === 'x' ? `Pokud zápas skončí remízou${ev.sport === 'hokej' ? ' po 60 min.' : ''}` : `Pokud vyhraje tým ${fav.who}`}, ze 100 Kč dostaneš</span> <strong class="num">{kc(100 * fav.best.odds / 1000)}</strong> <span class="text-ink-2">včetně vkladu</span></p>}
           <a href={ev.url} class="font-bold no-underline inline-flex items-center gap-1 min-h-[40px]">Jak se kurz vyvíjel<Icon name="arrow-right" size={16} /></a>
         </div>
       </>

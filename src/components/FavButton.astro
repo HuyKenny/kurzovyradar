@@ -1,14 +1,15 @@
 ---
-// Favourite toggle. Hidden until site.ts runs (without JS there is nowhere to store it); stored only in this browser.
+// Follow a match. Hidden until site.ts runs (without JS there is nowhere to store it); stored only in this browser.
+// `odds` = current highest price per outcome, saved as "seen" so /oblibene/ can show what changed since.
 import type { EventView } from '../server/view';
 import Icon from './Icon.astro';
-interface Props { ev: Pick<EventView, 'id' | 'url' | 'home' | 'away' | 'startAt' | 'compName'>; big?: boolean }
-const { ev, big = false } = Astro.props;
+interface Props { ev: Pick<EventView, 'id' | 'url' | 'home' | 'away' | 'startAt' | 'compName'>; big?: boolean; odds?: Record<string, number> }
+const { ev, big = false, odds = {} } = Astro.props;
 ---
 <button type="button" hidden data-fav={ev.id} data-url={ev.url} data-home={ev.home} data-away={ev.away} data-start={ev.startAt} data-comp={ev.compName}
-  aria-pressed="false" class:list={['btn btn--sm fav', big ? 'btn--ghost' : 'btn--quiet']} aria-label={`Přidat do oblíbených: ${ev.home} – ${ev.away}`}>
-  <Icon name="star" size={16} /><span data-fav-label class:list={[!big && 'sr sm:not-sr-only']}>Do oblíbených</span>
+  data-odds={JSON.stringify(odds)} aria-pressed="false" class:list={['btn btn--sm fav', big ? 'btn--ghost' : 'btn--quiet']} aria-label={`Sledovat zápas ${ev.home} – ${ev.away}`}>
+  <Icon name="star" size={16} /><span data-fav-label class:list={[!big && 'sr sm:not-sr-only']}>Sledovat zápas</span>
 </button>
 <style>
-  .fav[aria-pressed='true'] :global(svg) { fill: var(--color-blue); color: var(--color-blue); }
+  .fav[aria-pressed='true'] :global(svg) { fill: var(--color-orange); color: var(--color-ink); }
 </style>

@@ -16,7 +16,7 @@ const d = new Date('2026-10-23');
     <ul>
       <li>Každých {cfg.importIntervalMin} minut načteme kurzy Tipsportu a Chance na vybrané fotbalové a hokejové zápasy.</li>
       <li>Vedle sebe dáme jen úplně stejnou sázku. Zeleně označíme, kde se vyplatí víc.</li>
-      <li>Každou změnu kurzu si zapíšeme. Z toho jsou grafy a pohyby kurzů.</li>
+      <li>Při každé kontrole zapíšeme, co se od minulé změnilo. Z toho jsou grafy a pohyby kurzů. Změny mezi kontrolami nevidíme.</li>
       <li>Když data chybí, napíšeme to. Nic nedopočítáváme a nedáváme tipy.</li>
     </ul>
   </div>
@@ -64,6 +64,17 @@ const d = new Date('2026-10-23');
   <h2>Radar pohybů</h2>
   <p>Pro období 1, 6 nebo 24 hodin porovnáme aktuální kurz s posledním záznamem uloženým nejpozději na začátku období. Období nabízíme jen tehdy, když data sledujeme alespoň tak dlouho. Do radaru bereme jen zápasy, které ještě nezačaly. Radar nic nedoporučuje a pokles kurzu nepovažujeme za důkaz výhodné sázky.</p>
 
+  <h2>Výběr „Dnes stojí za pozornost“</h2>
+  <p>Na úvodní stránce ukazujeme nejvýš šest sázek ze zápasů dnes a zítra, u kterých jsme v datech něco zjistili. Každá má uvedený důvod:</p>
+  <ul>
+    <li><strong>Vyšší kurz jinde:</strong> jedna kancelář kurz změnila a druhá ho při pozdější kontrole měla pořád původní, nebo se kurzy obou kanceláří na stejnou sázku liší aspoň o 1 %.</li>
+    <li><strong>Zajímavý pohyb:</strong> kurz se za období změnil aspoň o 8 %, nebo stoupl aspoň o 2 % a je na nejvyšší hodnotě, jakou jsme v tom období zapsali. První zápis za maximum nepovažujeme.</li>
+  </ul>
+  <p>Řadíme nejdřív rozdíly mezi kancelářemi, pak velké změny, pak nová maxima, uvnitř podle velikosti. Spolupráce s kanceláří pořadí neovlivňuje. Nepočítáme šance na výhru ani „výhodnost“ sázky a změnám nepřisuzujeme příčiny, které neznáme.</p>
+
+  <h2>Mužské a ženské soutěže</h2>
+  <p>Kanceláře pojmenovávají mužskou a ženskou ligu stejně (třeba „1. španělská liga“). Rozlišujeme je podle zdrojového označení sportu u každého zápasu, ne podle názvu. Ženské soutěže mají v názvu „žen“ a týmy značku „(ž)“.</p>
+
   <h2>Chybějící a starší data</h2>
   <ul>
     <li>Když se kontrola nepovede, ponecháme poslední platná data. Po <strong>{cfg.staleAfterMin} minutách</strong> bez úspěšné kontroly je přestaneme počítat do porovnání a zobrazíme je šedě jako „poslední známé údaje“ s časem.</li>
@@ -73,7 +84,7 @@ const d = new Date('2026-10-23');
   </ul>
 
   <h2>Historie a uchování</h2>
-  <p>Do historie zapisujeme jen změnu kurzu nebo jeho dostupnosti. Časy ukládáme v UTC a zobrazujeme v českém čase. Podrobné záznamy uchováváme {cfg.historyDays} dní po začátku zápasu. Stránky zápasů zůstávají dostupné 7 dní po začátku, potom je odstraníme.</p>
+  <p>Do historie zapisujeme jen změnu kurzu nebo jeho dostupnosti, kterou zachytíme při kontrole. Co se stane mezi dvěma kontrolami, nevidíme. Časy ukládáme v UTC a zobrazujeme v českém čase. Podrobné záznamy uchováváme {cfg.historyDays} dní po začátku zápasu. Stránky zápasů zůstávají dostupné 7 dní po začátku, potom je odstraníme.</p>
 
   <h2>Co nezobrazujeme</h2>
   <p>Výsledky zápasů, sestavy, zranění, statistiky ani tipy. Pro výsledky a statistiky nemáme ověřený zdroj, tipy nedáváme z principu.</p>

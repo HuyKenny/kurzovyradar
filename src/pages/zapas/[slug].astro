@@ -7,7 +7,11 @@ import FavButton from '../../components/FavButton.astro';
 import Art from '../../components/Art.astro';
 import { BOOK, FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
 import { SPORTS, competitionBySlug } from '../../config/competitions';
-import { E, upcoming, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+import { E, upcoming, radar as getRadar, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+import { reasons, pricesFor } from '../../lib/picks';
+import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget } from '../../lib/market';
+import { backLink, isOutcome } from '../../lib/links';
+import Icon from '../../components/Icon.astro';
 import { ticketView, atBooks, STATE_TEXT, OUTCOMES, whoOf } from '../../lib/ticket';
 import { odds as fmt, pct, dateTime, date, time, kickoff, ago, kc } from '../../lib/format';
 import { changePct, overround, implied } from '../../server/calc/odds';
@@ -34,7 +38,17 @@ const offer = (b: FeedBook, o: Outcome) => ev.books[b]?.outcomes[o];
 // "Kolik vyhraju?" — computed on the server from ?vklad & ?tip (works without JS), live in the browser.
 const q = Astro.url.searchParams;
 const stake = Math.min(1e7, Math.max(0, Number((q.get('vklad') ?? '100').replace(',', '.')) || 100));
-const pick = (OUTCOMES as string[]).includes(q.get('tip') ?? '') ? (q.get('tip') as Outcome) : (v.favourite?.outcome ?? '1');
+// The chosen bet travels in stable ids (?trh=1x2&vysledek=x from radar, cards, followed): graph, calculator and the
+// beginner blocks all start on it. Without it: ?tip from the calculator form, else the favourite.
+const vysledek = q.get('vysledek');
+const pick: Outcome = isOutcome(vysledek) ? vysledek : isOutcome(q.get('tip')) ? (q.get('tip') as Outcome) : (v.favourite?.outcome ?? '1');
+const back = backLink(q.get('zpet'));
+const rd = await getRadar();
+const why = reasons(up, rd, t, cfg).get(`${ev.id}|${pick}`) ?? [];
+const pickPrices = pricesFor(ev, pick, up, t, cfg);
+const pickLabel = whoOf(ev, pick);
+const followBet = JSON.stringify({ id: ev.id, outcome: pick, url: ev.url, home: ev.home, away: ev.away, startAt: ev.startAt, comp: ev.compName, sport: ev.sport,
+  pickFrom: '#kalkulacka', labels: Object.fromEntries(OUTCOMES.map((o) => [o, whoOf(ev, o)])), oddsBy: Object.fromEntries(v.outcomes.map((o) => [o.outcome, o.best?.odds ?? null])) });
 const pickOdds = v.outcomes.find((o) => o.outcome === pick)?.best?.odds ?? null;
 
 // Tracking window and data gaps (failed import runs).
@@ -62,7 +76,7 @@ const enough = history.length > 0;
 // What happened, in sentences. Identical books are told once.
 const story: string[] = [];
 for (const o of OUTCOMES) {
-  const who = o === 'x' ? 'remízu' : whoOf(ev, o);
+  const who = betTarget(ev.sport, o, ev.home, ev.away);
   const parts = comparable.map((b) => ({ b, x: offer(b, o) })).filter((p) => p.x);
   if (!parts.length) continue;
   const sameAll = parts.every((p) => p.x!.odds === parts[0]!.x!.odds && p.x!.firstOdds === parts[0]!.x!.firstOdds);
@@ -94,7 +108,8 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
 <Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0} canonical={ev.url}
   crumbs={[{ name: S.name, url: S.path }, { name: ev.compName, url: `/souteze/${ev.comp}/` }, { name: `${ev.home} – ${ev.away}`, url: ev.url }]}>
   <div class="wrap pt-6">
-    <article class="ticket">
+    {back && <p class="m-0 mb-4"><a href={back.href} class="font-bold inline-flex items-center gap-1 min-h-[44px] no-underline hover:underline"><span aria-hidden="true">←</span>{back.label}</a></p>}
+    <article class="ticket" id="sazka">
       <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
         <Art name={ev.sport} size={22} />
         <a href={`/souteze/${ev.comp}/`} class="text-ink no-underline hover:underline">{ev.compName}</a>
@@ -105,7 +120,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
           <h1 class="m-0 text-balance">{ev.home} <span class="text-ink-3 font-normal">vs</span> {ev.away}</h1>
           <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-ink-2">
             {firstAt && <span>Kurzy sledujeme od {dateTime(firstAt)}</span>}
-            <FavButton ev={ev} big />
+            <FavButton ev={ev} big odds={Object.fromEntries(v.outcomes.filter((o) => o.best).map((o) => [o.outcome, o.best!.odds]))} />
           </div>
           {started && <p class="note-box mt-4 mb-0">Zápas už začal. Ukazujeme poslední kurzy před výkopem. Kurzy během zápasu nesledujeme.</p>}
           <h2 class="text-[1.25rem] mt-6 mb-3">Kolik kdo vyplácí</h2>
@@ -126,7 +141,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
               ))}
             </ul>
           )}
-          {v.allSame && <p class="mt-3 mb-0 flex flex-wrap items-center gap-2 text-ink-2"><span class="inline-flex gap-1">{v.books.map((b) => <BookLogo id={b} h={20} />)}</span>Stejné kurzy {atBooks(v.books)}. Je jedno, kde vsadíš.</p>}
+          {v.allSame && <p class="mt-3 mb-0 flex flex-wrap items-center gap-2 text-ink-2"><span class="inline-flex gap-1">{v.books.map((b) => <BookLogo id={b} h={20} />)}</span>Ceny všech tří sázek jsou teď {atBooks(v.books)} stejné.</p>}
           {v.books.length > 1 && !v.allSame && (
             <table class="w-full mt-3 text-[1rem]">
               <caption class="sr">Kurzy podle kanceláří</caption>
@@ -155,13 +170,43 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
             </div>
           </fieldset>
           <output class="block text-[1.1rem]" aria-live="polite" data-out>
-            {pickOdds ? <>Když to vyjde, dostaneš <strong class="num">{kc(stake * pickOdds / 1000)}</strong>, z toho zisk <strong class="num">{kc(stake * pickOdds / 1000 - stake)}</strong>.</> : 'Na tenhle výsledek teď kurz nemáme.'}
+            {pickOdds ? <>Pokud sázka vyhraje, dostaneš <strong class="num">{kc(stake * pickOdds / 1000)}</strong> včetně vkladu. Čistý zisk je <strong class="num">{kc(stake * pickOdds / 1000 - stake)}</strong>.</> : 'Na tenhle výsledek teď kurz nemáme.'}
           </output>
           <button class="btn btn--sm justify-self-start" type="submit" data-nojs>Spočítat</button>
+          <button type="button" hidden class="btn btn--ghost btn--sm justify-self-start follow-bet" data-follow-bet={followBet} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat změny</span></button>
           <p class="m-0 text-[0.85rem] text-ink-2">Počítáme s nejvyšším aktuálním kurzem. Daně a podmínky kanceláře nezahrnujeme.</p>
         </form>
       </div>
     </article>
+
+    <section class="mt-12" aria-labelledby="h-bet">
+      <p class="hand m-0 text-[1.3rem]">tvoje sázka</p>
+      <h2 id="h-bet" class="m-0 mt-1">{outcomeSentence(ev.sport, pick, ev.home, ev.away)}</h2>
+      <p class="mt-2 mb-5 text-ink-2">{settlement(ev.sport)} Jinou sázku vybereš v kalkulačce nahoře.</p>
+      <div class="grid gap-5 lg:grid-cols-3">
+        <div class="card p-5">
+          <h3 class="m-0 mb-2">Co musí nastat, aby sázka vyhrála?</h3>
+          <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, pick, ev.home, ev.away).map((x) => <li>{x}</li>)}</ul>
+        </div>
+        <div class="card p-5">
+          <h3 class="m-0 mb-2">Proč ji radar vybral?</h3>
+          {why.length ? (
+            <ul class="m-0 pl-0 list-none grid gap-2">{why.map((r) => <li><span class:list={['badge mr-1', r.label === 'Vyšší kurz jinde' ? 'badge--green' : 'badge--orange']}>{r.label}</span> {r.text}</li>)}</ul>
+          ) : <p class="m-0">Mezi dnešními zajímavostmi tahle sázka není: kurzy obou kanceláří jsou stejné a výrazně se nepohnuly. Ukazujeme ji, protože sis ji otevřel.</p>}
+          <p class="mt-3 mb-0 text-[0.88rem] text-ink-2">Je to zjištění z dat, ne tip. Důvod změn kanceláře neuvádějí.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="m-0 mb-2">Kde je nyní vyšší kurz?</h3>
+          {pickPrices.length === 0 ? <p class="m-0">Na „{pickLabel}“ teď nemáme aktuální kurz žádné kanceláře.</p>
+            : pickPrices.length === 1 ? <p class="m-0">Aktuální kurz máme jen {BOOK[pickPrices[0]!.book].locative}: {fmt(pickPrices[0]!.odds)} (ověřeno {time(pickPrices[0]!.checkedAt)}). Druhou kancelář teď porovnat nejde.</p>
+            : pickPrices[0]!.odds === pickPrices[pickPrices.length - 1]!.odds
+              ? <p class="m-0">Cena této sázky je teď {atBooks(pickPrices.map((x) => x.book))} stejná: {fmt(pickPrices[0]!.odds)} (ověřeno {time(Math.min(...pickPrices.map((x) => x.checkedAt)))}).</p>
+              : <p class="m-0">Vyšší je {BOOK[pickPrices[0]!.book].locative}: {fmt(pickPrices[0]!.odds)} proti {fmt(pickPrices[1]!.odds)} {BOOK[pickPrices[1]!.book].locative} (ověřeno {time(Math.min(...pickPrices.map((x) => x.checkedAt)))}).</p>}
+          {pickPrices[0] && <p class="mt-3 mb-0">{payoutSentence(100, pickPrices[0].odds)}</p>}
+          {!started && pickPrices[0] && <a class="btn btn--sm mt-4" href={`/go/${pickPrices[0].book}/?e=${ev.id}&p=sazka-${pick}`} rel="sponsored nofollow">Zobrazit {BOOK[pickPrices[0].book].locative}<Icon name="external-link" size={15} /></a>}
+        </div>
+      </div>
+    </section>
 
     {enough && (
       <section class="mt-12" aria-labelledby="h-story">
@@ -194,7 +239,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
               </> : <p>Na tenhle výsledek nemáme zápisy.</p>}
             </div>
           )))}
-          <p class="mt-3 mb-0 text-ink-2">Čára ukazuje jen kurzy, které jsme opravdu zapsali. Kurz platí, dokud ho kancelář nezmění. {gaps.length ? `Šedé pásy jsou chvíle, kdy se nám data nepodařilo načíst (${gaps.length}×).` : ''}</p>
+          <p class="mt-3 mb-0 text-ink-2">Čára ukazuje jen kurzy, které jsme při kontrolách opravdu zapsali; mezi kontrolami se kurz mohl změnit i víckrát. {gaps.length ? `Šedé pásy jsou chvíle, kdy se nám data nepodařilo načíst (${gaps.length}×).` : ''}</p>
         </div>
       )}
     </section>
@@ -251,7 +296,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     )}
 
     <aside class="mt-12 max-w-[80ch] text-ink-2">
-      <p class="m-0">Kurzy kontrolujeme každých {cfg.importIntervalMin} minut a zapisujeme každou změnu. Data jsme naposledy obnovili {up.at ? ago(up.at, t) : 'zatím ne'}. Výsledky, sestavy ani statistiky neukazujeme, nemáme na ně ověřený zdroj. <a href="/pruvodce/zakladni-hraci-doba-vs-prodlouzeni/">Proč se nepočítá prodloužení?</a> · <a href="/metodika/">Odkud bereme data</a></p>
+      <p class="m-0">Kurzy kontrolujeme každých {cfg.importIntervalMin} minut a zapíšeme, co se od minulé kontroly změnilo. Změny mezi kontrolami nevidíme. Data jsme naposledy obnovili {up.at ? ago(up.at, t) : 'zatím ne'}. Výsledky, sestavy ani statistiky neukazujeme, nemáme na ně ověřený zdroj. <a href="/pruvodce/zakladni-hraci-doba-vs-prodlouzeni/">Proč se nepočítá prodloužení?</a> · <a href="/metodika/">Odkud bereme data</a></p>
     </aside>
   </div>
 </Base>

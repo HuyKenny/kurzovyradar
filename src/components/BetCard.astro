@@ -1,0 +1,68 @@
+---
+// One concrete bet picked by the radar: what has to happen, when it is settled, why it was picked (a recorded fact),
+// the current prices with check times, what it means in money (conditional), and two actions.
+import { BOOK } from '../config/bookmakers';
+import { competitionBySlug } from '../config/competitions';
+import { kickoff, odds as fmt, atTime } from '../lib/format';
+import { outcomeLabel, outcomeSentence, settlement, payoutSentence } from '../lib/market';
+import { pricesFor, type Pick } from '../lib/picks';
+import { betUrl } from '../lib/links';
+import type { UpcomingSnapshot } from '../server/view';
+import type { Settings } from '../server/types';
+import BookLogo from './BookLogo.astro';
+import Icon from './Icon.astro';
+import Art from './Art.astro';
+
+interface Props { p: Pick; up: UpcomingSnapshot; now: number; cfg: Settings; back?: string }
+const { p, up, now, cfg, back = '/' } = Astro.props;
+const { ev, outcome, reason } = p;
+const comp = competitionBySlug(ev.comp);
+const prices = pricesFor(ev, outcome, up, now, cfg);
+const best = prices[0];
+const second = prices[1];
+const label = outcomeLabel(ev.sport, outcome, ev.home, ev.away);
+const href = betUrl(ev.url, outcome, back);
+const extra = best && second && best.odds > second.odds ? Math.round((100 * (best.odds - second.odds)) / 1000) : 0;
+const follow = JSON.stringify({ id: ev.id, outcome, url: ev.url, home: ev.home, away: ev.away, startAt: ev.startAt, comp: ev.compName, sport: ev.sport, label, odds: best?.odds ?? null });
+---
+<article class="ticket flex flex-col" data-pick={`${ev.id}-${outcome}`}>
+  <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
+    <Art name={ev.sport} size={20} />
+    <span class="truncate">{ev.compName}</span>
+    <time class="ml-auto shrink-0 num normal-case tracking-normal text-[0.95rem]" datetime={new Date(ev.startAt * 1000).toISOString()}>{kickoff(ev.startAt, now)}</time>
+  </div>
+  <div class="p-4 flex flex-col gap-3 flex-1">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="badge badge--grey">Vybráno radarem</span>
+      <span class:list={['badge', reason.label === 'Vyšší kurz jinde' ? 'badge--green' : 'badge--orange']}>{reason.label}</span>
+    </div>
+    <div>
+      <p class="m-0 text-ink-2 text-[0.95rem]">{ev.home} vs {ev.away}</p>
+      <h3 class="m-0 mt-0.5 text-[1.25rem] leading-snug">{outcomeSentence(ev.sport, outcome, ev.home, ev.away)}</h3>
+      <p class="m-0 mt-1 text-[0.92rem] text-ink-2">{settlement(ev.sport)}</p>
+    </div>
+    <p class="m-0 flex gap-2"><span class="hand text-[1.3rem] leading-none shrink-0" aria-hidden="true">→</span><span>{reason.text}</span></p>
+    {prices.length > 0 && (
+      <div class="border-2 border-ink rounded-[11px] bg-white">
+        <p class="m-0 px-3 pt-2 text-[0.85rem] text-ink-2">Kurz na „{label}“</p>
+        <ul class="list-none m-0 p-0">
+          {prices.map((x, i) => (
+            <li class="flex items-center gap-3 px-3 py-1.5">
+              <BookLogo id={x.book} h={20} />
+              <strong class:list={['num text-[1.25rem]', i > 0 && x.odds < prices[0]!.odds && 'font-semibold text-ink-2']}>{fmt(x.odds)}</strong>
+              {i === 0 && prices.length > 1 && x.odds > prices[1]!.odds && <span class="badge badge--green">vyšší</span>}
+              <span class="ml-auto text-[0.82rem] text-ink-2">ověřeno {atTime(x.checkedAt, now)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+    {best && (
+      <p class="m-0 text-[0.98rem]">{payoutSentence(100, best.odds)}{extra > 0 && ` ${BOOK[best.book].locative.charAt(0).toUpperCase()}${BOOK[best.book].locative.slice(1)} je to o ${extra} Kč víc než ${BOOK[second!.book].locative}.`}</p>
+    )}
+    <div class="mt-auto flex flex-wrap gap-2 pt-1">
+      <a href={href} class="btn btn--sm">Prohlédnout sázku<Icon name="arrow-right" size={16} /></a>
+      <button type="button" hidden class="btn btn--ghost btn--sm follow-bet" data-follow-bet={follow} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat změny</span></button>
+    </div>
+  </div>
+</article>

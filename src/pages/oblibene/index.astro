@@ -1,12 +1,26 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Art from '../../components/Art.astro';
 ---
-<Base title="Oblíbené zápasy | KurzovýRadar" description="Zápasy, které sis uložil(a). Ukládají se jen v tomto prohlížeči." noindex crumbs={[{ name: 'Oblíbené', url: '/oblibene/' }]}>
-  <div class="wrap pt-6 max-w-[980px]">
-    <h1 class="m-0">Oblíbené zápasy</h1>
-    <p class="text-ink-2 mt-2">Oblíbené zápasy ukládáme jen <strong class="text-ink">v tomto prohlížeči</strong> (localStorage). Nikam je neposíláme, takže v jiném zařízení je neuvidíš. Zápas přidáš hvězdičkou u jeho tiketu.</p>
-    <noscript><p class="card p-5">Oblíbené zápasy potřebují zapnutý JavaScript, protože se ukládají přímo v prohlížeči.</p></noscript>
-    <div data-favs class="grid gap-3 mt-6" aria-live="polite"><p class="card p-5 m-0 text-ink-2">Načítám…</p></div>
+<Base title="Moje sledované | KurzovýRadar" description="Sázky, zápasy, soutěže a sporty, které sleduješ. Ukládají se jen v tomto prohlížeči." noindex crumbs={[{ name: 'Sledované', url: '/oblibene/' }]}>
+  <div class="wrap pt-6 max-w-[1000px]">
+    <div class="flex items-start gap-4">
+      <div class="flex-1">
+        <h1 class="m-0">Moje sledované</h1>
+        <p class="mt-3 mb-0 text-[1.05rem]">Ukládáme jen <strong>v tomto prohlížeči</strong>. Nikam to neposíláme, takže v jiném zařízení to neuvidíš. Sledovat můžeš sázku (tlačítko „Sledovat změny“), zápas (hvězdička), soutěž nebo celý sport.</p>
+      </div>
+      <Art name="krok-historie" size={90} class="hidden sm:block" />
+    </div>
+    <noscript><p class="card p-5 mt-6">Sledování potřebuje zapnutý JavaScript, protože se ukládá přímo v prohlížeči.</p></noscript>
+
+    <section class="mt-10" aria-labelledby="h-changes">
+      <h2 id="h-changes" class="m-0">Co se změnilo u tvých zápasů</h2>
+      <p class="mt-2 mb-4 text-ink-2" data-since>Načítám…</p>
+      <div data-changes class="grid gap-3" aria-live="polite"></div>
+    </section>
+    <section class="mt-12" aria-labelledby="h-bets"><h2 id="h-bets" class="m-0 mb-4">Sledované sázky</h2><div data-bets class="grid gap-3"></div></section>
+    <section class="mt-12" aria-labelledby="h-events"><h2 id="h-events" class="m-0 mb-4">Sledované zápasy</h2><div data-events class="grid gap-3"></div></section>
+    <section class="mt-12" aria-labelledby="h-feed"><h2 id="h-feed" class="m-0 mb-2">Ze sledovaných soutěží a sportů</h2><p class="mt-0 mb-4 text-ink-2" data-feed-note></p><div data-feed class="grid gap-3"></div></section>
   </div>
 </Base>
-<script src="../../scripts/favs.ts"></script>
+<script src="../../scripts/sledovane.ts"></script>

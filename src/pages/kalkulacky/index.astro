@@ -30,7 +30,7 @@ const today = new Date('2026-10-23');
         <button class="btn" type="submit">Spočítat</button>
       </form>
       <output class="block mt-5 text-[1.2rem]" aria-live="polite" data-out="payout">
-        {r1 ? <>Když tip vyjde, dostaneš <strong class="num">{kc(r1.payout)}</strong>. Z toho <strong class="num">{kc(r1.profit)}</strong> je čistý zisk, zbytek je tvoje vrácená sázka.</>
+        {r1 ? <>Pokud sázka vyhraje, dostaneš <strong class="num">{kc(r1.payout)}</strong> včetně vkladu. Čistý zisk je <strong class="num">{kc(r1.profit)}</strong>.</>
           : <span class="text-orange-ink">Zadej sázku v Kč a kurz větší než 1.</span>}
       </output>
       <p class="text-ink-2 mt-3 mb-0">Výplata = sázka × kurz. Daně a podmínky kanceláře kalkulačka nezahrnuje.</p>
@@ -45,7 +45,7 @@ const today = new Date('2026-10-23');
         <button class="btn" type="submit">Porovnat</button>
       </form>
       <output class="block mt-5 text-[1.15rem]" aria-live="polite" data-out="compare">
-        {a && b ? <>S kurzem A dostaneš <strong class="num">{kc(a.payout)}</strong>, s kurzem B <strong class="num">{kc(b.payout)}</strong>. Rozdíl je <strong class="num">{kc(Math.abs(b.payout - a.payout))}</strong>.</>
+        {a && b ? <>Pokud sázka vyhraje, s kurzem A dostaneš <strong class="num">{kc(a.payout)}</strong>, s kurzem B <strong class="num">{kc(b.payout)}</strong> (vždy včetně vkladu). Rozdíl je <strong class="num">{kc(Math.abs(b.payout - a.payout))}</strong>.</>
           : <span class="text-orange-ink">Zadej sázku a oba kurzy větší než 1.</span>}
       </output>
       <p class="text-ink-2 mt-3 mb-0">Srovnávej jen úplně stejnou sázku. Proč, vysvětlujeme v článku <a href="/pruvodce/porovnavani-stejnych-sazek/">Jak porovnávat kurzy</a>.</p>

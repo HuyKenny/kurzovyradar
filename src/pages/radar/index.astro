@@ -7,6 +7,8 @@ import Art from '../../components/Art.astro';
 import { upcoming, radar, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { odds as fmt, pct, kickoff, dateTime } from '../../lib/format';
 import { WINDOWS, type WindowKey } from '../../server/view';
+import { betUrl } from '../../lib/links';
+import { betTarget } from '../../lib/market';
 
 const [up, rd] = await Promise.all([upcoming(), radar()]);
 const t = getNow();
@@ -28,10 +30,11 @@ const items = mergeMoves(!w ? [] : view === 'poklesy' ? notStarted(w.drops) : vi
 const diffs = rd ? notStarted(rd.diffs) : [];
 const href = (k: string, v: string) => { const p = new URLSearchParams(q); p.set(k, v); return `/radar/?${p}`; };
 const filtered = q.size > 0;
+const here = `/radar/${q.size ? `?${q}` : ''}`;
 const since = up.stats.firstRecordAt;
 const EXPLAIN: Record<string, string> = {
-  poklesy: 'Kancelář teď za tenhle výsledek vyplácí méně než dřív. Často to znamená, že na něj lidé sází, nebo že se objevila nová informace (zranění, sestava). Není to tip a neznamená to, že to vyjde.',
-  rusty: 'Kancelář teď za tenhle výsledek vyplácí víc než dřív. Obvykle mu věří méně než předtím. Vyšší kurz znamená vyšší výhru, ne vyšší šanci.',
+  poklesy: 'Kancelář teď za tenhle výsledek vyplácí méně než při dřívější kontrole. Důvod kanceláře neuvádějí a my ho neznáme. Je to zjištění, ne tip.',
+  rusty: 'Kancelář teď za tenhle výsledek vyplácí víc než při dřívější kontrole. Důvod neuvádí a my ho neznáme. Vyšší kurz znamená vyšší výplatu, pokud sázka vyhraje, ne vyšší šanci.',
   rozdily: 'Tady se Tipsport a Chance liší. Kde je kurz vyšší, tam za stejnou sázku dostaneš víc. Většinou mají obě kanceláře kurzy stejné, takže rozdílů bývá málo.',
   maxima: 'Kurz za zvolené období stoupl a teď je nejvýš, kolik jsme ho viděli.',
 };
@@ -44,7 +47,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <div class="flex items-start gap-4">
       <div class="flex-1">
         <h1 class="m-0">Pohyby kurzů</h1>
-        <p class="text-[1.1rem] max-w-[60ch] mt-3 mb-3">Kancelář mění kurzy i několikrát denně. Každou změnu si zapíšeme. Tady jsou ty největší u zápasů, které ještě nezačaly.</p>
+        <p class="text-[1.1rem] max-w-[60ch] mt-3 mb-3">Kancelář mění kurzy i několikrát denně. Při každé kontrole (à 15 min) si zapíšeme, co se od minulé změnilo. Tady jsou největší změny u zápasů, které ještě nezačaly.</p>
         <FreshNote books={up.books} now={t} cfg={cfg} />
       </div>
       <Art name="radar" size={110} class="hidden md:block" />
@@ -72,8 +75,8 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
             {diffs.map((d) => (
               <li class="ticket p-4 grid gap-2">
                 <p class="m-0 text-[0.95rem] text-ink-2"><span class="num font-bold text-ink">{kickoff(d.startAt, t)}</span> · {d.compName}</p>
-                <h2 class="text-[1.15rem] m-0"><a href={d.url} class="text-ink no-underline hover:underline">{d.home} vs {d.away}</a></h2>
-                <p class="m-0">Na <strong>{d.outcome === '1' ? d.home : d.outcome === '2' ? d.away : 'remízu'}</strong> vyplatí víc {d.high.book === 'tipsport' ? 'Tipsport' : 'Chance'}: o {pct(d.pct, false)} víc za stejnou sázku.</p>
+                <h2 class="text-[1.15rem] m-0"><a href={betUrl(d.url, d.outcome, here)} class="text-ink no-underline hover:underline">{d.home} vs {d.away}</a></h2>
+                <p class="m-0">Na <strong>{betTarget(d.sport, d.outcome, d.home, d.away)}</strong> vyplatí víc {d.high.book === 'tipsport' ? 'Tipsport' : 'Chance'}: o {pct(d.pct, false)} víc za stejnou sázku.</p>
                 <div class="flex items-center gap-3 flex-wrap">
                   <span class="flex items-center gap-2"><BookLogo id={d.high.book} h={22} /><span class="odd odd--best !min-h-0 !py-1"><span class="odd__val">{fmt(d.high.odds)}</span></span></span>
                   <span class="flex items-center gap-2"><BookLogo id={d.low.book} h={22} /><span class="odd !min-h-0 !py-1"><span class="odd__val text-ink-2">{fmt(d.low.odds)}</span></span></span>
@@ -85,7 +88,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       ) : !win ? (
         <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Pro tohle zatím nemáme dost zápisů.</p><p class="mt-2 mb-0">{since ? `Kurzy si zapisujeme od ${dateTime(since)}. První pohyby uvidíš zhruba hodinu po začátku.` : 'Zapisování ještě nezačalo.'}</p></div>
       ) : items.length ? (
-        <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0">{items.map((m) => <MoveItem m={m} now={t} windowLabel={win.since} />)}</ul>
+        <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0">{items.map((m) => <MoveItem m={m} now={t} windowLabel={win.since} back={here} />)}</ul>
       ) : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">{win.since.charAt(0).toUpperCase() + win.since.slice(1)} se nic takového nestalo.</p><p class="mt-2 mb-0">Zkus delší období nebo druhou záložku.</p></div>}
     </div>
 

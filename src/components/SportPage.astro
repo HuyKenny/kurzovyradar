@@ -4,6 +4,7 @@ import EventList from './EventList.astro';
 import FreshNote from './FreshNote.astro';
 import Photo from './Photo.astro';
 import Art from './Art.astro';
+import Icon from './Icon.astro';
 import { COMPETITIONS, SPORTS, type Sport } from '../config/competitions';
 import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
 
@@ -39,6 +40,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       <div>
         <h1 class="m-0 flex items-center gap-3"><Art name={sport} size={52} eager />{TEXT.h1}</h1>
         <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">{TEXT.lead}</p>
+        <button type="button" hidden class="btn btn--ghost btn--sm mb-3" data-follow-sport={sport} data-name={sport} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat {sport}</span></button>
         <FreshNote books={up.books} now={t} cfg={cfg} />
       </div>
       <div class="hidden md:block card p-2 rotate-[1.5deg]"><div class="rounded-[8px] overflow-hidden border-2 border-ink aspect-[16/9]"><Photo slot={sport} sizes="340px" priority class="h-full" /></div></div>

@@ -29,6 +29,9 @@ export function kickoff(s: number, now: number): string {
   return `${w.charAt(0).toUpperCase()}${w.slice(1)} ${dateShort(s)} ${time(s)}`;
 }
 
+/** "v 21:34" today, otherwise "23. 10. v 21:34". */
+export const atTime = (s: number, now: number) => (dayKey(s) === dayKey(now) ? `v ${time(s)}` : `${dateShort(s)} v ${time(s)}`);
+
 /** "před 6 min", "před 2 h", or the date when older than a day. */
 export function ago(s: number, now: number): string {
   const d = Math.max(0, now - s);

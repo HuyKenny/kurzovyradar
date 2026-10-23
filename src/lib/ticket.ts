@@ -33,7 +33,9 @@ export interface TicketView {
   checkedAt: number | null;
 }
 
-export const whoOf = (ev: Pick<EventView, 'home' | 'away'>, o: Outcome) => (o === '1' ? ev.home : o === '2' ? ev.away : 'Remíza');
+/** Outcome label: team name, or the draw with its period in hockey ("Remíza po 60 minutách"). */
+export const whoOf = (ev: Pick<EventView, 'home' | 'away'> & { sport?: EventView['sport'] }, o: Outcome) =>
+  o === '1' ? ev.home : o === '2' ? ev.away : ev.sport === 'hokej' ? 'Remíza po 60 minutách' : 'Remíza';
 
 export function cellState(ev: EventView, book: FeedBook, o: Outcome, books: UpcomingSnapshot['books'], now: number, cfg: Settings): CellState {
   const b = ev.books[book];

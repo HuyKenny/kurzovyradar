@@ -122,7 +122,7 @@
   .odd { display: flex; flex-direction: column; justify-content: center; gap: 0.05rem; min-height: 58px; min-width: 0; padding: 0.35rem 0.6rem; border-radius: 11px;
     border: 2px solid var(--color-ink); background: #fff; color: var(--color-ink); text-decoration: none; text-align: left; position: relative; transition: background-color 0.12s ease; }
   a.odd:hover { background: var(--color-green-soft); color: var(--color-ink); }
-  .odd__who { font-size: 0.82rem; color: var(--color-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .odd__who { font-size: 0.82rem; line-height: 1.2; color: var(--color-ink-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
   .odd__val { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; font-weight: 700; font-size: 1.35rem; line-height: 1.15; }
   .odd--best { background: var(--color-green-soft); box-shadow: inset 0 0 0 2px var(--color-green); }
   .odd--off { background: var(--color-sunken); border-style: dashed; color: var(--color-ink-3); }
@@ -140,6 +140,7 @@
   .field { width: 100%; min-height: 48px; border-radius: 11px; border: 2px solid var(--color-ink); background: #fff; padding: 0 0.85rem; font-size: 1.05rem; color: var(--color-ink); }
   .field:focus { outline: 3px solid var(--color-orange); outline-offset: 1px; }
 
+  .follow-bet[aria-pressed='true'] svg, [data-follow-comp][aria-pressed='true'] svg, [data-follow-sport][aria-pressed='true'] svg { fill: var(--color-orange); }
   .note-box { border: 2px dashed var(--color-ink); border-radius: 14px; background: var(--color-warn-soft); padding: 1rem 1.15rem; }
 
   .prose { max-width: 70ch; font-size: 1.05rem; }

@@ -1,0 +1,141 @@
+// /oblibene/ ("Moje sledované"): everything comes from localStorage (follow.ts) + current prices from the site's API.
+// "Co se změnilo" compares today's highest price with what the visitor saw last (or when they saved it), then
+// moves that point to now. DOM is built with createElement only (no innerHTML of stored or fetched data).
+import { load, save, nowS, type FollowState, type Odds3 } from './follow';
+
+interface Outc { who: string; odds: number | null; books: string[]; same: boolean }
+interface Ev { id: number; url: string; home: string; away: string; comp: string; compName: string; sport: string; startAt: number; started: boolean; checkedAt: number | null; outcomes: Record<string, Outc> }
+
+const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
+const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = '') => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+const add = (p: Node, ...kids: (Node | null | false)[]) => { for (const k of kids) if (k) p.appendChild(k); return p; };
+const fmt = (m: number) => (m / 1000).toFixed(2).replace('.', ',');
+const tz = { timeZone: 'Europe/Prague' } as const;
+const when = (s: number) => new Intl.DateTimeFormat('cs-CZ', { ...tz, day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(s * 1000));
+const kick = (s: number) => new Intl.DateTimeFormat('cs-CZ', { ...tz, weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(s * 1000));
+const target = (o: string, who: string) => (o === 'x' ? who.replace(/^Remíza/, 'remízu') : `výhru týmu ${who}`);
+const betHref = (url: string, o: string) => `${url}?${new URLSearchParams({ trh: '1x2', vysledek: o, zpet: '/oblibene/' })}#sazka`;
+
+async function getJson(url: string): Promise<{ events: Ev[] }> {
+  try { return (await (await fetch(url)).json()) as { events: Ev[] }; } catch { return { events: [] }; }
+}
+
+function card(...kids: Node[]) { const c = el('article', 'ticket p-4 grid gap-2'); add(c, ...kids); return c; }
+function link(text: string, href: string, cls = 'font-bold') { const a = el('a', cls, text); a.href = href; return a; }
+function empty(text: string) { return el('p', 'card p-5 m-0', text); }
+
+function followBtn(kind: 'bet' | 'event' | 'comp' | 'sport', data: Record<string, string>, label: string) {
+  const b = el('button', 'btn btn--ghost btn--sm', label);
+  b.type = 'button';
+  b.setAttribute('aria-pressed', 'true');
+  for (const [k, v] of Object.entries(data)) b.dataset[k] = v;
+  return b;
+}
+
+async function render(markSeen: boolean) {
+  const s: FollowState = load();
+  const ids = [...new Set([...s.events.map((e) => e.id), ...s.bets.map((b) => b.id)])];
+  const [cur, feed] = await Promise.all([
+    ids.length ? getJson(`/api/events.json?ids=${ids.join(',')}`) : Promise.resolve({ events: [] as Ev[] }),
+    s.comps.length || s.sports.length ? getJson(`/api/sledovane.json?souteze=${s.comps.map((c) => c.slug).join(',')}&sporty=${s.sports.join(',')}`) : Promise.resolve({ events: [] as Ev[] }),
+  ]);
+  const byId = new Map(cur.events.map((e) => [e.id, e]));
+
+  // --- what changed ---
+  const changes: HTMLElement[] = [];
+  let oldest: number | null = null;
+  const note = (at: number) => { oldest = oldest === null ? at : Math.min(oldest, at); };
+  for (const b of s.bets) {
+    const e = byId.get(b.id);
+    const now = e?.outcomes[b.outcome]?.odds ?? null;
+    if (!b.seen) continue;
+    note(b.seen.at);
+    if (e && !e.started && now !== null && b.seen.odds !== null && now !== b.seen.odds) {
+      const who = e.outcomes[b.outcome]!.who;
+      changes.push(card(
+        el('p', 'm-0 text-ink-2 text-[0.95rem]', `${b.home} vs ${b.away} · ${b.comp}`),
+        el('p', 'm-0 text-[1.05rem]', `Kurz na ${target(b.outcome, who)} ${now < b.seen.odds ? 'klesl' : 'stoupl'} z ${fmt(b.seen.odds)} na ${fmt(now)}.`),
+        el('p', 'm-0 text-[0.88rem] text-ink-2', `Porovnáno s ${b.seen.via === 'zobrazeni' ? 'tvým posledním zobrazením' : 'uložením'} ${when(b.seen.at)}${e.checkedAt ? `, teď ověřeno ${when(e.checkedAt)}` : ''}.`),
+        link('Prohlédnout sázku →', betHref(b.url, b.outcome)),
+      ));
+    }
+  }
+  for (const f of s.events) {
+    const e = byId.get(f.id);
+    if (!f.seen || !e || e.started) continue;
+    note(f.seen.at);
+    for (const o of ['1', 'x', '2']) {
+      const was = f.seen.odds[o as keyof Odds3];
+      const now = e.outcomes[o]?.odds ?? null;
+      if (was === undefined || now === null || was === now) continue;
+      if (s.bets.some((b) => b.id === f.id && b.outcome === o)) continue; // already listed as a bet
+      changes.push(card(
+        el('p', 'm-0 text-ink-2 text-[0.95rem]', `${f.home} vs ${f.away} · ${f.comp}`),
+        el('p', 'm-0 text-[1.05rem]', `Kurz na ${target(o, e.outcomes[o]!.who)} ${now < was ? 'klesl' : 'stoupl'} z ${fmt(was)} na ${fmt(now)}.`),
+        el('p', 'm-0 text-[0.88rem] text-ink-2', `Porovnáno s ${f.seen.via === 'zobrazeni' ? 'tvým posledním zobrazením' : 'uložením'} ${when(f.seen.at)}${e.checkedAt ? `, teď ověřeno ${when(e.checkedAt)}` : ''}.`),
+        link('Prohlédnout sázku →', betHref(f.url, o)),
+      ));
+    }
+  }
+  const box = $('[data-changes]');
+  box.replaceChildren(...(changes.length ? changes : [empty(s.bets.length || s.events.length
+    ? 'Od tvého posledního zobrazení se u sledovaných zápasů kurzy nezměnily.'
+    : 'Zatím nic nesleduješ. Na kartě sázky klikni na „Sledovat změny“, nebo u zápasu na hvězdičku.')]));
+  $('[data-since]').textContent = oldest !== null
+    ? `Porovnáváme nejvyšší dnešní kurz s tím, co jsi u každé položky viděl naposledy (nejstarší porovnání je od ${when(oldest)}). Změny mezi našimi kontrolami (à 15 min) nevidíme.`
+    : 'Až něco uložíš, ukážeme tady, jak se kurz od té doby změnil.';
+
+  // --- followed bets ---
+  $('[data-bets]').replaceChildren(...(s.bets.length ? s.bets.slice().sort((a, b) => a.startAt - b.startAt).map((b) => {
+    const e = byId.get(b.id);
+    const o = e?.outcomes[b.outcome];
+    return card(
+      el('p', 'm-0 text-ink-2 text-[0.95rem]', `${kick(b.startAt)} · ${b.comp}`),
+      el('h3', 'm-0 text-[1.15rem]', `${b.label} (${b.home} vs ${b.away})`),
+      el('p', 'm-0', !e ? 'Zápas už v nabídce není.' : e.started ? 'Zápas začal, předzápasové kurzy už nesledujeme.' : o?.odds ? `Teď ${fmt(o.odds)}${o.books.length ? ` (${o.same && o.books.length > 1 ? 'stejně u ' + o.books.join(' i ') : 'nejvýš u ' + o.books[0]})` : ''}.` : 'Kurz teď není v nabídce.'),
+      add(el('div', 'flex flex-wrap gap-2'), link('Prohlédnout sázku', betHref(b.url, b.outcome), 'btn btn--sm'),
+        followBtn('bet', { followBet: JSON.stringify({ id: b.id, outcome: b.outcome, url: b.url, home: b.home, away: b.away, startAt: b.startAt, comp: b.comp, sport: b.sport, label: b.label, odds: null }) }, 'Přestat sledovat')) as HTMLElement,
+    );
+  }) : [empty('Žádné sledované sázky.')]));
+
+  // --- followed matches ---
+  $('[data-events]').replaceChildren(...(s.events.length ? s.events.slice().sort((a, b) => a.startAt - b.startAt).map((f) => {
+    const e = byId.get(f.id);
+    const prices = e && !e.started ? (['1', 'x', '2'] as const).map((o) => e.outcomes[o]?.odds ? `${e.outcomes[o]!.who} ${fmt(e.outcomes[o]!.odds!)}` : null).filter(Boolean).join(' · ') : '';
+    return card(
+      el('p', 'm-0 text-ink-2 text-[0.95rem]', `${kick(f.startAt)} · ${f.comp}`),
+      el('h3', 'm-0 text-[1.15rem]', `${f.home} vs ${f.away}`),
+      el('p', 'm-0 num', !e ? 'Zápas už v nabídce není.' : e.started ? 'Zápas začal.' : prices || 'Kurzy teď nejsou v nabídce.'),
+      add(el('div', 'flex flex-wrap gap-2'), link('Detail zápasu', f.url, 'btn btn--sm'),
+        followBtn('event', { fav: String(f.id), home: f.home, away: f.away }, 'Přestat sledovat')) as HTMLElement,
+    );
+  }) : [empty('Žádné sledované zápasy.')]));
+
+  // --- followed competitions and sports ---
+  const chips = add(el('div', 'flex flex-wrap gap-2 mb-4'),
+    ...s.comps.map((c) => followBtn('comp', { followComp: c.slug, name: c.name }, `${c.name} ✕`)),
+    ...s.sports.map((x) => followBtn('sport', { followSport: x, name: x === 'hokej' ? 'hokej' : 'fotbal' }, `${x === 'hokej' ? 'Hokej' : 'Fotbal'} ✕`))) as HTMLElement;
+  $('[data-feed-note]').textContent = s.comps.length || s.sports.length
+    ? 'Nejbližší zápasy toho, co sleduješ. Křížkem sledování zrušíš.'
+    : 'Na stránce soutěže nebo sportu klikni na „Sledovat soutěž“ / „Sledovat fotbal“.';
+  $('[data-feed]').replaceChildren(chips, ...feed.events.map((e) => card(
+    el('p', 'm-0 text-ink-2 text-[0.95rem]', `${kick(e.startAt)} · ${e.compName}`),
+    link(`${e.home} vs ${e.away}`, e.url, 'font-display font-bold text-[1.1rem] text-ink no-underline hover:underline'),
+    el('p', 'm-0 num', (['1', 'x', '2'] as const).map((o) => e.outcomes[o]?.odds ? `${e.outcomes[o]!.who} ${fmt(e.outcomes[o]!.odds!)}` : null).filter(Boolean).join(' · ')),
+  )));
+
+  // The comparison point moves to now: next visit shows what changed since this one.
+  if (markSeen) {
+    const t = nowS();
+    for (const b of s.bets) { const e = byId.get(b.id); if (e && !e.started) b.seen = { at: t, odds: e.outcomes[b.outcome]?.odds ?? null, via: 'zobrazeni' }; }
+    for (const f of s.events) {
+      const e = byId.get(f.id);
+      if (e && !e.started) f.seen = { at: t, odds: Object.fromEntries((['1', 'x', '2'] as const).filter((o) => e.outcomes[o]?.odds).map((o) => [o, e.outcomes[o]!.odds!])), via: 'zobrazeni' };
+    }
+    save(s);
+  }
+}
+
+let first = true;
+document.addEventListener('kr:follow', () => { if (!first) void render(false); });
+void render(true).then(() => { first = false; });

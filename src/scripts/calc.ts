@@ -10,7 +10,7 @@ const RENDER: Record<string, (f: HTMLFormElement) => Part[] | string> = {
     const s = num(f, 'vklad'), o = num(f, 'kurz');
     if (!(s >= 0 && o > 1 && o <= 1000)) return 'Zadej sázku v Kč a kurz větší než 1.';
     const r = payout(s, o);
-    return ['Když tip vyjde, dostaneš ', { b: kc(r.payout) }, '. Z toho ', { b: kc(r.profit) }, ' je čistý zisk, zbytek je tvoje vrácená sázka.'];
+    return ['Pokud sázka vyhraje, dostaneš ', { b: kc(r.payout) }, ' včetně vkladu. Čistý zisk je ', { b: kc(r.profit) }, '.'];
   },
   implied(f) {
     const o = num(f, 'k');
@@ -20,7 +20,7 @@ const RENDER: Record<string, (f: HTMLFormElement) => Part[] | string> = {
     const s = num(f, 'v2'), a = num(f, 'k1'), b = num(f, 'k2');
     if (!(s >= 0 && a > 1 && b > 1 && a <= 1000 && b <= 1000)) return 'Zadej sázku a oba kurzy větší než 1.';
     const pa = payout(s, a).payout, pb = payout(s, b).payout;
-    return ['S kurzem A dostaneš ', { b: kc(pa) }, ', s kurzem B ', { b: kc(pb) }, '. Rozdíl je ', { b: kc(Math.abs(pb - pa)) }, '.'];
+    return ['Pokud sázka vyhraje, s kurzem A dostaneš ', { b: kc(pa) }, ', s kurzem B ', { b: kc(pb) }, ' (vždy včetně vkladu). Rozdíl je ', { b: kc(Math.abs(pb - pa)) }, '.'];
   },
 };
 for (const f of document.querySelectorAll<HTMLFormElement>('[data-calc] form[data-form]')) {

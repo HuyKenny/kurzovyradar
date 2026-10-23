@@ -7,6 +7,8 @@ import BookLogo from '../components/BookLogo.astro';
 import Icon from '../components/Icon.astro';
 import Art from '../components/Art.astro';
 import HowOdds from '../components/HowOdds.astro';
+import BetCard from '../components/BetCard.astro';
+import { picks as pickList, MIN_DIFF_PCT, BIG_MOVE_PCT, MIN_HIGH_PCT } from '../lib/picks';
 import Photo from '../components/Photo.astro';
 import art from '../data/art.json';
 import { BOOKMAKERS } from '../config/bookmakers';
@@ -25,6 +27,7 @@ const sport = Astro.url.searchParams.get('sport') === 'hokej' ? 'hokej' : 'fotba
 const soon = events.filter((e) => e.sport === sport && e.startAt <= t + 2 * 86400);
 const next = (soon.length >= 4 ? soon : events.filter((e) => e.sport === sport)).slice(0, 6);
 const checked = lastCheck(up);
+const chosen = pickList(up, rd, t, cfg);
 const win = rd ? [...WINDOWS].reverse().find((w) => rd.windows[w.key].available) : undefined;
 const moves = win && rd
   ? [...mergeMoves(rd.windows[win.key].drops.filter((m) => m.startAt > t)).slice(0, 2), ...mergeMoves(rd.windows[win.key].rises.filter((m) => m.startAt > t)).slice(0, 1)]
@@ -59,10 +62,38 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
           <p class="eyebrow m-0">{ex.e.compName}</p>
           <p class="font-display font-bold text-lg m-0 mt-1">{ex.e.home} vs {ex.e.away}</p>
           <p class="m-0 mt-2">Kurz na {ex.v.favourite.outcome === 'x' ? 'remízu' : ex.v.favourite.who}: <strong class="num">{(ex.v.favourite.best.odds / 1000).toFixed(2).replace('.', ',')}</strong></p>
-          <p class="hand m-0 mt-1">100 Kč → {Math.round(ex.v.favourite.best.odds / 10)} Kč</p>
+          <p class="hand m-0 mt-1">pokud vyhraje: 100 Kč → {Math.round(ex.v.favourite.best.odds / 10)} Kč</p>
         </div>
       )}
     </div>
+  </section>
+
+  <div class="wrap mt-10" data-follow-strip hidden></div>
+
+  <section class="wrap mt-14" aria-labelledby="h-picks" id="vybrano">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+      <div class="max-w-[70ch]">
+        <p class="hand m-0 text-[1.35rem] -rotate-1 origin-left">vybráno radarem</p>
+        <h2 id="h-picks" class="m-0 mt-1 flex items-center gap-2"><Art name="radar" size={34} />Dnes stojí za pozornost</h2>
+        <p class="mt-2 mb-0 text-ink-2">Zápasy dnes a zítra, u kterých jsme v datech něco zjistili: jiný kurz u druhé kanceláře nebo výraznou změnu. Je to zjištění, ne tip.</p>
+      </div>
+    </div>
+    {chosen.length ? <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{chosen.map((p) => <BetCard p={p} up={up} now={t} cfg={cfg} back="/" />)}</div> : (
+      <div class="card p-6 max-w-[720px]">
+        <p class="m-0 text-lg font-bold">Dnes jsme u sledovaných zápasů nenašli rozdíl mezi kancelářemi ani výraznou změnu kurzu.</p>
+        <p class="mt-2 mb-0">Tipsport a Chance mají teď stejné kurzy a nic se výrazně nepohnulo. Můžeš si níže sledovat konkrétní zápas (hvězdička) a my ti ukážeme, až se u něj kurz změní.</p>
+        <a href="#h-next" class="btn btn--ghost mt-4">Vybrat zápas ke sledování</a>
+      </div>
+    )}
+    <details class="mt-5 text-ink-2 max-w-[80ch]">
+      <summary class="font-bold text-ink min-h-[44px] inline-flex items-center">Jak vybíráme a řadíme</summary>
+      <ul class="mt-2 mb-0 pl-5 list-disc grid gap-1">
+        <li><strong>Vyšší kurz jinde:</strong> jedna kancelář změnila kurz a druhá ho při pozdější kontrole měla pořád původní, nebo se kurzy obou kanceláří na stejnou sázku liší aspoň o {MIN_DIFF_PCT} %.</li>
+        <li><strong>Zajímavý pohyb:</strong> kurz se za sledované období změnil aspoň o {BIG_MOVE_PCT} %, nebo stoupl aspoň o {MIN_HIGH_PCT} % a je na nejvyšší hodnotě, jakou jsme v tom období zapsali (první zápis za maximum nepovažujeme).</li>
+        <li>Pořadí: nejdřív rozdíly mezi kancelářemi, pak velké změny, pak nová maxima; uvnitř podle velikosti rozdílu. Nejvýš 6 položek, z každého zápasu jedna.</li>
+        <li>Bereme jen aktuální kurzy z posledních kontrol. Na pořadí ani na to, kde je kurz vyšší, nemá vliv, se kterou kanceláří spolupracujeme.</li>
+      </ul>
+    </details>
   </section>
 
   <section class="wrap mt-16" aria-labelledby="h-next">
@@ -85,11 +116,11 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
       <div>
         <h2 id="h-moves" class="m-0 flex items-center gap-2"><Art name="radar" size={34} />Co se hýbe</h2>
-        <p class="mt-2 mb-0 text-ink-2">Když kancelář změní kurz, zapíšeme si to. Tady jsou největší změny{win ? ` ${win.since}` : ''}.</p>
+        <p class="mt-2 mb-0 text-ink-2">Při každé kontrole si zapíšeme, jak se kurz od minulé změnil. Tady jsou největší změny{win ? ` ${win.since}` : ''}.</p>
       </div>
       <a href="/radar/" class="font-bold inline-flex items-center gap-1 min-h-[44px]">Všechny pohyby kurzů<Icon name="arrow-right" size={16} /></a>
     </div>
-    {moves.length ? <ul class="grid gap-4 lg:grid-cols-3 list-none p-0 m-0">{moves.map((m) => <MoveItem m={m} now={t} windowLabel={win!.since} compact />)}</ul>
+    {moves.length ? <ul class="grid gap-4 lg:grid-cols-3 list-none p-0 m-0">{moves.map((m) => <MoveItem m={m} now={t} windowLabel={win!.since} compact back="/" />)}</ul>
       : <p class="card p-5 m-0">Kurzy si zapisujeme teprve chvíli. Jakmile se nějaký pohne, uvidíš to tady.</p>}
   </section>
 
@@ -132,7 +163,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <ol class="grid gap-5 md:grid-cols-3 list-none p-0 m-0">
       <li class="card p-5"><Art name="krok-kontrola" size={56} /><h3 class="mt-3 mb-1">1. Každých {cfg.importIntervalMin} minut kontrolujeme kurzy</h3><p class="m-0 text-ink-2">U Tipsportu a Chance na fotbal a hokej. Nemusíš nic obnovovat ani se registrovat.</p></li>
       <li class="card p-5"><Art name="krok-porovnani" size={56} /><h3 class="mt-3 mb-1">2. Dáme vedle sebe stejné sázky</h3><p class="m-0 text-ink-2">Jen stejný zápas a stejnou sázku. Kde kancelář vyplatí víc, označíme zeleně.</p></li>
-      <li class="card p-5"><Art name="krok-historie" size={56} /><h3 class="mt-3 mb-1">3. Zapisujeme každou změnu</h3><p class="m-0 text-ink-2">Proto uvidíš, jestli kurz roste, nebo padá. Nic nedopočítáváme a nedáváme tipy.</p></li>
+      <li class="card p-5"><Art name="krok-historie" size={56} /><h3 class="mt-3 mb-1">3. Zapisujeme, co se mezi kontrolami změnilo</h3><p class="m-0 text-ink-2">Proto uvidíš, jestli kurz roste, nebo padá. Změny mezi kontrolami nevidíme, nic nedopočítáváme a nedáváme tipy.</p></li>
     </ol>
     <p class="mt-6"><a href="/metodika/">Podrobně: odkud bereme data</a></p>
   </section>
