@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Oblíbené zápasy | KurzovýRadar" description="Zápasy, které jste si uložili. Ukládají se jen v tomto prohlížeči." noindex crumbs={[{ name: 'Oblíbené', url: '/oblibene/' }]}>
+  <div class="wrap pt-6 max-w-[980px]">
+    <h1 class="m-0">Oblíbené zápasy</h1>
+    <p class="text-ink-2 mt-2">Oblíbené zápasy ukládáme jen <strong class="text-ink">v tomto prohlížeči</strong> (localStorage). Nikam je neodesíláme a v jiném zařízení je neuvidíte. Zápas přidáte hvězdičkou u jeho kurzů.</p>
+    <noscript><p class="card p-5">Oblíbené zápasy potřebují zapnutý JavaScript, protože se ukládají přímo v prohlížeči.</p></noscript>
+    <div data-favs class="grid gap-3 mt-6" aria-live="polite"><p class="card p-5 m-0 text-ink-2">Načítám…</p></div>
+  </div>
+</Base>
+<script src="../../scripts/favs.ts"></script>

@@ -1,0 +1,20 @@
+---
+// Wordmark "KurzovýRadar" + own geometric symbol (radar quadrant with a sweep and a tracked blip). Same symbol = favicon.
+interface Props { size?: 'md' | 'lg'; invert?: boolean }
+const { size = 'md', invert = false } = Astro.props;
+const px = size === 'lg' ? 40 : 32;
+---
+<span class="inline-flex items-center gap-2.5 select-none">
+  <svg width={px} height={px} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="8" fill="#112039" />
+    <path d="M7 8A17 17 0 0 1 24 25" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2" />
+    <path d="M7 15A10 10 0 0 1 17 25" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2" />
+    <path d="M7 25L20.93 15.25A17 17 0 0 0 16.75 11.07Z" fill="#2457ff" fill-opacity=".6" />
+    <path d="M7 25L16.75 11.07" stroke="#8fb0ff" stroke-width="2" stroke-linecap="round" />
+    <circle cx="22.6" cy="9.4" r="2.6" fill="#3cc8bd" />
+    <circle cx="7" cy="25" r="2" fill="#fff" />
+  </svg>
+  <span class:list={['font-[750] tracking-[-0.025em] leading-none', size === 'lg' ? 'text-[1.6rem]' : 'text-[1.28rem]', invert ? 'text-white' : 'text-ink']}>
+    Kurzový<span class={invert ? 'text-[#8fb0ff]' : 'text-blue'}>Radar</span>
+  </span>
+</span>

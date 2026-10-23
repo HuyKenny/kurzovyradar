@@ -1,0 +1,14 @@
+---
+import Article from '../../components/Article.astro';
+export const prerender = true;
+const d = new Date('2026-10-23');
+---
+<Article title="Cookies" metaTitle="Cookies | KurzovýRadar" description="KurzovýRadar nepoužívá analytické ani reklamní cookies. Oblíbené zápasy jsou uložené jen v prohlížeči."
+  crumbs={[{ name: 'Cookies', url: '/cookies/' }]} published={d} updated={d}>
+  <p>KurzovýRadar <strong>nepoužívá analytické ani reklamní cookies</strong>, a proto se vás na souhlas neptáme.</p>
+  <ul>
+    <li><strong>Oblíbené zápasy</strong> ukládáme do úložiště vašeho prohlížeče (localStorage), ne do cookies. Data zůstávají jen u vás.</li>
+    <li>Poskytovatel infrastruktury Cloudflare může při podezřelém provozu nastavit nezbytnou bezpečnostní cookie k ochraně webu před roboty.</li>
+    <li>Po přechodu na web sázkové kanceláře platí její vlastní zásady cookies.</li>
+  </ul>
+</Article>

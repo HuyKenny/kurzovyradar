@@ -1,0 +1,70 @@
+---
+import Article from '../../components/Article.astro';
+import { BOOKMAKERS } from '../../config/bookmakers';
+import { COMPETITIONS, SPORTS } from '../../config/competitions';
+import { settings } from '../../server/types';
+export const prerender = true;
+// Defaults equal the production wrangler vars (IMPORT_INTERVAL_MIN, STALE_AFTER_MIN, HISTORY_DAYS).
+const cfg = settings({});
+const d = new Date('2026-10-23');
+---
+<Article title="Metodika a zdroje dat" metaTitle="Metodika – jak KurzovýRadar sleduje a porovnává kurzy | KurzovýRadar"
+  description="Které sázkové kanceláře sledujeme, jak často kurzy kontrolujeme, jak párujeme stejné sázky, jak počítáme změny a nejvyšší kurz a jak zacházíme s chybějícími daty."
+  lead="Přesně popisujeme, odkud čísla na webu pocházejí a jak je počítáme." crumbs={[{ name: 'Metodika', url: '/metodika/' }]} published={d} updated={d} checked={d}>
+  <h2>Které kanceláře sledujeme</h2>
+  <table>
+    <thead><tr><th scope="col">Kancelář</th><th scope="col">Kurzy</th><th scope="col">Partnerství</th><th scope="col">Recenze</th></tr></thead>
+    <tbody>
+      {BOOKMAKERS.map((b) => <tr><th scope="row">{b.name}</th><td>{b.oddsFeed === 'active' ? 'sledujeme' : 'nesledujeme'}</td><td>{b.affiliate === 'approved' ? 'ano' : 'ne'}</td><td>{b.review === 'published' ? <a href={`/sazkove-kancelare/${b.id}/`}>ano</a> : 'ne'}</td></tr>)}
+    </tbody>
+  </table>
+  <p>Tyto tři údaje evidujeme odděleně. Partnerství neznamená, že kurzy kanceláře sledujeme, a naopak.</p>
+
+  <h2>Co sledujeme</h2>
+  <ul>
+    <li><strong>Předzápasové kurzy</strong>, ne kurzy během zápasu.</li>
+    <li><strong>Trh:</strong> výsledek zápasu v základní hrací době (1X2). Fotbal 90 minut včetně nastavení, hokej 60 minut. Prodloužení, nájezdy ani penalty se nepočítají.</li>
+    <li><strong>Okno:</strong> zápasy, které začínají v následujících {cfg.windowDays} dnech.</li>
+    <li><strong>Soutěže:</strong> {(['fotbal', 'hokej'] as const).map((s, i) => <>{i > 0 && '; '}{SPORTS[s].name.toLowerCase()} – {COMPETITIONS.filter((c) => c.sport === s).map((c) => c.name).join(', ')}</>)}.</li>
+  </ul>
+
+  <h2>Jak často</h2>
+  <p>Kurzy kontrolujeme každých <strong>{cfg.importIntervalMin} minut</strong>. Každá kontrola načte celou nabídku kanceláře najednou. Návštěva webu nikdy sama nevyvolá nové načítání: stránky se zobrazují z posledních uložených dat a ve vyrovnávací paměti mohou být až {Math.round(cfg.cacheTtlS / 60)} minut. U přehledů uvádíme čas poslední úspěšné kontroly každé kanceláře.</p>
+
+  <h2>Jak párujeme stejné sázky</h2>
+  <p>Kurzy dvou kanceláří dáme vedle sebe, jen když souhlasí všechno z tohoto seznamu:</p>
+  <ol>
+    <li>sport a soutěž,</li>
+    <li>oba účastníci ve stejném pořadí (domácí a hosté),</li>
+    <li>čas začátku,</li>
+    <li>typ trhu, sledované období a případná hranice (handicap, počet gólů),</li>
+    <li>pravidla vyhodnocení (základní hrací doba, nebo včetně prodloužení).</li>
+  </ol>
+  <p>Samotná podobnost názvů týmů nestačí. Nejednoznačné zápasy necháme nespárované. Pokud se údaje kanceláří později rozejdou, například jedna posune začátek, kurzy té kanceláře přestaneme srovnávat, dokud se údaje znovu neshodují.</p>
+
+  <h2>Jak počítáme</h2>
+  <ul>
+    <li><strong>Změna kurzu</strong> = (nový kurz ÷ původní kurz − 1) × 100 %.</li>
+    <li><strong>Implikovaná pravděpodobnost</strong> = 1 ÷ kurz. Obsahuje marži kanceláře, není to skutečná pravděpodobnost výsledku.</li>
+    <li><strong>Marže</strong> (overround) = součet 1 ÷ kurz přes všechny výsledky jednoho trhu u jedné kanceláře − 100 %. Počítáme ji jen z kompletní sady 1, X a 2.</li>
+    <li><strong>Nejvyšší kurz z námi sledovaných kanceláří</strong> = maximum z aktuálních, nepozastavených a správně spárovaných nabídek. Když se všechny shodují, píšeme „shoda“. Když je aktuální jen jedna nabídka, píšeme „jen jedna nabídka“.</li>
+    <li><strong>První zaznamenaný kurz</strong> je první hodnota, kterou jsme uložili. Nemusí to být otevírací kurz kanceláře, ten neznáme. <strong>Zachycené minimum a maximum</strong> jsou extrémy z našich záznamů.</li>
+  </ul>
+
+  <h2>Radar pohybů</h2>
+  <p>Pro období 1, 6 nebo 24 hodin porovnáme aktuální kurz s posledním záznamem uloženým nejpozději na začátku období. Období nabízíme jen tehdy, když data sledujeme alespoň tak dlouho. Do radaru bereme jen zápasy, které ještě nezačaly. Radar nic nedoporučuje a pokles kurzu nepovažujeme za důkaz výhodné sázky.</p>
+
+  <h2>Chybějící a starší data</h2>
+  <ul>
+    <li>Když se kontrola nepovede, ponecháme poslední platná data. Po <strong>{cfg.staleAfterMin} minutách</strong> bez úspěšné kontroly je přestaneme počítat do porovnání a zobrazíme je šedě jako „poslední známé údaje“ s časem.</li>
+    <li>Když kancelář sázku pozastaví nebo stáhne, kurz do porovnání nepočítáme.</li>
+    <li>Chybějící kurz nikdy nezobrazujeme jako nulu a chybějící historii nezaměňujeme za nulovou změnu.</li>
+    <li>Výpadky dat vyznačujeme v grafech.</li>
+  </ul>
+
+  <h2>Historie a uchování</h2>
+  <p>Do historie zapisujeme jen změnu kurzu nebo jeho dostupnosti. Časy ukládáme v UTC a zobrazujeme v českém čase. Podrobné záznamy uchováváme {cfg.historyDays} dní po začátku zápasu. Stránky zápasů zůstávají dostupné 7 dní po začátku, potom je odstraníme.</p>
+
+  <h2>Co nezobrazujeme</h2>
+  <p>Výsledky zápasů, sestavy, zranění, statistiky ani tipy. Pro výsledky a statistiky nemáme ověřený zdroj, tipy nedáváme z principu.</p>
+</Article>

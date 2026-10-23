@@ -1,0 +1,22 @@
+---
+import Article from '../../components/Article.astro';
+import { SITE } from '../../config/site';
+export const prerender = true;
+const d = new Date('2026-10-23');
+---
+<Article title="Ochrana soukromí" metaTitle="Ochrana soukromí | KurzovýRadar" description="Jaké údaje KurzovýRadar zpracovává: žádné účty, žádné reklamní cookies, oblíbené zápasy jen ve vašem prohlížeči."
+  crumbs={[{ name: 'Ochrana soukromí', url: '/soukromi/' }]} published={d} updated={d}>
+  <h2>Správce</h2>
+  <p>{SITE.operator.name}, IČO {SITE.operator.ico}, e-mail <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+  <h2>Co zpracováváme</h2>
+  <ul>
+    <li><strong>Žádné účty ani registrace.</strong> Nesbíráme jména, e-maily ani platební údaje.</li>
+    <li><strong>Oblíbené zápasy</strong> se ukládají jen ve vašem prohlížeči (localStorage). Na náš server se neposílají. Smažete je odebráním zápasů nebo vymazáním dat prohlížeče.</li>
+    <li><strong>Kliknutí na partnerské odkazy</strong> počítáme anonymně: kancelář, umístění odkazu, stránka a typ zařízení. Bez IP adresy a bez cookies.</li>
+    <li><strong>Provozní záznamy</strong> serveru (Cloudflare) slouží k zabezpečení a provozu webu.</li>
+  </ul>
+  <h2>Zpracovatelé</h2>
+  <p>Web běží na infrastruktuře Cloudflare. Analytické nástroje třetích stran ani reklamní sítě nepoužíváme.</p>
+  <h2>Vaše práva</h2>
+  <p>Máte právo na přístup, opravu, výmaz a omezení zpracování a právo podat stížnost u Úřadu pro ochranu osobních údajů (uoou.gov.cz). Napište nám na {SITE.email}.</p>
+</Article>

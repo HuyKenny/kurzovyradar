@@ -1,0 +1,20 @@
+---
+import Article from '../../components/Article.astro';
+import { PARTNERS } from '../../config/bookmakers';
+export const prerender = true;
+const d = new Date('2026-10-23');
+---
+<Article title="Jak se financujeme" metaTitle="Jak se financujeme – partnerské odkazy | KurzovýRadar" description="KurzovýRadar se financuje z partnerských (affiliate) odkazů. Co to znamená a proč to nemá vliv na pořadí kurzů."
+  crumbs={[{ name: 'Jak se financujeme', url: '/financovani/' }]} published={d} updated={d}>
+  <p>Web je pro návštěvníky zdarma a bez registrace. Financujeme ho z <strong>partnerských (affiliate) odkazů</strong>: když přes náš odkaz přejdete ke kanceláři a zaregistrujete se, můžeme od ní dostat provizi. Pro vás se tím nic nemění.</p>
+  <h2>Se kterými kancelářemi spolupracujeme</h2>
+  <ul>{PARTNERS.map((b) => <li>{b.name}</li>)}</ul>
+  <p>Partnerské odkazy označujeme a technicky je značíme atributem <code>rel="sponsored"</code>.</p>
+  <h2>Co partnerství neovlivňuje</h2>
+  <ul>
+    <li><strong>Nejvyšší kurz</strong> určují jen data. Kancelář nemůže zaplatit za zvýraznění.</li>
+    <li><strong>Radar pohybů</strong> řadí podle velikosti změny, ne podle kanceláře.</li>
+    <li><strong>Recenze</strong> uvádějí i omezení a nehodnotí hvězdičkami.</li>
+  </ul>
+  <p>Partnerství s kanceláří je samostatný údaj. Neznamená, že sledujeme její kurzy (například Allwyn je partner, ale jeho kurzy zatím nesledujeme).</p>
+</Article>

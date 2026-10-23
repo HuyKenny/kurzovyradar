@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Astro SSR (adapter) + our own entry: fetch → Astro with an edge cache, scheduled → odds import into D1.
+  "name": "kurzovyradar",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "kurzovyradar.cz", "custom_domain": true },
+    { "pattern": "www.kurzovyradar.cz", "custom_domain": true }
+  ],
+  "assets": { "directory": "./dist/client", "binding": "ASSETS", "html_handling": "force-trailing-slash", "not_found_handling": "none" },
+  // Secrets (wrangler secret put): TIPSPORT_CLIENT_ID/SECRET, CHANCE_API_USER/PASS. Values: ~/ai/credentials/.kurzovyradar-credentials.env
+  // Every 15 min, offset from sportstreamy (which runs on */15): 2 requests per run (one bulk call per bookmaker).
+  "triggers": { "crons": ["4,19,34,49 * * * *"] },
+  "d1_databases": [{ "binding": "DB", "database_name": "kurzovyradar", "database_id": "af52d462-e199-4497-8605-89f9a73e3c3e", "migrations_dir": "migrations" }],
+  "vars": {
+    "ENVIRONMENT": "production",
+    // Partner links (tracking ids pid/sid/bid/tid are lifted from these for match deeplinks).
+    // sid 46142/46143 = the registered sportstreamy placement until kurzovyradar has its own (see README).
+    "TIPSPORT_URL": "https://www.tipsport.cz/PartnerRedirectAction.do?pid=14361&sid=46142&bid=5695&tid=3121&urlid=653",
+    "CHANCE_URL": "https://www.chance.cz/PartnerRedirectAction.do?pid=31094&sid=46143&bid=4666&tid=2703&urlid=681",
+    "ALLWYN_URL": "https://record.sazka.cz/_8u72YyI1anK2bnhOaaLAUmNd7ZgqdRLk/1/?payload=kurzovyradar.cz",
+    "IMPORT_INTERVAL_MIN": "15",
+    "CACHE_TTL_S": "300",
+    "STALE_AFTER_MIN": "45",
+    "HISTORY_DAYS": "30",
+    "START_TOLERANCE_MIN": "0",
+    "WINDOW_DAYS": "7"
+  },
+  "analytics_engine_datasets": [{ "binding": "CLICKS", "dataset": "kurzovyradar_clicks" }],
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 }
+}

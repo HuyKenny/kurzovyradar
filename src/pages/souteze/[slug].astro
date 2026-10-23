@@ -1,0 +1,35 @@
+---
+import Base from '../../layouts/Base.astro';
+import EventList from '../../components/EventList.astro';
+import FreshNote from '../../components/FreshNote.astro';
+import { COMPETITIONS, SPORTS, competitionBySlug } from '../../config/competitions';
+import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+
+const c = competitionBySlug(Astro.params.slug ?? '');
+if (!c) return new Response(null, { status: 404 });
+const up = await upcoming();
+const t = getNow();
+const cfg = getCfg();
+const events = listable(up, t, cfg).filter((e) => e.comp === c.slug);
+const S = SPORTS[c.sport];
+const siblings = COMPETITIONS.filter((x) => x.sport === c.sport && x.slug !== c.slug);
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title={`${c.name} – kurzy a jejich vývoj | KurzovýRadar`}
+  description={`Kurzy na zápasy soutěže ${c.name} (${c.country}): Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný a zaznamenané změny kurzů.`}
+  noindex={events.length === 0} crumbs={[{ name: S.name, url: S.path }, { name: c.name, url: `/souteze/${c.slug}/` }]}>
+  <div class="wrap pt-6">
+    <p class="eyebrow m-0">{S.name} · {c.country}</p>
+    <h1 class="mt-2 mb-0">{c.name}: kurzy</h1>
+    <p class="text-ink-2 max-w-[70ch] mt-2">{c.intro} Porovnáváme kurzy na výsledek zápasu v základní hrací době (1X2).</p>
+    <FreshNote books={up.books} now={t} cfg={cfg} />
+    <div class="mt-8">
+      {events.length ? <EventList events={events} books={up.books} now={t} cfg={cfg} place={`soutez-${c.slug}`} showComp={false} />
+        : <p class="card p-5 m-0 text-ink-2">V nabídce sledovaných kanceláří teď nemáme žádný zápas této soutěže. Jakmile se objeví, uvidíte ho tady.</p>}
+    </div>
+    <nav class="mt-12" aria-labelledby="h-sib">
+      <h2 id="h-sib" class="text-lg">Další soutěže – {S.name.toLowerCase()}</h2>
+      <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3">{siblings.map((s) => <li><a class="chip" href={`/souteze/${s.slug}/`}>{s.name}</a></li>)}</ul>
+    </nav>
+  </div>
+</Base>

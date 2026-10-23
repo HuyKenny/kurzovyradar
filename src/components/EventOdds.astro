@@ -1,0 +1,84 @@
+---
+// One event: participants + one small accessible table (rows = bookmakers, columns = 1 / X / 2).
+// Best current price: blue frame + bold + "nejvyšší" text; equal prices: "shoda". Stale, suspended or missing
+// quotes are shown as such and never win. Each live price links to the bookmaker (partner link, rel sponsored).
+import { BOOK } from '../config/bookmakers';
+import { compare, OUTCOMES, type Cell } from '../lib/data';
+import { odds as fmt, kickoff, time, dateTime } from '../lib/format';
+import { OUTCOME_LABEL } from '../server/normalize/markets';
+import type { EventView, UpcomingSnapshot } from '../server/view';
+import type { Settings } from '../server/types';
+import BookLogo from './BookLogo.astro';
+import Icon from './Icon.astro';
+import FavButton from './FavButton.astro';
+
+interface Props { ev: EventView; books: UpcomingSnapshot['books']; now: number; cfg: Settings; place?: string; showComp?: boolean; headingLevel?: 'h2' | 'h3' }
+const { ev, books, now, cfg, place = 'list', showComp = true, headingLevel = 'h3' } = Astro.props;
+const rows = compare(ev, books, now, cfg);
+const bookIds = rows[0]!.cells.filter((c) => c.state !== 'missing').map((c) => c.book);
+const H = headingLevel;
+const currentBooks = new Set(rows.flatMap((r) => r.cells.filter((c) => c.current).map((c) => c.book)));
+const single = currentBooks.size === 1;
+const checked = [...currentBooks].map((b) => books[b]?.lastSuccessAt ?? 0).filter(Boolean);
+const checkedAt = checked.length ? Math.min(...checked) : null;
+const cellFor = (book: string, o: string): Cell => rows.find((r) => r.outcome === o)!.cells.find((c) => c.book === book)!;
+const ariaFor = (c: Cell, o: string) => `${OUTCOME_LABEL[o as '1']}: kurz ${fmt(c.odds!)} ${BOOK[c.book].locative}${c.best ? ', nejvyšší z námi sledovaných kanceláří' : c.tie ? ', shoda kanceláří' : ''} – otevřít ${BOOK[c.book].locative}`;
+const stateText: Record<Cell['state'], string> = {
+  current: '', stale: 'starší údaj', suspended: 'pozastaveno', removed: 'staženo z nabídky', mismatch: 'nespárováno', missing: 'nenabízí', started: 'po začátku',
+};
+---
+<article class="card p-4 md:p-0 grid md:grid-cols-[minmax(0,1fr)_auto] md:grid-rows-[auto_1fr] overflow-hidden" data-event={ev.id}>
+  <div class="md:p-4 md:pb-0 md:pr-6 flex flex-col gap-1.5 min-w-0 md:col-start-1 md:row-start-1">
+    <div class="flex items-center gap-2 text-sm text-ink-2 flex-wrap">
+      <span class="inline-flex items-center gap-1 font-semibold text-ink num"><Icon name="clock" size={14} class="text-ink-3" />{kickoff(ev.startAt, now)}</span>
+      {showComp && <><span aria-hidden="true">·</span><a href={`/souteze/${ev.comp}/`} class="text-ink-2">{ev.compName}</a></>}
+    </div>
+    <H class="text-[1.06rem] font-bold leading-snug m-0"><a href={ev.url} class="text-ink no-underline hover:text-blue-ink">{ev.home} <span class="text-ink-3 font-medium">–</span> {ev.away}</a></H>
+    <p class="text-[0.8rem] text-ink-2 m-0">Výsledek zápasu v základní hrací době (1X2)
+      {checkedAt && <> · ověřeno <time datetime={new Date(checkedAt * 1000).toISOString()} class="num">{time(checkedAt)}</time></>}</p>
+  </div>
+  <div class="mt-3 md:mt-0 md:border-l md:border-line md:bg-[#fbfcfe] md:p-4 md:pl-5 flex items-center md:col-start-2 md:row-start-1 md:row-span-2">
+    {bookIds.length === 0 ? <p class="text-sm text-ink-2 m-0">Kurzy zatím nejsou k dispozici.</p> : (
+      <table class="w-full md:w-auto">
+        <caption class="sr">Kurzy na výsledek zápasu {ev.home} – {ev.away}</caption>
+        <thead>
+          <tr class="text-xs text-ink-2">
+            <th scope="col" class="text-left font-semibold pb-1.5 pr-2"><span class="sr">Kancelář</span></th>
+            {OUTCOMES.map((o) => <th scope="col" class="font-semibold pb-1.5 px-1 text-center"><abbr title={OUTCOME_LABEL[o]} class="no-underline">{o === 'x' ? 'X' : o}</abbr><span class="sr"> – {OUTCOME_LABEL[o]}</span></th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {bookIds.map((b) => (
+            <tr>
+              <th scope="row" class="text-left pr-3 py-1 font-normal"><BookLogo id={b} h={24} /></th>
+              {OUTCOMES.map((o) => {
+                const c = cellFor(b, o);
+                return (
+                  <td class="px-1 py-1">
+                    {c.current && c.odds ? (
+                      <a href={`/go/${b}/?e=${ev.id}&p=${place}`} rel="sponsored nofollow" class:list={['odd num', c.best && 'odd--best', c.tie && 'odd--tie']} aria-label={ariaFor(c, o)}>
+                        {c.best && <Icon name="arrow-up" size={14} stroke={2.6} class="text-blue" />}{fmt(c.odds)}
+                      </a>
+                    ) : c.odds && c.state !== 'missing' ? (
+                      <span class="odd odd--off num" title={`${stateText[c.state]}${books[b]?.lastSuccessAt ? ` · poslední známé údaje z ${dateTime(books[b]!.lastSuccessAt!)}` : ''}`}>
+                        {fmt(c.odds)}<span class="sr"> ({stateText[c.state]}, nesrovnáváme)</span>
+                      </span>
+                    ) : (
+                      <span class="odd odd--off" title={stateText[c.state]}><span aria-hidden="true">–</span><span class="sr">{stateText[c.state]}</span></span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+  <div class="flex flex-wrap items-center gap-2 mt-2 md:mt-0 md:px-4 md:pb-3 md:pt-1 md:self-end md:col-start-1 md:row-start-2">
+    {single && <span class="badge badge--warn">Jen jedna nabídka</span>}
+    {rows.every((r) => r.best.kind === 'best' && r.best.tie) && <span class="badge badge--tie"><Icon name="equal" size={12} />Kurzy se shodují</span>}
+    <a href={ev.url} class="btn btn--quiet btn--sm -ml-2">Detail a vývoj<Icon name="arrow-right" size={16} /></a>
+    <FavButton ev={ev} />
+  </div>
+</article>

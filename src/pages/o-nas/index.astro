@@ -1,0 +1,25 @@
+---
+import Article from '../../components/Article.astro';
+import { SITE } from '../../config/site';
+import photos from '../../data/photos.json';
+export const prerender = true;
+const d = new Date('2026-10-23');
+---
+<Article title="O nás a kontakt" metaTitle="O nás a kontakt | KurzovýRadar" description="Kdo provozuje KurzovýRadar, jak nás kontaktovat a kdo připravuje obsah webu."
+  crumbs={[{ name: 'O nás', url: '/o-nas/' }]} published={d} updated={d}>
+  <p>KurzovýRadar je český web pro porovnání kurzů sázkových kanceláří a sledování jejich změn. Nedáváme tipy ani nepředpovídáme výsledky. Ukazujeme kurzy, jejich historii a vysvětlujeme, jak je číst.</p>
+  <h2>Provozovatel</h2>
+  <table><tbody>
+    <tr><th scope="row">Provozovatel</th><td>{SITE.operator.name}</td></tr>
+    <tr><th scope="row">IČO</th><td>{SITE.operator.ico}</td></tr>
+    <tr><th scope="row">DPH</th><td>{SITE.operator.vat}</td></tr>
+    <tr><th scope="row">E-mail</th><td><a href={`mailto:${SITE.email}`}>{SITE.email}</a></td></tr>
+  </tbody></table>
+  <h2>Kdo připravuje obsah</h2>
+  <p>Texty a recenze připravuje {SITE.editor}. U každého článku uvádíme datum poslední aktualizace a kontroly faktů a u recenzí i zdroje. Kurzy, grafy a shrnutí u zápasů vznikají automaticky z uložených dat podle pravidel v <a href="/metodika/">metodice</a>.</p>
+  <h2>Chyba v datech?</h2>
+  <p>Pokud najdete nesprávně spárovaný zápas nebo chybný údaj, napište nám na <a href={`mailto:${SITE.email}`}>{SITE.email}</a> s odkazem na stránku.</p>
+  <h2>Fotografie</h2>
+  <p>Ilustrační fotografie stadionů a hal jsou z <a href="https://www.pexels.com/" rel="nofollow noopener">Pexels</a> a nezobrazují konkrétní zápasy. Autoři:</p>
+  <ul>{Object.values(photos).map((p) => <li><a href={p.url} rel="nofollow noopener">{p.author}</a></li>)}</ul>
+</Article>

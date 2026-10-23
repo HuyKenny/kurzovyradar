@@ -1,0 +1,30 @@
+{
+ "hero": {
+  "id": 28827841,
+  "author": "Siarhei Nester",
+  "authorUrl": "https://www.pexels.com/@siarhei-nester-318033361",
+  "url": "https://www.pexels.com/photo/illuminated-soccer-stadium-at-night-28827841/",
+  "alt": "Brightly lit empty soccer stadium with green field under spotlights during night time."
+ },
+ "fotbal": {
+  "id": 33210166,
+  "author": "李 先生",
+  "authorUrl": "https://www.pexels.com/@37403501",
+  "url": "https://www.pexels.com/photo/aerial-view-of-soccer-field-with-players-33210166/",
+  "alt": "Top-down view of a soccer field with players during daytime."
+ },
+ "hokej": {
+  "id": 6539276,
+  "author": "Pavel Danilyuk",
+  "authorUrl": "https://www.pexels.com/@pavel-danilyuk",
+  "url": "https://www.pexels.com/photo/ice-rink-with-tribune-6539276/",
+  "alt": "An empty indoor ice rink with colorful seats, bright overhead lights, and a clear ice surface."
+ },
+ "pruvodce": {
+  "id": 434633,
+  "author": "Pixabay",
+  "authorUrl": "https://www.pexels.com/@pixabay",
+  "url": "https://www.pexels.com/photo/blue-arena-chairs-434633/",
+  "alt": "Rows of blue plastic stadium seats numbered and aligned perfectly in an empty grandstand."
+ }
+}

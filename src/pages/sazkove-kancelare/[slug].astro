@@ -1,0 +1,45 @@
+---
+import Article from '../../components/Article.astro';
+import BookLogo from '../../components/BookLogo.astro';
+import Icon from '../../components/Icon.astro';
+import { BOOK } from '../../config/bookmakers';
+import { REVIEWS, type Review } from '../../config/reviews';
+export const prerender = true;
+export function getStaticPaths() {
+  return REVIEWS.filter((r) => BOOK[r.id].review === 'published').map((r) => ({ params: { slug: r.id }, props: { r } }));
+}
+const { r } = Astro.props as { r: Review };
+const b = BOOK[r.id];
+const checked = new Date(r.checked);
+---
+<Article title={`${b.name}: recenze sázkové kanceláře`} metaTitle={`${b.name} – recenze, licence a kurzy | KurzovýRadar`}
+  description={`${b.name}: provozovatel ${r.operator}, licence Ministerstva financí, nabídka a omezení. ${b.oddsFeed === 'active' ? 'Kurzy sledujeme a porovnáváme.' : 'Kurzy zatím nesledujeme.'}`}
+  lead={r.summary} crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: b.name, url: `/sazkove-kancelare/${b.id}/` }]}
+  published={checked} updated={checked} checked={checked} schemaType="Article">
+  <div class="not-prose flex flex-wrap items-center gap-4">
+    <BookLogo id={b.id} h={40} lazy={false} />
+    {b.affiliate === 'approved' && <a class="btn" href={`/go/${b.id}/?p=recenze`} rel="sponsored nofollow">Přejít na {r.web}<Icon name="external-link" size={16} /></a>}
+  </div>
+  <h2>Základní údaje</h2>
+  <table>
+    <tbody>
+      <tr><th scope="row">Provozovatel</th><td>{r.operator}, IČ {r.ico}</td></tr>
+      <tr><th scope="row">Sídlo</th><td>{r.seat}</td></tr>
+      <tr><th scope="row">Povolení</th><td>{r.licence}</td></tr>
+      <tr><th scope="row">Web</th><td>{r.web}</td></tr>
+      {r.facts.map((f) => <tr><th scope="row">{f.label}</th><td>{f.value}</td></tr>)}
+    </tbody>
+  </table>
+  <h2>Na KurzovémRadaru</h2>
+  <p>{r.onSite} {b.oddsFeed === 'active' && <a href="/kurzy/">Srovnání kurzů</a>}</p>
+  <h2>Co nabízí</h2>
+  <ul>{r.features.map((f) => <li>{f}</li>)}</ul>
+  <h2>Výhody a omezení</h2>
+  <div class="not-prose grid gap-4 sm:grid-cols-2">
+    <div class="card p-4"><h3 class="text-base m-0 mb-2 flex items-center gap-1.5"><Icon name="arrow-up" size={16} class="text-up" />Výhody</h3><ul class="list-disc pl-5 m-0 grid gap-1">{r.pros.map((p) => <li>{p}</li>)}</ul></div>
+    <div class="card p-4"><h3 class="text-base m-0 mb-2 flex items-center gap-1.5"><Icon name="minus" size={16} class="text-down" />Omezení</h3><ul class="list-disc pl-5 m-0 grid gap-1">{r.limits.map((p) => <li>{p}</li>)}</ul></div>
+  </div>
+  <p class="text-sm text-ink-2">Nehodnotíme hvězdičkami a neuvádíme bonusy. Podmínky bonusů a akcí se mění, platné znění najdete vždy přímo u kanceláře.{b.affiliate === 'approved' && ' Odkaz na kancelář je partnerský – při registraci můžeme dostat provizi.'}</p>
+  <h2>Zdroje</h2>
+  <ul>{r.sources.map((s) => <li><a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></li>)}</ul>
+</Article>

@@ -1,0 +1,19 @@
+---
+// Pexels photo (generic atmosphere, never presented as a specific match). AVIF + WebP, fixed 16:9 box.
+import photos from '../data/photos.json';
+type Slot = keyof typeof photos;
+const ALT: Record<Slot, string> = {
+  hero: 'Prázdný osvětlený fotbalový stadion večer',
+  fotbal: 'Fotbalové hřiště při pohledu shora',
+  hokej: 'Prázdná hokejová hala s barevnými sedačkami',
+  pruvodce: 'Řady modrých sedaček na tribuně stadionu',
+};
+interface Props { slot: Slot; sizes?: string; priority?: boolean; class?: string; alt?: string }
+const { slot, sizes = '(min-width: 1024px) 600px, 100vw', priority = false, class: cls = '', alt } = Astro.props;
+const set = (ext: string) => [480, 800, 1280].map((w) => `/img/foto/${slot}-${w}.${ext} ${w}w`).join(', ');
+---
+<picture>
+  <source type="image/avif" srcset={set('avif')} sizes={sizes} />
+  <img src={`/img/foto/${slot}-800.webp`} srcset={set('webp')} sizes={sizes} width="1280" height="720" alt={alt ?? ALT[slot]}
+    loading={priority ? 'eager' : 'lazy'} fetchpriority={priority ? 'high' : undefined} decoding="async" class={`w-full h-auto object-cover ${cls}`} />
+</picture>

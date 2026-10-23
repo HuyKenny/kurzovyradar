@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // LOCAL DEMO ONLY (`pnpm demo`): synthetic data, its own database, noindex + banner. Never deployed (no routes, no crons).
+  "name": "kurzovyradar-demo",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "./dist-demo/client", "binding": "ASSETS", "html_handling": "force-trailing-slash", "not_found_handling": "none" },
+  "d1_databases": [{ "binding": "DB", "database_name": "kurzovyradar-demo", "database_id": "00000000-0000-4000-8000-000000000000", "migrations_dir": "migrations" }],
+  "vars": {
+    "ENVIRONMENT": "demo",
+    "DEMO": "on",
+    "TIPSPORT_URL": "https://www.tipsport.cz/",
+    "CHANCE_URL": "https://www.chance.cz/",
+    "ALLWYN_URL": "https://www.allwyn.cz/",
+    "IMPORT_INTERVAL_MIN": "15",
+    "CACHE_TTL_S": "0",
+    "STALE_AFTER_MIN": "100000",
+    "HISTORY_DAYS": "30",
+    "START_TOLERANCE_MIN": "0",
+    "WINDOW_DAYS": "7"
+  }
+}

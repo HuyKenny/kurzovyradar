@@ -1,0 +1,91 @@
+---
+import Base from '../../layouts/Base.astro';
+import MoveItem from '../../components/MoveItem.astro';
+import BookLogo from '../../components/BookLogo.astro';
+import FreshNote from '../../components/FreshNote.astro';
+import Icon from '../../components/Icon.astro';
+import { upcoming, radar, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+import { odds as fmt, pct, kickoff, date, dateTime } from '../../lib/format';
+import { OUTCOME_LABEL } from '../../server/normalize/markets';
+import { WINDOWS, type WindowKey } from '../../server/view';
+
+const [up, rd] = await Promise.all([upcoming(), radar()]);
+const t = getNow();
+const cfg = getCfg();
+const q = Astro.url.searchParams;
+const available = WINDOWS.filter((w) => rd?.windows[w.key].available);
+const req = WINDOWS.find((w) => w.key === q.get('obdobi'));
+const win = req && rd?.windows[req.key].available ? req : available[available.length - 1];
+const VIEWS = [
+  { key: 'poklesy', label: 'Největší poklesy' },
+  { key: 'rusty', label: 'Největší růsty' },
+  { key: 'rozdily', label: 'Rozdíly mezi kancelářemi' },
+  { key: 'maxima', label: 'U nejvyšší hodnoty' },
+] as const;
+const view = VIEWS.find((v) => v.key === q.get('pohled'))?.key ?? 'poklesy';
+const w = win && rd ? rd.windows[win.key as WindowKey] : null;
+const notStarted = <T extends { startAt: number }>(l: T[]) => l.filter((m) => m.startAt > t);
+const items = mergeMoves(!w ? [] : view === 'poklesy' ? notStarted(w.drops) : view === 'rusty' ? notStarted(w.rises) : view === 'maxima' ? notStarted(w.highs) : []);
+const diffs = rd ? notStarted(rd.diffs) : [];
+const href = (k: string, v: string) => { const p = new URLSearchParams(q); p.set(k, v); return `/radar/?${p}`; };
+const filtered = q.size > 0;
+const since = up.stats.firstRecordAt;
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title={filtered ? 'Radar pohybů kurzů – výběr | KurzovýRadar' : 'Radar pohybů kurzů – největší poklesy a růsty | KurzovýRadar'}
+  description="Největší zaznamenané poklesy a růsty kurzů Tipsportu a Chance na fotbal a hokej za 1, 6 a 24 hodin. U každé změny skutečné časy obou záznamů a důvod zařazení."
+  canonical="/radar/" noindex={filtered} crumbs={[{ name: 'Radar', url: '/radar/' }]}>
+  <div class="wrap pt-6">
+    <h1 class="m-0">Radar pohybů kurzů</h1>
+    <p class="text-ink-2 max-w-[72ch] mt-2">Porovnáváme aktuální kurz s posledním kurzem, který jsme uložili před začátkem zvoleného období. Pokles kurzu neznamená, že je sázka výhodná. Jen ukazuje, že kancelář cenu změnila.</p>
+    <FreshNote books={up.books} now={t} cfg={cfg} />
+
+    <div class="flex flex-wrap items-center gap-3 mt-5">
+      <nav class="seg" aria-label="Pohled">
+        {VIEWS.map((v) => <a href={href('pohled', v.key)} aria-current={view === v.key ? 'page' : undefined}>{v.label}</a>)}
+      </nav>
+      {view !== 'rozdily' && available.length > 0 && (
+        <nav class="seg" aria-label="Období">
+          {available.map((x) => <a href={href('obdobi', x.key)} aria-current={win?.key === x.key ? 'page' : undefined}>{x.label}</a>)}
+        </nav>
+      )}
+    </div>
+
+    <div class="mt-6">
+      {view === 'rozdily' ? (
+        diffs.length ? (
+          <ul class="grid gap-3 list-none p-0 m-0">
+            {diffs.map((d) => (
+              <li class="card p-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div>
+                  <p class="m-0 text-sm text-ink-2"><span class="num font-semibold text-ink">{kickoff(d.startAt, t)}</span> · {d.compName}</p>
+                  <h2 class="text-base m-0 mt-0.5"><a href={d.url} class="text-ink no-underline hover:text-blue-ink">{d.home} – {d.away}</a></h2>
+                  <p class="m-0 mt-1 text-sm text-ink-2">Výsledek zápasu (1X2): <strong class="text-ink">{OUTCOME_LABEL[d.outcome]}</strong>. Kancelář s vyšším kurzem nabízí o {pct(d.pct, false)} víc.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center gap-2"><BookLogo id={d.high.book} h={22} /><span class="odd odd--best num"><Icon name="arrow-up" size={14} stroke={2.6} class="text-blue" />{fmt(d.high.odds)}</span></span>
+                  <span class="flex items-center gap-2"><BookLogo id={d.low.book} h={22} /><span class="odd num">{fmt(d.low.odds)}</span></span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : <p class="card p-5 m-0 text-ink-2">Teď se kurzy sledovaných kanceláří u žádného zápasu neliší. Tipsport a Chance běží na stejné platformě a jejich kurzy bývají většinou shodné.</p>
+      ) : !win ? (
+        <p class="card p-5 m-0 text-ink-2">Pro toto období nemáme dostatek záznamů. {since ? `Kurzy ukládáme od ${dateTime(since)}. První pohyby za hodinu uvidíte hodinu po začátku sledování.` : 'Sledování ještě nezačalo.'}</p>
+      ) : items.length ? (
+        <ul class="grid gap-3 lg:grid-cols-2 list-none p-0 m-0">{items.map((m) => <MoveItem m={m} now={t} windowLabel={win.label} />)}</ul>
+      ) : <p class="card p-5 m-0 text-ink-2">Za posledních {win.label} jsme u nadcházejících zápasů nezaznamenali žádnou takovou změnu.</p>}
+    </div>
+
+    <section class="mt-12 card p-5 md:p-6 prose max-w-none" aria-labelledby="h-how-radar">
+      <h2 id="h-how-radar" class="!mt-0">Jak radar počítá</h2>
+      <ul>
+        <li><strong>Změna</strong> = (nový kurz ÷ původní kurz − 1) × 100. Původní kurz je poslední záznam uložený nejpozději na začátku období.</li>
+        <li>Když sledujeme kurz kratší dobu, než je zvolené období, změnu nepočítáme. Chybějící historie není nulová změna.</li>
+        <li>Do přehledu bereme jen zápasy, které ještě nezačaly, a jen aktuální, nepozastavené kurzy.</li>
+        <li>„U nejvyšší hodnoty“ znamená, že kurz během období vzrostl a teď je na nejvyšší hodnotě, kterou jsme v tom období zaznamenali.</li>
+      </ul>
+      <p>Podrobnosti najdete v <a href="/metodika/">metodice</a>{since && <>, historii ukládáme od {date(since)}</>}.</p>
+    </section>
+  </div>
+</Base>

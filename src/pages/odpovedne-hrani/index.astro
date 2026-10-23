@@ -1,0 +1,24 @@
+---
+import Article from '../../components/Article.astro';
+import { HELP } from '../../config/site';
+export const prerender = true;
+const d = new Date('2026-10-23');
+---
+<Article title="Odpovědné hraní" metaTitle="Odpovědné hraní a pomoc | KurzovýRadar" description="Sázení je jen pro dospělé a může způsobit závislost. Jak hrát s limity a kde najít pomoc."
+  crumbs={[{ name: 'Odpovědné hraní', url: '/odpovedne-hrani/' }]} published={d} updated={d}>
+  <p><strong>Sázení je jen pro osoby starší 18 let.</strong> Může způsobit závislost. Sázka je zábava za peníze, které si můžete dovolit prohrát, ne způsob výdělku.</p>
+  <h2>Kurz není předpověď</h2>
+  <p>Kurz je cena, kterou nastavila kancelář. Obsahuje její marži, takže dlouhodobě vychází v její prospěch. Žádný kurz, pohyb kurzu ani porovnání nezaručují výhru.</p>
+  <h2>Jak hrát s limity</h2>
+  <ul>
+    <li>Nastavte si u kanceláře limity vkladů, sázek a času. Licencované kanceláře je musí nabízet.</li>
+    <li>Nesnažte se dohnat prohry vyššími sázkami.</li>
+    <li>Nesázejte pod vlivem alkoholu, ve stresu nebo z peněz určených na nutné výdaje.</li>
+    <li>Pokud potřebujete přestávku, můžete se u kanceláře nechat dočasně vyřadit nebo požádat o zápis do rejstříku vyloučených osob.</li>
+  </ul>
+  <h2>Kde najít pomoc</h2>
+  <ul>
+    <li>{HELP.naberteKurz.name}: <a href={`tel:${HELP.naberteKurz.tel}`}>{HELP.naberteKurz.phone}</a> ({HELP.naberteKurz.note})</li>
+    <li>{HELP.linka.name}: <a href={`tel:${HELP.linka.tel}`}>{HELP.linka.phone}</a> ({HELP.linka.note})</li>
+  </ul>
+</Article>

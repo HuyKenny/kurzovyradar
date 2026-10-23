@@ -1,0 +1,11 @@
+---
+// Bookmaker logo: the brand tile at one fixed height, so every logo takes the same slot. No verified logo → the name as text.
+import { BOOK, type BookId } from '../config/bookmakers';
+interface Props { id: BookId; h?: number; class?: string; lazy?: boolean }
+const { id, h = 26, class: cls = '', lazy = true } = Astro.props;
+const b = BOOK[id];
+const w = b.logo ? Math.round((b.logo.w / b.logo.h) * h) : 0;
+---
+{b.logo
+  ? <img src={b.logo.src} width={w} height={h} alt={b.name} loading={lazy ? 'lazy' : 'eager'} decoding="async" class={`rounded-[6px] ${cls}`} style={`height:${h}px;width:${w}px`} />
+  : <span class={`inline-flex items-center px-2 rounded-[6px] border border-line bg-surface font-bold text-sm text-ink ${cls}`} style={`height:${h}px`}>{b.name}</span>}

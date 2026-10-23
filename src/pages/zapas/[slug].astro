@@ -1,0 +1,235 @@
+---
+import Base from '../../layouts/Base.astro';
+import EventOdds from '../../components/EventOdds.astro';
+import OddsChart, { type Series } from '../../components/OddsChart.astro';
+import BookLogo from '../../components/BookLogo.astro';
+import FavButton from '../../components/FavButton.astro';
+import Icon from '../../components/Icon.astro';
+import { BOOK, FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
+import { SPORTS } from '../../config/competitions';
+import { E, upcoming, eventDetail, compare, listable, OUTCOMES, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+import { odds as fmt, pct, dateTime, date, time, kickoff, ago } from '../../lib/format';
+import { MARKET_LABEL, OUTCOME_LABEL } from '../../server/normalize/markets';
+import { changePct, overround, implied } from '../../server/calc/odds';
+import { isFresh } from '../../server/store/derive';
+import type { Outcome } from '../../server/types';
+
+const m = /^(.*)-(\d+)$/.exec(Astro.params.slug ?? '');
+if (!m) return new Response(null, { status: 404 });
+const id = Number(m[2]);
+const d = await eventDetail(id);
+if (!d) return new Response(null, { status: 404 });
+const { ev, history } = d;
+if (Astro.url.pathname !== ev.url) return Astro.redirect(ev.url, 301);
+const t = getNow();
+const cfg = getCfg();
+if (ev.startAt < t - 7 * 86400) return new Response('Zápas skončil a jeho kurzy už nezobrazujeme.', { status: 410, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+const up = await upcoming();
+const books = up.books;
+const started = ev.startAt <= t;
+const rows = compare(ev, books, t, cfg);
+const presentBooks = FEED_BOOKS.filter((b) => ev.books[b]);
+const comparable = presentBooks.filter((b) => !ev.books[b]!.mismatch);
+
+// Tracking window: first record … now (or kick-off). Gaps = failed import runs inside it.
+const firstAt = history.length ? Math.min(...history.map((h) => h.at)) : null;
+const endAt = Math.min(t, ev.startAt);
+let gaps: { from: number; to: number }[] = [];
+if (firstAt) {
+  const runs = await E.DB.prepare("SELECT book, started_at FROM import_runs WHERE status = 'error' AND started_at BETWEEN ? AND ? ORDER BY started_at")
+    .bind(firstAt, endAt).all<{ book: string; started_at: number }>();
+  const step = cfg.importIntervalMin * 60;
+  for (const r of runs.results) {
+    const last = gaps[gaps.length - 1];
+    if (last && r.started_at - last.to <= step) last.to = r.started_at + step;
+    else gaps.push({ from: r.started_at, to: r.started_at + step });
+  }
+}
+const span = firstAt ? endAt - firstAt : 0;
+const PERIODS = [
+  { key: '24h', label: '24 hodin', s: 86400 },
+  { key: '3d', label: '3 dny', s: 3 * 86400 },
+].filter((p) => span > p.s * 1.1);
+const periods = [...PERIODS, { key: 'vse', label: `Vše (od ${dateTime(firstAt ?? t)})`, s: span }];
+const series = (o: Outcome): Series[] => comparable.map((b) => ({ book: b, points: history.filter((h) => h.book === b && h.outcome === o) })).filter((s) => s.points.length);
+const enough = history.length > 0;
+
+// Template summary from stored data only.
+const offer = (b: FeedBook, o: Outcome) => ev.books[b]?.outcomes[o];
+const lines: string[] = [];
+for (const o of OUTCOMES) {
+  const parts: string[] = [];
+  for (const b of comparable) {
+    const x = offer(b, o);
+    if (!x) continue;
+    if (x.odds === x.firstOdds) parts.push(`${BOOK[b].locative} beze změny (${fmt(x.odds)})`);
+    else parts.push(`${BOOK[b].locative} ${x.odds < x.firstOdds ? 'klesl' : 'stoupl'} z ${fmt(x.firstOdds)} na ${fmt(x.odds)} (${pct(changePct(x.firstOdds, x.odds))})`);
+  }
+  if (parts.length) lines.push(`${OUTCOME_LABEL[o]}: kurz ${parts.join(', ')}.`);
+}
+const margins = comparable.map((b) => ({ b, v: overround(Object.fromEntries(OUTCOMES.map((o) => [o, offer(b, o)?.odds ? offer(b, o)!.odds / 1000 : undefined])), OUTCOMES) }))
+  .filter((x) => x.v !== null);
+const allTie = rows.every((r) => r.best.kind === 'best' && r.best.tie);
+const related = listable(up, t, cfg).filter((e) => e.comp === ev.comp && e.id !== ev.id).slice(0, 4);
+const S = SPORTS[ev.sport];
+const title = `${ev.home} – ${ev.away}: kurzy a jejich vývoj (${date(ev.startAt)}) | KurzovýRadar`;
+const desc = `Kurzy na zápas ${ev.home} – ${ev.away} (${ev.compName}, ${date(ev.startAt)} ${time(ev.startAt)}): Tipsport a Chance vedle sebe a zaznamenaný vývoj kurzů na výsledek zápasu.`;
+const schema = [{
+  '@type': 'SportsEvent', name: `${ev.home} – ${ev.away}`, startDate: new Date(ev.startAt * 1000).toISOString(), sport: S.name,
+  eventStatus: 'https://schema.org/EventScheduled',
+  homeTeam: { '@type': 'SportsTeam', name: ev.home }, awayTeam: { '@type': 'SportsTeam', name: ev.away },
+  superEvent: { '@type': 'SportsEvent', name: ev.compName },
+}];
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title={title} description={desc} schema={schema} noindex={!enough}
+  crumbs={[{ name: S.name, url: S.path }, { name: ev.compName, url: `/souteze/${ev.comp}/` }, { name: `${ev.home} – ${ev.away}`, url: ev.url }]}>
+  <div class="wrap pt-6">
+    <p class="eyebrow m-0">{S.name} · <a href={`/souteze/${ev.comp}/`} class="text-ink-3">{ev.compName}</a></p>
+    <h1 class="mt-2 mb-2">{ev.home} – {ev.away}</h1>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-ink-2">
+      <span class="inline-flex items-center gap-1.5"><Icon name="calendar" size={16} />Začátek <strong class="text-ink num"><time datetime={new Date(ev.startAt * 1000).toISOString()}>{kickoff(ev.startAt, t)}</time></strong></span>
+      {firstAt && <span class="inline-flex items-center gap-1.5"><Icon name="clock" size={16} />Sledujeme od <span class="num">{dateTime(firstAt)}</span></span>}
+      <FavButton ev={ev} big />
+    </div>
+    {started && <p class="mt-4 card p-4 bg-warn-soft border-[#f0d58a] text-warn m-0">Zápas už začal. Níže jsou poslední předzápasové kurzy, které jsme zaznamenali. Živé kurzy nesledujeme.</p>}
+
+    <section class="mt-8" aria-labelledby="h-cmp">
+      <h2 id="h-cmp" class="m-0">Porovnání kurzů</h2>
+      <p class="text-ink-2 mt-1.5 mb-4 max-w-[75ch]"><strong class="text-ink">{MARKET_LABEL['1x2'].long}.</strong> {MARKET_LABEL['1x2'].note}</p>
+      <div class="card overflow-x-auto">
+        <table class="w-full min-w-[520px]">
+          <caption class="sr">Kurzy sledovaných kanceláří na výsledek zápasu</caption>
+          <thead>
+            <tr class="text-sm text-ink-2 border-b border-line">
+              <th scope="col" class="text-left font-semibold p-3">Výsledek</th>
+              {presentBooks.map((b) => <th scope="col" class="p-3 text-center font-semibold"><BookLogo id={b} h={24} lazy={false} /></th>)}
+              <th scope="col" class="p-3 text-left font-semibold">Porovnání</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr class="border-b border-line last:border-0">
+                <th scope="row" class="text-left p-3 font-semibold">{OUTCOME_LABEL[r.outcome]} <span class="text-ink-3 font-medium">({r.outcome === 'x' ? 'X' : r.outcome})</span></th>
+                {presentBooks.map((b) => {
+                  const c = r.cells.find((x) => x.book === b)!;
+                  return (
+                    <td class="p-2 text-center">
+                      {c.current && c.odds
+                        ? <span class:list={['odd num mx-auto w-[88px]', c.best && 'odd--best', c.tie && 'odd--tie']}>{c.best && <Icon name="arrow-up" size={14} stroke={2.6} class="text-blue" />}{fmt(c.odds)}</span>
+                        : <span class="odd odd--off num mx-auto w-[88px]">{c.odds ? fmt(c.odds) : '–'}<span class="sr"> (nesrovnáváme)</span></span>}
+                    </td>
+                  );
+                })}
+                <td class="p-3 text-sm">
+                  {r.best.kind === 'none' ? <span class="text-ink-2">Žádný aktuální kurz</span>
+                    : r.best.kind === 'single' ? <span class="badge badge--warn">Jen jedna nabídka</span>
+                    : r.best.tie ? <span class="badge badge--tie"><Icon name="equal" size={12} />Shoda</span>
+                    : <span class="badge badge--best">Nejvyšší {BOOK[r.best.books[0] as FeedBook].locative}</span>}
+                  {r.best.kind !== 'none' && <span class="block mt-1 text-ink-2 num">implikovaná p. {(Math.round(implied(r.best.odds) * 1000) / 10).toString().replace('.', ',')} %</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-ink-2 mt-2">Modrý rámeček a šipka = nejvyšší kurz z námi sledovaných kanceláří. Šedé „–“ nebo přerušovaný rámeček = kurz chybí, je pozastavený nebo starší než {cfg.staleAfterMin} minut a do porovnání ho nepočítáme. {presentBooks.map((b) => books[b]?.lastSuccessAt ? `${BOOK[b].name} ověřeno ${isFresh(books[b], t, cfg) ? time(books[b]!.lastSuccessAt!) : dateTime(books[b]!.lastSuccessAt!)}.` : '').join(' ')}</p>
+      {!started && (
+        <div class="flex flex-wrap gap-2 mt-4">
+          {comparable.filter((b) => BOOK[b].affiliate === 'approved').map((b) => <a class="btn btn--ghost" href={`/go/${b}/?e=${ev.id}&p=detail`} rel="sponsored nofollow">Zobrazit {BOOK[b].locative}<Icon name="external-link" size={16} /></a>)}
+        </div>
+      )}
+      {presentBooks.some((b) => ev.books[b]!.mismatch) && <p class="mt-3 text-sm badge--warn p-3 rounded-lg">Údaje jedné kanceláře se teď neshodují (jiný čas začátku nebo účastníci), proto její kurzy nesrovnáváme.</p>}
+    </section>
+
+    <section class="mt-12" aria-labelledby="h-hist">
+      <h2 id="h-hist" class="m-0">Vývoj kurzů</h2>
+      {!enough ? <p class="card p-5 mt-4 text-ink-2">Pro tento zápas zatím nemáme dostatek záznamů.</p> : (
+        <>
+          <p class="text-ink-2 mt-1.5 max-w-[75ch]">Graf ukazuje jen kurzy, které jsme skutečně uložili. Kurz platí, dokud nezaznamenáme další změnu. {gaps.length ? `V období sledování jsme ${gaps.length}× nedostali data (šedé pásy). Změna během výpadku se může projevit až v dalším záznamu.` : 'Během sledování jsme neměli žádný výpadek dat.'}</p>
+          <div class="period-switch mt-4">
+            <div class="seg" role="radiogroup" aria-label="Období grafu">
+              {periods.map((p, i) => <label><input type="radio" name="period" value={p.key} checked={i === periods.length - 1} /><span>{p.label}</span></label>)}
+            </div>
+            {periods.map((p) => (
+              <div class="period-panel mt-4 grid gap-4 lg:grid-cols-3" data-period={p.key}>
+                {OUTCOMES.map((o) => series(o).length ? (
+                  <div class="card p-4">
+                    <h3 class="text-base m-0 mb-2">{OUTCOME_LABEL[o]}</h3>
+                    <OddsChart id={`ch-${o}-${p.key}`} series={series(o)} from={Math.max(firstAt!, endAt - p.s)} to={endAt} gaps={gaps}
+                      label={`Vývoj kurzu na ${OUTCOME_LABEL[o].toLowerCase()} za období ${p.label}`} />
+                  </div>
+                ) : null)}
+              </div>
+            ))}
+          </div>
+
+          <h3 class="mt-10 mb-3">Zaznamenané hodnoty</h3>
+          <div class="card overflow-x-auto">
+            <table class="w-full min-w-[640px] text-[15px]">
+              <thead><tr class="text-sm text-ink-2 border-b border-line">
+                <th scope="col" class="text-left p-3">Výsledek</th><th scope="col" class="text-left p-3">Kancelář</th>
+                <th scope="col" class="text-right p-3">První zaznamenaný</th><th scope="col" class="text-right p-3">Poslední</th>
+                <th scope="col" class="text-right p-3">Zachycené minimum</th><th scope="col" class="text-right p-3">Zachycené maximum</th>
+              </tr></thead>
+              <tbody>
+                {OUTCOMES.flatMap((o) => comparable.map((b) => {
+                  const x = offer(b, o);
+                  if (!x) return null;
+                  return (
+                    <tr class="border-b border-line last:border-0">
+                      <th scope="row" class="text-left p-3 font-medium">{OUTCOME_LABEL[o]}</th>
+                      <td class="p-3">{BOOK[b].name}</td>
+                      <td class="p-3 text-right num">{fmt(x.firstOdds)} <span class="text-ink-2 text-sm">{dateTime(x.firstAt)}</span></td>
+                      <td class="p-3 text-right num font-semibold">{fmt(x.odds)} <span class="text-ink-2 text-sm font-normal">{dateTime(x.changedAt)}</span></td>
+                      <td class="p-3 text-right num">{fmt(x.minOdds)}</td>
+                      <td class="p-3 text-right num">{fmt(x.maxOdds)}</td>
+                    </tr>
+                  );
+                }))}
+              </tbody>
+            </table>
+          </div>
+          <details class="mt-3 card">
+            <summary class="px-4 min-h-[48px] flex items-center font-semibold">Tabulka všech záznamů ({history.length})</summary>
+            <div class="overflow-x-auto px-4 pb-4">
+              <table class="w-full text-sm min-w-[480px]">
+                <thead><tr class="text-ink-2 border-b border-line"><th scope="col" class="text-left py-2">Čas záznamu</th><th scope="col" class="text-left py-2">Kancelář</th><th scope="col" class="text-left py-2">Výsledek</th><th scope="col" class="text-right py-2">Kurz</th><th scope="col" class="text-left py-2 pl-3">Stav</th></tr></thead>
+                <tbody>{history.map((h) => <tr class="border-b border-line last:border-0"><td class="py-1.5 num">{dateTime(h.at)}</td><td>{BOOK[h.book].name}</td><td>{OUTCOME_LABEL[h.outcome]}</td><td class="text-right num">{fmt(h.odds)}</td><td class="pl-3">{h.enabled ? 'v nabídce' : 'pozastaveno'}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </details>
+        </>
+      )}
+    </section>
+
+    {enough && (
+      <section class="mt-12 card p-5 md:p-6" aria-labelledby="h-sum">
+        <h2 id="h-sum" class="m-0 text-xl">Shrnutí dat</h2>
+        <ul class="mt-3 mb-0 grid gap-1.5 pl-5 list-disc">
+          {lines.map((l) => <li>{l}</li>)}
+          {allTie && <li>Obě sledované kanceláře teď nabízejí na všechny výsledky stejné kurzy.</li>}
+          {margins.map((x) => <li>Marže {BOOK[x.b].locative} na tomto trhu je {pct(x.v! * 100, false)} (součet převrácených hodnot kurzů 1, X a 2 minus 100 %).</li>)}
+        </ul>
+        <p class="text-sm text-ink-2 mt-3 mb-0">Shrnutí vzniká automaticky z uložených kurzů. Není to tip ani předpověď výsledku. <a href="/metodika/">Jak počítáme</a></p>
+      </section>
+    )}
+
+    {related.length > 0 && (
+      <section class="mt-12" aria-labelledby="h-rel">
+        <h2 id="h-rel" class="text-xl mb-4">Další zápasy – {ev.compName}</h2>
+        <div class="grid gap-3">{related.map((r) => <EventOdds ev={r} books={books} now={t} cfg={cfg} place="related" showComp={false} />)}</div>
+      </section>
+    )}
+
+    <aside class="mt-12 text-sm text-ink-2 max-w-[80ch]">
+      <p class="m-0">Kurzy kontrolujeme každých {cfg.importIntervalMin} minut, historii ukládáme při každé změně ceny nebo dostupnosti. Data jsme naposledy obnovili {up.at ? ago(up.at, t) : 'zatím ne'}. Výsledky, sestavy a statistiky zápasu nezobrazujeme, protože pro ně nemáme ověřený zdroj. Podrobnosti v <a href="/metodika/">metodice</a>.</p>
+    </aside>
+  </div>
+</Base>
+<style>
+  .period-panel { display: none; }
+  .period-switch:has(input[value='24h']:checked) .period-panel[data-period='24h'],
+  .period-switch:has(input[value='3d']:checked) .period-panel[data-period='3d'],
+  .period-switch:has(input[value='vse']:checked) .period-panel[data-period='vse'] { display: grid; }
+</style>

@@ -1,0 +1,39 @@
+{
+  "name": "kurzovyradar",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "pnpm@11.15.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "types": "wrangler types",
+    "check": "astro check",
+    "test": "vitest run",
+    "preview": "wrangler dev --local --persist-to .wrangler/state --port 8831 --inspector-port 9331 --test-scheduled",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "deploy": "pnpm build && wrangler deploy",
+    "demo": "KR_DEMO=1 astro build && wrangler d1 migrations apply DB --local -c dist-demo/server/wrangler.json --persist-to .wrangler/demo && wrangler dev -c dist-demo/server/wrangler.json --local --persist-to .wrangler/demo --port 8832 --inspector-port 9332 --test-scheduled"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "14.3.4",
+    "astro": "7.3.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "22.20.4",
+    "lucide-static": "^0.545.0",
+    "satori": "0.62.0",
+    "sharp": "0.35.5",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11",
+    "wrangler": "4.151.0"
+  }
+}

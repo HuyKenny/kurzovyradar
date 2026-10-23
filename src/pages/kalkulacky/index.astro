@@ -1,0 +1,72 @@
+---
+import Article from '../../components/Article.astro';
+import { payout, implied } from '../../server/calc/odds';
+import { kc } from '../../lib/format';
+
+// Results are computed on the server from the query (works without JS); src/scripts/calc.ts recalculates live.
+const q = Astro.url.searchParams;
+const num = (k: string, d: number) => { const v = Number((q.get(k) ?? '').replace(',', '.')); return Number.isFinite(v) && q.get(k) ? v : d; };
+const stake = num('vklad', 100), odds = num('kurz', 1.85);
+const pOdds = num('k', 2.5);
+const cStake = num('v2', 100), c1 = num('k1', 1.85), c2 = num('k2', 1.95);
+const ok = (s: number, o: number) => s >= 0 && s <= 1e9 && o > 1 && o <= 1000;
+const r1 = ok(stake, odds) ? payout(stake, odds) : null;
+const r2 = pOdds > 1 && pOdds <= 1000 ? implied(pOdds) : null;
+const a = ok(cStake, c1) ? payout(cStake, c1) : null, b = ok(cStake, c2) ? payout(cStake, c2) : null;
+const fmtP = (p: number) => `${(Math.round(p * 1000) / 10).toString().replace('.', ',')} %`;
+const field = 'w-full min-h-[48px] rounded-[10px] border border-line-2 bg-surface px-3 text-lg num';
+const today = new Date('2026-10-23');
+---
+<Article title="Kalkulačky kurzů" metaTitle="Kalkulačka kurzů – výplata, zisk a implikovaná pravděpodobnost | KurzovýRadar"
+  description="Spočítejte výplatu a čistý zisk z vkladu a kurzu, převeďte kurz na implikovanou pravděpodobnost a porovnejte výplatu při dvou různých kurzech."
+  lead="Tři jednoduché výpočty. Zadáte čísla, výsledek se ukáže hned." crumbs={[{ name: 'Kalkulačky', url: '/kalkulacky/' }]}
+  published={today} updated={today} checked={today} schemaType="WebPage" noindex={q.size > 0}>
+  <div class="not-prose grid gap-5 max-w-[880px]" data-calc>
+    <section class="card p-5" aria-labelledby="h-c1">
+      <h2 id="h-c1" class="text-xl m-0">Výplata a čistý zisk</h2>
+      <form method="get" action="/kalkulacky/#h-c1" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end mt-3" data-form="payout">
+        <label class="grid gap-1 font-semibold text-sm">Vklad (Kč)<input class={field} name="vklad" inputmode="decimal" value={String(stake)} required /></label>
+        <label class="grid gap-1 font-semibold text-sm">Kurz<input class={field} name="kurz" inputmode="decimal" value={String(odds).replace('.', ',')} required /></label>
+        <button class="btn" type="submit">Spočítat</button>
+      </form>
+      <output class="block mt-4" aria-live="polite" data-out="payout">
+        {r1 ? <dl class="grid grid-cols-2 gap-3 m-0"><div class="bg-sunken rounded-xl p-3"><dt class="text-sm text-ink-2">Celková výplata</dt><dd class="m-0 text-2xl font-bold num">{kc(r1.payout)}</dd></div><div class="bg-sunken rounded-xl p-3"><dt class="text-sm text-ink-2">Čistý zisk</dt><dd class="m-0 text-2xl font-bold num">{kc(r1.profit)}</dd></div></dl>
+          : <p class="text-down m-0">Zadejte vklad 0 Kč a víc a kurz vyšší než 1.</p>}
+      </output>
+      <p class="text-sm text-ink-2 mt-3 mb-0">Výplata = vklad × kurz a obsahuje i vrácený vklad. Zisk = výplata − vklad. Daně a poplatky podle podmínek kanceláře kalkulačka nezahrnuje.</p>
+    </section>
+
+    <section class="card p-5" aria-labelledby="h-c2">
+      <h2 id="h-c2" class="text-xl m-0">Kurz na implikovanou pravděpodobnost</h2>
+      <form method="get" action="/kalkulacky/#h-c2" class="grid gap-3 sm:grid-cols-[1fr_auto] items-end mt-3" data-form="implied">
+        <label class="grid gap-1 font-semibold text-sm">Kurz<input class={field} name="k" inputmode="decimal" value={String(pOdds).replace('.', ',')} required /></label>
+        <button class="btn" type="submit">Převést</button>
+      </form>
+      <output class="block mt-4" aria-live="polite" data-out="implied">
+        {r2 ? <p class="m-0 text-2xl font-bold num">{fmtP(r2)}</p> : <p class="text-down m-0">Zadejte kurz vyšší než 1.</p>}
+      </output>
+      <p class="text-sm text-ink-2 mt-3 mb-0">Implikovaná pravděpodobnost = 1 ÷ kurz. Obsahuje marži kanceláře a <strong>není to skutečná pravděpodobnost výsledku</strong>, jen cena převedená na procenta.</p>
+    </section>
+
+    <section class="card p-5" aria-labelledby="h-c3">
+      <h2 id="h-c3" class="text-xl m-0">Srovnání výplaty při dvou kurzech</h2>
+      <form method="get" action="/kalkulacky/#h-c3" class="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] items-end mt-3" data-form="compare">
+        <label class="grid gap-1 font-semibold text-sm">Vklad (Kč)<input class={field} name="v2" inputmode="decimal" value={String(cStake)} required /></label>
+        <label class="grid gap-1 font-semibold text-sm">Kurz A<input class={field} name="k1" inputmode="decimal" value={String(c1).replace('.', ',')} required /></label>
+        <label class="grid gap-1 font-semibold text-sm">Kurz B<input class={field} name="k2" inputmode="decimal" value={String(c2).replace('.', ',')} required /></label>
+        <button class="btn" type="submit">Porovnat</button>
+      </form>
+      <output class="block mt-4" aria-live="polite" data-out="compare">
+        {a && b ? (
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="bg-sunken rounded-xl p-3"><p class="text-sm text-ink-2 m-0">Výplata s kurzem A</p><p class="m-0 text-xl font-bold num">{kc(a.payout)}</p></div>
+            <div class="bg-sunken rounded-xl p-3"><p class="text-sm text-ink-2 m-0">Výplata s kurzem B</p><p class="m-0 text-xl font-bold num">{kc(b.payout)}</p></div>
+            <div class="bg-blue-soft rounded-xl p-3"><p class="text-sm text-ink-2 m-0">Rozdíl při výhře</p><p class="m-0 text-xl font-bold num">{kc(Math.abs(b.payout - a.payout))}</p></div>
+          </div>
+        ) : <p class="text-down m-0">Zadejte vklad a oba kurzy vyšší než 1.</p>}
+      </output>
+      <p class="text-sm text-ink-2 mt-3 mb-0">Rozdíl platí jen tehdy, když jde o úplně stejnou sázku. Viz průvodce <a href="/pruvodce/porovnavani-stejnych-sazek/">Jak správně porovnávat stejné sázky</a>.</p>
+    </section>
+  </div>
+</Article>
+<script src="../../scripts/calc.ts"></script>

@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import EventList from './EventList.astro';
+import FreshNote from './FreshNote.astro';
+import Photo from './Photo.astro';
+import { COMPETITIONS, SPORTS, type Sport } from '../config/competitions';
+import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
+
+interface Props { sport: Sport }
+const { sport } = Astro.props;
+const up = await upcoming();
+const t = getNow();
+const cfg = getCfg();
+const events = listable(up, t, cfg).filter((e) => e.sport === sport);
+const counts = new Map<string, number>();
+for (const e of events) counts.set(e.comp, (counts.get(e.comp) ?? 0) + 1);
+const comps = COMPETITIONS.filter((c) => c.sport === sport);
+const S = SPORTS[sport];
+const TEXT = {
+  fotbal: {
+    title: 'Kurzy na fotbal – srovnání Tipsport a Chance | KurzovýRadar',
+    desc: 'Kurzy na fotbalové zápasy Chance Ligy, Premier League, Ligy mistrů a dalších soutěží. Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný, historie změn.',
+    h1: 'Kurzy na fotbal',
+    lead: 'Fotbalové kurzy na výsledek zápasu po 90 minutách včetně nastavení. Prodloužení a penalty v pohárových zápasech se do této sázky nepočítají.',
+  },
+  hokej: {
+    title: 'Kurzy na hokej – srovnání Tipsport a Chance | KurzovýRadar',
+    desc: 'Kurzy na hokejové zápasy Tipsport extraligy, NHL a evropských lig. Výsledek po 60 minutách, Tipsport a Chance vedle sebe a historie změn kurzů.',
+    h1: 'Kurzy na hokej',
+    lead: 'Hokejové kurzy na výsledek zápasu po 60 minutách základní hrací doby. Remíza je samostatný výsledek, prodloužení ani nájezdy se nepočítají.',
+  },
+}[sport];
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title={TEXT.title} description={TEXT.desc} crumbs={[{ name: S.name, url: S.path }]}>
+  <div class="wrap pt-6">
+    <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_340px] md:items-center">
+      <div>
+        <h1 class="m-0">{TEXT.h1}</h1>
+        <p class="text-ink-2 max-w-[66ch] mt-2">{TEXT.lead}</p>
+        <FreshNote books={up.books} now={t} cfg={cfg} />
+      </div>
+      <div class="hidden md:block rounded-[14px] overflow-hidden border border-line aspect-[16/9]"><Photo slot={sport} sizes="340px" priority class="h-full" /></div>
+    </div>
+    <nav class="mt-6" aria-label={`${S.name} – soutěže`}>
+      <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
+        {comps.map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}{counts.get(c.slug) ? <span class="text-ink-3 num">{counts.get(c.slug)}</span> : null}</a></li>)}
+      </ul>
+    </nav>
+    <div class="mt-8">
+      {events.length ? <EventList events={events} books={up.books} now={t} cfg={cfg} place={sport} />
+        : <p class="card p-5 m-0 text-ink-2">Kurzy zatím nejsou k dispozici.</p>}
+    </div>
+  </div>
+</Base>

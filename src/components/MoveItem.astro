@@ -1,0 +1,37 @@
+---
+// One recorded movement: what, where, from → to (both real record times), size and why it is listed.
+// Direction is an arrow + word + signed number; colour only repeats it.
+import { odds as fmt, pct, dateTime, kickoff } from '../lib/format';
+import { OUTCOME_LABEL } from '../server/normalize/markets';
+import type { MoveItem } from '../server/view';
+import type { FeedBook } from '../config/bookmakers';
+import BookLogo from './BookLogo.astro';
+import Icon from './Icon.astro';
+import Sparkline from './Sparkline.astro';
+interface Props { m: MoveItem & { books?: FeedBook[] }; now: number; windowLabel: string }
+const { m, now, windowLabel } = Astro.props;
+const down = m.to.odds < m.from.odds;
+const books = m.books ?? [m.book];
+const outcomeText = m.outcome === '1' ? `výhra ${m.home}` : m.outcome === '2' ? `výhra ${m.away}` : 'remíza';
+const why = m.reason === 'high'
+  ? `Kurz je teď na nejvyšší hodnotě, kterou jsme za posledních ${windowLabel} zaznamenali.`
+  : down ? `Patří mezi největší poklesy za posledních ${windowLabel}.` : `Patří mezi největší růsty za posledních ${windowLabel}.`;
+---
+<li class="card p-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+  <div class="min-w-0">
+    <p class="m-0 text-sm text-ink-2"><span class="num font-semibold text-ink">{kickoff(m.startAt, now)}</span> · {m.compName}</p>
+    <h3 class="text-base m-0 mt-0.5"><a href={m.url} class="text-ink no-underline hover:text-blue-ink">{m.home} – {m.away}</a></h3>
+    <p class="m-0 mt-1 text-sm text-ink-2">Výsledek zápasu (1X2): <strong class="text-ink font-semibold">{OUTCOME_LABEL[m.outcome]}</strong> <span class="sr">({outcomeText})</span></p>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3">
+      <span class="flex items-center gap-1.5">{books.map((b) => <BookLogo id={b} h={22} />)}</span>
+      <span class="num text-[1.05rem] font-semibold text-ink-2 line-through decoration-ink-3/60">{fmt(m.from.odds)}</span>
+      <Icon name="arrow-right" size={16} class="text-ink-3" />
+      <span class="num text-[1.15rem] font-bold">{fmt(m.to.odds)}</span>
+      <span class:list={['badge num text-[0.8rem]', down ? 'badge--down' : 'badge--up']}>
+        <Icon name={down ? 'trending-down' : 'trending-up'} size={14} />{down ? 'pokles' : 'růst'} {pct(m.pct)}
+      </span>
+    </div>
+    <p class="m-0 mt-2 text-[0.8rem] text-ink-2">{books.length > 1 && 'Stejnou změnu zaznamenaly obě kanceláře. '}Srovnáváme záznam z <time class="num" datetime={new Date(m.from.at * 1000).toISOString()}>{dateTime(m.from.at)}</time> se záznamem z <time class="num" datetime={new Date(m.to.at * 1000).toISOString()}>{dateTime(m.to.at)}</time>. {why}</p>
+  </div>
+  <Sparkline points={m.points} to={now} label={`Zaznamenaný vývoj kurzu od ${fmt(m.from.odds)} do ${fmt(m.to.odds)}`} />
+</li>

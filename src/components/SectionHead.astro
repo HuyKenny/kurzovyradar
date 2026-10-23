@@ -1,0 +1,11 @@
+---
+interface Props { title: string; id?: string; lead?: string; href?: string; linkText?: string }
+const { title, id, lead, href, linkText } = Astro.props;
+---
+<div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 mb-5">
+  <div class="max-w-[70ch]">
+    <h2 id={id} class="m-0">{title}</h2>
+    {lead && <p class="mt-1.5 mb-0 text-ink-2">{lead}</p>}
+  </div>
+  {href && <a href={href} class="font-semibold inline-flex items-center gap-1 min-h-[44px]">{linkText}<span aria-hidden="true">→</span></a>}
+</div>

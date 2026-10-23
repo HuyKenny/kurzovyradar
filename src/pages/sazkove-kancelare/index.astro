@@ -1,0 +1,41 @@
+---
+import Article from '../../components/Article.astro';
+import BookLogo from '../../components/BookLogo.astro';
+import Icon from '../../components/Icon.astro';
+import { BOOKMAKERS } from '../../config/bookmakers';
+import { reviewOf } from '../../config/reviews';
+export const prerender = true;
+const STATE = {
+  oddsFeed: { active: 'Kurzy sledujeme', none: 'Kurzy zatím nesledujeme' },
+  affiliate: { approved: 'Partner webu (provizní odkaz)', none: 'Bez spolupráce' },
+  review: { published: 'Recenze', draft: 'Recenze se připravuje', none: 'Recenzi zatím nemáme' },
+};
+---
+<Article title="Kde vsadit: přehled sázkových kanceláří" metaTitle="Kde vsadit – přehled sázkových kanceláří s licencí v ČR | KurzovýRadar"
+  description="Přehled sázkových kanceláří Tipsport, Chance a Allwyn: provozovatel, licence Ministerstva financí, co nabízejí a které kurzy na KurzovémRadaru sledujeme."
+  lead="U každé kanceláře zvlášť uvádíme, jestli sledujeme její kurzy, jestli s ní spolupracujeme a jestli má recenzi. Tyto stavy spolu nesouvisí." crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]}>
+  <div class="not-prose grid gap-4 max-w-[980px]">
+    {BOOKMAKERS.map((b) => {
+      const r = reviewOf(b.id);
+      return (
+        <section class="card p-5 grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-center">
+          <div><BookLogo id={b.id} h={34} lazy={false} /></div>
+          <div>
+            <h2 class="text-lg m-0">{b.name}</h2>
+            {r ? <p class="m-0 mt-1 text-ink-2 text-[15px]">{r.summary}</p> : <p class="m-0 mt-1 text-ink-2 text-[15px]">Kurzy ani spolupráci s touto kanceláří zatím nemáme. Uvádíme ji, aby byl přehled úplný.</p>}
+            <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3 text-sm">
+              <li class:list={['badge', b.oddsFeed === 'active' ? 'badge--teal' : 'badge--tie']}><Icon name={b.oddsFeed === 'active' ? 'activity' : 'minus'} size={13} />{STATE.oddsFeed[b.oddsFeed]}</li>
+              <li class="badge badge--tie"><Icon name="shield-check" size={13} />{STATE.affiliate[b.affiliate]}</li>
+              <li class="badge badge--tie"><Icon name="book-open" size={13} />{STATE.review[b.review]}</li>
+            </ul>
+          </div>
+          <div class="flex md:flex-col gap-2">
+            {b.review === 'published' && <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.id}/`}>Recenze</a>}
+            {b.affiliate === 'approved' && <a class="btn btn--sm" href={`/go/${b.id}/?p=prehled`} rel="sponsored nofollow">Web {b.name}<Icon name="external-link" size={15} /></a>}
+          </div>
+        </section>
+      );
+    })}
+  </div>
+  <p class="text-sm text-ink-2">Pořadí kanceláří je dané tím, jestli jejich kurzy sledujeme, a ne výší provize. Všechny uvedené kanceláře mají povolení Ministerstva financí ČR. Jak se web financuje, popisujeme na stránce <a href="/financovani/">Jak se financujeme</a>.</p>
+</Article>

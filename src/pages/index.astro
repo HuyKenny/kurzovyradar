@@ -1,0 +1,150 @@
+---
+import Base from '../layouts/Base.astro';
+import EventOdds from '../components/EventOdds.astro';
+import MoveItem from '../components/MoveItem.astro';
+import BookLogo from '../components/BookLogo.astro';
+import Icon from '../components/Icon.astro';
+import Photo from '../components/Photo.astro';
+import SectionHead from '../components/SectionHead.astro';
+import { BOOKMAKERS } from '../config/bookmakers';
+import { COMPETITIONS } from '../config/competitions';
+import { getCollection } from 'astro:content';
+import { upcoming, radar, listable, lastCheck, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
+import { int, time, date } from '../lib/format';
+import { WINDOWS } from '../server/view';
+
+const [up, rd, guides] = await Promise.all([upcoming(), radar(), getCollection('pruvodce')]);
+guides.sort((a, b) => a.data.order - b.data.order);
+const t = getNow();
+const cfg = getCfg();
+const events = listable(up, t, cfg);
+const next = events.slice(0, 8);
+const checked = lastCheck(up);
+const win = rd ? [...WINDOWS].reverse().find((w) => rd.windows[w.key].available) : undefined;
+const moves = win && rd ? [...mergeMoves(rd.windows[win.key].drops.filter((m) => m.startAt > t)).slice(0, 3), ...mergeMoves(rd.windows[win.key].rises.filter((m) => m.startAt > t)).slice(0, 3)]
+  .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 6) : [];
+const compCounts = new Map<string, number>();
+for (const e of events) compCounts.set(e.comp, (compCounts.get(e.comp) ?? 0) + 1);
+const comps = COMPETITIONS.filter((c) => compCounts.has(c.slug)).sort((a, b) => Number(!!b.top) - Number(!!a.top) || (compCounts.get(b.slug)! - compCounts.get(a.slug)!));
+const sportCounts = { fotbal: events.filter((e) => e.sport === 'fotbal').length, hokej: events.filter((e) => e.sport === 'hokej').length };
+const hasData = events.length > 0;
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title="KurzovýRadar – porovnání kurzů a jejich pohybů na fotbal a hokej"
+  description="Porovnej kurzy Tipsportu a Chance na fotbal a hokej na jednom místě a sleduj, jak se mění. Vlastní historie kurzů, radar pohybů a kalkulačky. Bez registrace.">
+  <section class="wrap pt-8 md:pt-12 grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center">
+    <div>
+      <p class="eyebrow m-0">Fotbal a hokej · {hasData && checked ? `ověřeno ${time(checked)}` : 'kurzy bez registrace'}</p>
+      <h1 class="mt-3 mb-4 text-balance">Porovnej kurzy. Sleduj jejich pohyb.</h1>
+      <p class="text-[1.1rem] text-ink-2 max-w-[54ch] m-0">Kurzy Tipsportu a Chance na stejné sázky vedle sebe a k tomu vlastní historie jejich změn. Kurzy kontrolujeme každých {cfg.importIntervalMin} minut. U ostatních kanceláří kurzy zatím nesledujeme.</p>
+      <div class="flex flex-wrap gap-3 mt-6">
+        <a href="/kurzy/" class="btn">Porovnat kurzy<Icon name="arrow-right" size={18} /></a>
+        <a href="/radar/" class="btn btn--ghost"><Icon name="radar" size={18} />Otevřít radar</a>
+      </div>
+      <form action="/hledat/" method="get" role="search" class="mt-7 max-w-[560px]">
+        <label for="q-home" class="text-sm font-semibold">Najdi tým, soutěž nebo zápas</label>
+        <div class="mt-1.5 flex gap-2">
+          <div class="relative flex-1">
+            <Icon name="search" size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
+            <input id="q-home" name="q" type="search" required minlength="2" placeholder="Např. Sparta, Premier League…" class="w-full min-h-[48px] pl-10 pr-3 rounded-[11px] border border-line-2 bg-surface text-base" />
+          </div>
+          <button class="btn btn--ghost" type="submit">Hledat</button>
+        </div>
+      </form>
+    </div>
+    <div class="relative">
+      <div class="rounded-[18px] overflow-hidden border border-line aspect-[16/10] lg:aspect-[16/11]">
+        <Photo slot="hero" priority sizes="(min-width: 1024px) 600px, 100vw" class="h-full" />
+      </div>
+      <div class="card p-4 sm:p-5 -mt-16 sm:-mt-20 mx-3 sm:mx-6 relative shadow-[var(--shadow-pop)]">
+        <p class="eyebrow m-0 flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-teal" aria-hidden="true"></span>Stav dat</p>
+        {hasData ? (
+          <dl class="grid grid-cols-3 gap-3 mt-3 m-0">
+            <div><dt class="text-xs text-ink-2">Zápasy s kurzy</dt><dd class="m-0 text-2xl font-bold num">{int(events.length)}</dd></div>
+            <div><dt class="text-xs text-ink-2">Změny za 24 h</dt><dd class="m-0 text-2xl font-bold num">{int(up.stats.changes24h)}</dd></div>
+            <div><dt class="text-xs text-ink-2">Poslední kontrola</dt><dd class="m-0 text-2xl font-bold num">{checked ? time(checked) : '–'}</dd></div>
+          </dl>
+        ) : <p class="mt-2 mb-0 text-ink-2">Kurzy zatím nejsou k dispozici. Jakmile proběhne první kontrola, objeví se tu.</p>}
+        {up.stats.firstRecordAt && <p class="mt-3 mb-0 text-xs text-ink-2">Historii kurzů ukládáme od {date(up.stats.firstRecordAt)}. Počty jsou spočítané z uložených dat.</p>}
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap mt-14" aria-labelledby="h-next">
+    <SectionHead id="h-next" title="Nejbližší zápasy" lead="Nejvyšší kurz z námi sledovaných kanceláří má modrý rámeček a šipku. Shodné kurzy jsou šedé." href="/kurzy/" linkText="Všechny kurzy" />
+    <nav class="flex flex-wrap gap-2 mb-5" aria-label="Sport a den">
+      <a class="chip" href="/fotbal/">Fotbal <span class="text-ink-3 num">{sportCounts.fotbal}</span></a>
+      <a class="chip" href="/hokej/">Hokej <span class="text-ink-3 num">{sportCounts.hokej}</span></a>
+      <span class="w-px bg-line mx-1" aria-hidden="true"></span>
+      <a class="chip" href="/kurzy/?den=dnes">Dnes</a>
+      <a class="chip" href="/kurzy/?den=zitra">Zítra</a>
+      <a class="chip" href="/kurzy/?den=7">Příštích 7 dní</a>
+    </nav>
+    {next.length ? <div class="grid gap-3">{next.map((ev) => <EventOdds ev={ev} books={up.books} now={t} cfg={cfg} place="home" />)}</div>
+      : <p class="card p-5 m-0 text-ink-2">Kurzy zatím nejsou k dispozici.</p>}
+  </section>
+
+  <section class="wrap mt-16" aria-labelledby="h-moves">
+    <SectionHead id="h-moves" title="Výrazné pohyby kurzů" lead={win ? `Největší zaznamenané změny za posledních ${win.label} u zápasů, které ještě nezačaly.` : undefined} href="/radar/" linkText="Celý radar" />
+    {moves.length ? <ul class="grid gap-3 lg:grid-cols-2 list-none p-0 m-0">{moves.map((m) => <MoveItem m={m} now={t} windowLabel={win!.label} />)}</ul>
+      : <p class="card p-5 m-0 text-ink-2">Pro výpočet pohybů zatím nemáme dost záznamů. {up.stats.firstRecordAt ? `Kurzy ukládáme od ${date(up.stats.firstRecordAt)}, první porovnání bude možné za hodinu sledování.` : ''}</p>}
+  </section>
+
+  <section class="wrap mt-16" aria-labelledby="h-books">
+    <SectionHead id="h-books" title="Sledované kanceláře" lead="U každé kanceláře zvlášť uvádíme, jestli sledujeme její kurzy, jestli s ní spolupracujeme a jestli má recenzi." href="/sazkove-kancelare/" linkText="Kde vsadit" />
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {BOOKMAKERS.filter((b) => b.oddsFeed === 'active' || b.review === 'published').map((b) => (
+        <a href={`/sazkove-kancelare/${b.id}/`} class="card p-4 no-underline text-ink hover:border-blue transition-colors flex flex-col gap-3">
+          <BookLogo id={b.id} h={30} />
+          <ul class="list-none p-0 m-0 grid gap-1 text-sm">
+            <li class="flex items-center gap-1.5"><Icon name={b.oddsFeed === 'active' ? 'activity' : 'minus'} size={15} class={b.oddsFeed === 'active' ? 'text-teal' : 'text-ink-3'} />{b.oddsFeed === 'active' ? 'Kurzy sledujeme' : 'Kurzy zatím nesledujeme'}</li>
+            <li class="flex items-center gap-1.5"><Icon name="shield-check" size={15} class="text-ink-3" />{b.affiliate === 'approved' ? 'Partner webu' : 'Bez spolupráce'}</li>
+          </ul>
+          <span class="mt-auto font-semibold text-blue-ink inline-flex items-center gap-1">Recenze {b.name}<Icon name="arrow-right" size={15} /></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {comps.length > 0 && (
+    <section class="wrap mt-16" aria-labelledby="h-comps">
+      <SectionHead id="h-comps" title="Soutěže s kurzy" lead="Sledujeme vybrané fotbalové a hokejové soutěže." />
+      <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
+        {comps.map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="text-ink-3 num">{compCounts.get(c.slug)}</span><span class="sr"> zápasů</span></a></li>)}
+      </ul>
+    </section>
+  )}
+
+  <section class="wrap mt-16" aria-labelledby="h-guides">
+    <SectionHead id="h-guides" title="Průvodce a nástroje" href="/pruvodce/" linkText="Všichni průvodci" />
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {guides.slice(0, 3).map((g) => (
+        <a href={`/pruvodce/${g.id}/`} class="card p-4 no-underline text-ink hover:border-blue transition-colors">
+          <Icon name="book-open" size={20} class="text-teal" />
+          <h3 class="mt-3 mb-1 text-base">{g.data.title}</h3>
+          <p class="m-0 text-sm text-ink-2">{g.data.lead}</p>
+        </a>
+      ))}
+      <a href="/kalkulacky/" class="card p-4 no-underline text-ink hover:border-blue transition-colors">
+        <Icon name="calculator" size={20} class="text-teal" />
+        <h3 class="mt-3 mb-1 text-base">Kalkulačky kurzů</h3>
+        <p class="m-0 text-sm text-ink-2">Výplata a zisk, implikovaná pravděpodobnost a srovnání dvou kurzů.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="wrap mt-16" aria-labelledby="h-how">
+    <div class="card p-6 md:p-8 grid gap-8 md:grid-cols-[1fr_2fr]">
+      <div>
+        <h2 id="h-how" class="m-0">Jak KurzovýRadar funguje</h2>
+        <p class="text-ink-2 mt-2 mb-0">Žádné tipy ani předpovědi. Jen kurzy, jejich historie a vysvětlení.</p>
+        <a href="/metodika/" class="btn btn--ghost mt-5">Metodika<Icon name="arrow-right" size={16} /></a>
+      </div>
+      <ol class="grid gap-5 sm:grid-cols-3 list-none p-0 m-0">
+        <li><span class="badge badge--teal num">1</span><h3 class="text-base mt-2 mb-1">Kontrolujeme kurzy</h3><p class="m-0 text-sm text-ink-2">Každých {cfg.importIntervalMin} minut načteme předzápasové kurzy sledovaných kanceláří na vybrané soutěže.</p></li>
+        <li><span class="badge badge--teal num">2</span><h3 class="text-base mt-2 mb-1">Párujeme stejné sázky</h3><p class="m-0 text-sm text-ink-2">Vedle sebe dáme jen stejný zápas a stejný trh se stejnými účastníky, začátkem a pravidly vyhodnocení.</p></li>
+        <li><span class="badge badge--teal num">3</span><h3 class="text-base mt-2 mb-1">Ukládáme každou změnu</h3><p class="m-0 text-sm text-ink-2">Z vlastní historie počítáme pohyby. Když záznamy chybí, napíšeme to, místo abychom je dopočítávali.</p></li>
+      </ol>
+    </div>
+  </section>
+</Base>
