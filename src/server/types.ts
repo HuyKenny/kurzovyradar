@@ -12,6 +12,8 @@ export interface SourceMatch {
   sport: Sport;
   competition: string; // our competition slug
   srcCompetition: string; // provider's name, kept for audits
+  srcSportId?: string; // provider idSport (sport + gender)
+  srcCompId?: string; // provider idCompetition
   home: string;
   away: string;
   startAt: number; // unix s, UTC

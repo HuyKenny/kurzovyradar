@@ -1,15 +1,20 @@
 /**
  * Pilot scope: football and hockey competitions we import, compare and publish.
- * `match` is tested against the platform's nameCompetition (Tipsport and Chance use the same names).
+ * `match` is tested against the platform's nameCompetition (Tipsport and Chance use the same names) together with
+ * the gender taken from the source idSport: the platform names the men's and women's leagues the same way
+ * ("1. španělská liga" = La Liga for idSport -1 and the women's Liga F for idSport 295).
  * Everything outside this list is ignored by the import, so the database and the sitemap stay small.
  */
 export type Sport = 'fotbal' | 'hokej';
+export type Gender = 'muzi' | 'zeny';
 
 export interface Competition {
   slug: string;
   name: string;
   sport: Sport;
   match: RegExp;
+  /** Default 'muzi'. */
+  gender?: Gender;
   country: string;
   /** Ticket stub colour (light tint, ink text stays readable). */
   color: string;
@@ -20,6 +25,12 @@ export interface Competition {
 
 /** idSuperSport on the Tipsport/Chance platform. */
 export const SPORT_IDS: Record<number, Sport> = { 16: 'fotbal', 23: 'hokej' };
+/** idSport (sport + gender) on the platform: "Fotbal - muži" -1, "Fotbal - ženy" 295, "Lední hokej - muži" -2. Others are skipped. */
+export const GENDER_BY_ID_SPORT: Record<number, { sport: Sport; gender: Gender }> = {
+  [-1]: { sport: 'fotbal', gender: 'muzi' },
+  295: { sport: 'fotbal', gender: 'zeny' },
+  [-2]: { sport: 'hokej', gender: 'muzi' },
+};
 
 export const SPORTS: Record<Sport, { name: string; path: string; adjective: string }> = {
   fotbal: { name: 'Fotbal', path: '/fotbal/', adjective: 'fotbalové' },
@@ -64,6 +75,17 @@ export const COMPETITIONS: Competition[] = [
     intro: 'Druhá nejvyšší německá liga. Zápasy se hrají od pátku do neděle.' },
   { slug: 'mls', name: 'MLS', sport: 'fotbal', match: /^MLS$/, country: 'USA a Kanada', color: '#dde3ee',
     intro: 'Zámořská Major League Soccer. Zápasy začínají našeho času většinou v noci.' },
+  // Women's football (same source names as the men's leagues, told apart by idSport 295)
+  { slug: 'anglicka-liga-zen', name: 'Anglická liga žen', sport: 'fotbal', match: /^1\. anglická liga$/, gender: 'zeny', country: 'Anglie', color: '#efe2f5',
+    intro: 'Nejvyšší anglická fotbalová soutěž žen (Women\'s Super League). Hrají v ní ženské týmy Chelsea, Arsenalu nebo Manchesteru City.' },
+  { slug: 'spanelska-liga-zen', name: 'Španělská liga žen', sport: 'fotbal', match: /^1\. španělská liga$/, gender: 'zeny', country: 'Španělsko', color: '#f9e3e1',
+    intro: 'Nejvyšší španělská fotbalová soutěž žen (Liga F) s týmy Barcelony nebo Realu Madrid.' },
+  { slug: 'francouzska-liga-zen', name: 'Francouzská liga žen', sport: 'fotbal', match: /^1\. francouzská liga$/, gender: 'zeny', country: 'Francie', color: '#e3e7f1',
+    intro: 'Nejvyšší francouzská fotbalová soutěž žen s Lyonem a PSG.' },
+  { slug: 'nemecka-liga-zen', name: 'Německá liga žen', sport: 'fotbal', match: /^1\. německá liga$/, gender: 'zeny', country: 'Německo', color: '#f8e2e3',
+    intro: 'Nejvyšší německá fotbalová soutěž žen (Frauen-Bundesliga).' },
+  { slug: 'ceska-liga-zen', name: 'Česká liga žen', sport: 'fotbal', match: /^1\. česká liga$/, gender: 'zeny', country: 'Česko', color: '#e2f2e7',
+    intro: 'Nejvyšší česká fotbalová soutěž žen se Slavií a Spartou.' },
   // Hockey
   { slug: 'tipsport-extraliga', name: 'Tipsport extraliga', sport: 'hokej', match: /^Česká Tipsport extraliga$/, country: 'Česko', color: '#d1def3', top: true,
     intro: 'Nejvyšší česká hokejová soutěž. Hraje se hlavně v úterý, pátek a neděli, nejčastěji od 17:30 a 18:00.' },
@@ -87,7 +109,7 @@ const BY_SLUG = new Map(COMPETITIONS.map((c) => [c.slug, c]));
 export const competitionBySlug = (slug: string) => BY_SLUG.get(slug);
 
 /** The pilot competition a platform match belongs to, or null (not imported). */
-export function competitionOf(sport: Sport, name: string): Competition | null {
-  for (const c of COMPETITIONS) if (c.sport === sport && c.match.test(name.trim())) return c;
+export function competitionOf(sport: Sport, name: string, gender: Gender = 'muzi'): Competition | null {
+  for (const c of COMPETITIONS) if (c.sport === sport && (c.gender ?? 'muzi') === gender && c.match.test(name.trim())) return c;
   return null;
 }

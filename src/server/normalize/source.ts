@@ -1,5 +1,5 @@
 import type { FeedBook } from '../../config/bookmakers';
-import { SPORT_IDS, competitionOf } from '../../config/competitions';
+import { GENDER_BY_ID_SPORT, SPORT_IDS, competitionOf } from '../../config/competitions';
 import type { RawMatch } from '../providers/platform';
 import type { SourceMatch } from '../types';
 import { classifyMarket, outcomesOf } from './markets';
@@ -16,8 +16,11 @@ export function toSource(book: FeedBook, raw: RawMatch): SourceMatch | null {
   const sport = SPORT_IDS[Number(raw?.idSuperSport)];
   if (!sport || !raw?.id || raw.ended) return null;
   if (String(raw.matchType ?? '').toUpperCase() !== 'PREMATCH') return null;
+  // Men's and women's leagues share names; only the source idSport tells them apart. Unknown idSport = skip.
+  const g = GENDER_BY_ID_SPORT[Number(raw.idSport)];
+  if (!g || g.sport !== sport) return null;
   const srcCompetition = String(raw.nameCompetition ?? '').trim();
-  const comp = competitionOf(sport, srcCompetition);
+  const comp = competitionOf(sport, srcCompetition, g.gender);
   if (!comp) return null;
   const home = displayName(String(raw.homeParticipant ?? ''));
   const away = displayName(String(raw.visitingParticipant ?? ''));
@@ -34,6 +37,8 @@ export function toSource(book: FeedBook, raw: RawMatch): SourceMatch | null {
     sport,
     competition: comp.slug,
     srcCompetition,
+    srcSportId: String(raw.idSport),
+    srcCompId: raw.idCompetition != null ? String(raw.idCompetition) : '',
     home,
     away,
     startAt: Math.floor(startMs / 1000),

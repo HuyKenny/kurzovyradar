@@ -16,6 +16,7 @@ import { Meter, multiInsert, type Db, type Stmt } from './db';
 interface SourceRow {
   book: FeedBook; src_id: string; event_id: number; src_competition: string; home: string; away: string;
   start_at: number; path: string; mismatch: number; removed_at: number | null; competition: string; sport: PairFacts['sport'];
+  src_sport_id: string; src_comp_id: string;
 }
 interface EventRow { id: number; slug: string; sport: PairFacts['sport']; competition_id: number; home: string; away: string; start_at: number }
 interface OfferRow {
@@ -63,7 +64,7 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
   const events = await m.all<EventRow>(db.prepare('SELECT id, slug, sport, competition_id, home, away, start_at FROM events WHERE start_at >= ?').bind(from));
   const evById = new Map(events.map((e) => [e.id, e]));
   const sources = (await m.all<Omit<SourceRow, 'competition' | 'sport'>>(db.prepare(
-    'SELECT es.book, es.src_id, es.event_id, es.src_competition, es.home, es.away, es.start_at, es.path, es.mismatch, es.removed_at FROM event_sources es JOIN events e ON e.id = es.event_id WHERE e.start_at >= ?',
+    'SELECT es.book, es.src_id, es.event_id, es.src_competition, es.home, es.away, es.start_at, es.path, es.mismatch, es.removed_at, es.src_sport_id, es.src_comp_id FROM event_sources es JOIN events e ON e.id = es.event_id WHERE e.start_at >= ?',
   ).bind(from))).map((s) => {
     const e = evById.get(s.event_id)!;
     return { ...s, competition: compSlug.get(e.competition_id) ?? '', sport: e.sport } as SourceRow;
@@ -118,9 +119,11 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
     const row: SourceRow = {
       book, src_id: s.srcId, event_id: eventId!, src_competition: s.srcCompetition, home: s.home, away: s.away, start_at: s.startAt,
       path: s.path, mismatch: 0, removed_at: null, competition: s.competition, sport: s.sport,
+      src_sport_id: s.srcSportId ?? '', src_comp_id: s.srcCompId ?? '',
     };
     const changed = !src || src.removed_at !== null || src.home !== row.home || src.away !== row.away || src.start_at !== row.start_at
-      || src.path !== row.path || src.src_competition !== row.src_competition || src.competition !== row.competition;
+      || src.path !== row.path || src.src_competition !== row.src_competition || src.competition !== row.competition
+      || src.src_sport_id !== row.src_sport_id || src.src_comp_id !== row.src_comp_id;
     if (!src) {
       src = row;
       bySource.set(key, row);
@@ -189,7 +192,7 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
   }
   for (const s of sources) {
     if (s.book === book && (touchedEvents.has(s.event_id) || removedSources.includes(s.src_id))) {
-      sourceUpserts.push([s.book, s.src_id, s.event_id, s.src_competition, s.home, s.away, s.start_at, s.path, s.mismatch, s.removed_at, now]);
+      sourceUpserts.push([s.book, s.src_id, s.event_id, s.src_competition, s.home, s.away, s.start_at, s.path, s.mismatch, s.removed_at, now, s.src_sport_id, s.src_comp_id]);
     }
   }
   // Other books' sources whose mismatch flag changed because of this book's update.
@@ -200,10 +203,10 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
   const writes: Stmt[] = [
     ...multiInsert(db, 'INSERT INTO events (id, slug, sport, competition_id, home, away, start_at, created_at, updated_at)', 9,
       newEvents.map((e) => [e.id, e.slug, e.sport, e.competition_id, e.home, e.away, e.start_at, now, now])),
-    ...multiInsert(db, 'INSERT INTO event_sources (book, src_id, event_id, src_competition, home, away, start_at, path, mismatch, removed_at, updated_at)', 11, sourceUpserts,
+    ...multiInsert(db, 'INSERT INTO event_sources (book, src_id, event_id, src_competition, home, away, start_at, path, mismatch, removed_at, updated_at, src_sport_id, src_comp_id)', 13, sourceUpserts,
       `ON CONFLICT (book, src_id) DO UPDATE SET event_id = excluded.event_id, src_competition = excluded.src_competition, home = excluded.home,
        away = excluded.away, start_at = excluded.start_at, path = excluded.path, mismatch = excluded.mismatch, removed_at = excluded.removed_at,
-       updated_at = excluded.updated_at`),
+       updated_at = excluded.updated_at, src_sport_id = excluded.src_sport_id, src_comp_id = excluded.src_comp_id`),
     ...eventUpdates,
     ...multiInsert(db, 'INSERT INTO offers (event_id, book, market, outcome, odds, enabled, first_odds, first_at, min_odds, min_at, max_odds, max_at, changed_at, src_ts, removed_at)', 15, offerUpserts,
       `ON CONFLICT (event_id, book, market, outcome) DO UPDATE SET odds = excluded.odds, enabled = excluded.enabled, min_odds = excluded.min_odds,
