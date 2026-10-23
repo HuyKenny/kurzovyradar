@@ -20,7 +20,7 @@ const checked = new Date(r.checked);
     <BookLogo id={b.id} h={40} lazy={false} />
     {b.affiliate === 'approved' && <a class="btn" href={`/go/${b.id}/?p=recenze`} rel="sponsored nofollow">Přejít na {r.web}<Icon name="external-link" size={16} /></a>}
   </div>
-  <div class="strucne not-prose">
+  <div class="strucne not-prose mt-6">
     <p class="m-0 font-display font-bold text-lg">V kostce</p>
     <ul class="list-disc pl-5 mt-2 mb-0 grid gap-1">{r.inShort.map((x) => <li>{x}</li>)}</ul>
   </div>

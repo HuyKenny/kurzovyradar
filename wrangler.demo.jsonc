@@ -15,6 +15,7 @@
     "TIPSPORT_URL": "https://www.tipsport.cz/",
     "CHANCE_URL": "https://www.chance.cz/",
     "ALLWYN_URL": "https://www.allwyn.cz/",
+    "MERKURXTIP_URL": "https://www.merkurxtip.cz/",
     "IMPORT_INTERVAL_MIN": "15",
     "CACHE_TTL_S": "0",
     "STALE_AFTER_MIN": "100000",

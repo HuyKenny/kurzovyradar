@@ -1,11 +1,11 @@
 /**
  * Bookmakers and their three independent states. Never merge them into one switch:
  *  - oddsFeed:  do we import their odds?            (only Tipsport and Chance today)
- *  - affiliate: is there an approved partner link?  (Tipsport, Chance, Allwyn)
- *  - review:    is a publishable review ready?      (Tipsport, Chance, Allwyn)
- * Link targets live in wrangler vars (TIPSPORT_URL, CHANCE_URL, ALLWYN_URL) and are read only by /go/.
+ *  - affiliate: is there an approved partner link?  (Tipsport, Chance, Allwyn, MerkurXtip)
+ *  - review:    is a publishable review ready?      (Tipsport, Chance, Allwyn, MerkurXtip)
+ * Link targets live in wrangler vars (TIPSPORT_URL, CHANCE_URL, ALLWYN_URL, MERKURXTIP_URL) and are read only by /go/.
  */
-export type BookId = 'tipsport' | 'chance' | 'allwyn' | 'fortuna' | 'betano';
+export type BookId = 'tipsport' | 'chance' | 'allwyn' | 'merkurxtip' | 'fortuna' | 'betano';
 export type FeedBook = 'tipsport' | 'chance';
 
 export interface Bookmaker {
@@ -30,6 +30,8 @@ export const BOOKMAKERS: Bookmaker[] = [
     logo: { src: '/img/loga/chance.webp', w: 227, h: 64 }, site: 'https://www.chance.cz' },
   { id: 'allwyn', name: 'Allwyn', locative: 'u Allwynu', oddsFeed: 'none', affiliate: 'approved', review: 'published', color: '#1d4757',
     logo: { src: '/img/loga/allwyn.webp', w: 214, h: 64 }, site: 'https://www.allwyn.cz' },
+  { id: 'merkurxtip', name: 'MerkurXtip', locative: 'u MerkurXtipu', oddsFeed: 'none', affiliate: 'approved', review: 'published', color: '#0b3b8f',
+    logo: { src: '/img/loga/merkurxtip.webp', w: 128, h: 128 }, site: 'https://www.merkurxtip.cz' },
   { id: 'fortuna', name: 'Fortuna', locative: 'u Fortuny', oddsFeed: 'none', affiliate: 'none', review: 'none', color: '#f6c400',
     logo: null, site: 'https://www.ifortuna.cz' },
   { id: 'betano', name: 'Betano', locative: 'u Betana', oddsFeed: 'none', affiliate: 'none', review: 'none', color: '#ff6a00',

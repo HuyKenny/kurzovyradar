@@ -15,6 +15,7 @@ Design „Sportovní tiket“ (od 23. 10. 2026): zápasy jako sázkové tikety, 
 | Tipsport | **ano** – partner API `partners.tipsport.cz` (OAuth client_credentials) | ano (`TIPSPORT_URL`) | ano |
 | Chance | **ano** – partner API `partners.chance.cz` (stejná platforma a stejná ID zápasů jako Tipsport) | ano (`CHANCE_URL`) | ano |
 | Allwyn | ne – kurzový XML feed zatím nemáme | ano (`ALLWYN_URL`, record.sazka.cz) | ano |
+| MerkurXtip | ne | ano (`MERKURXTIP_URL`, affilmaster, `data1=kurzovyradar`) | ano |
 | Fortuna | ne | ne | ne |
 | Betano | ne | ne | ne |
 
@@ -91,9 +92,9 @@ Zóna: SSL strict, `browser_cache_ttl` 0, WAF (blok CN, skenerů a bezcenných c
 ## Zbývající podklady (pro Kennyho)
 
 1. **Kurzový feed Allwyn** (XML) – adaptér nemáme. Až bude, přidat provider vedle `providers/platform.ts` a do `FEED_BOOKS`. Bez shodných ID je nutné párování podle faktů (už implementované v `pair.ts`).
-2. **Vlastní `sid` KurzovéhoRadaru** v panelech partner.tipsport.cz a partner.chance.cz. Teď se používá sid sportstreamy (46142/46143). Starý kurzovyradar měl sid 39360, a to je podle paměti utomat. Vyměnit `TIPSPORT_URL`/`CHANCE_URL` ve `wrangler.jsonc`.
+2. ~~Vlastní sid~~ **hotovo 23. 10.:** Tipsport sid 45940, Chance sid 45960 (odkazy od Kennyho, `wrangler.jsonc`).
 3. **Ověřit v panelu, že deeplink se zápasem** (`www.tipsport.cz/kurzy/zapas/…?pid&sid&bid&tid`) připisuje provizi. Stejná metoda jako sportstreamy, ani tam zatím neověřeno.
-4. **Allwyn odkaz:** použitý odkaz SazkaBet (record.sazka.cz, kód ze sportstreamy) s `payload=kurzovyradar.cz`. Ověřit v panelu Allwynu.
+4. **Allwyn odkaz:** od 23. 10. vlastní odkaz od Kennyho (record.sazka.cz `_8u72YyI1anJ_qr…`).
 5. **Souhlas Tipsportu** s dalším webem nad jejich API. Kenny zvolil vlastní volání (2× token + 2× hromadný dotaz za 15 min).
 6. **Fortuna, Betano:** API ani partnerství nejsou.
 7. **Brand kity log:** loga Tipsport/Chance jsou ze souborů portfolia (oficiální dlaždice), Allwyn z jejich webu. Viz `docs/ASSETS.md`.

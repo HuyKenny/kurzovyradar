@@ -120,6 +120,30 @@ export const REVIEWS: Review[] = [
       { label: 'allwyn.cz – kurzové sázky', url: 'https://www.allwyn.cz/kurzove-sazky' },
     ],
   },
+  {
+    id: 'merkurxtip', checked: '2026-10-23',
+    inShort: ['Online sázková kancelář s českou licencí, kurzové sázky i casino na jednom účtu.', 'Je to náš partner, ale jeho kurzy zatím nesledujeme.', 'Kurzy si u něj porovnej sám přímo na merkurxtip.cz.'],
+    operator: 'MerkurXtip a.s.', ico: '27583759', seat: 'Na okraji 335/42, Praha 6',
+    licence: 'Kurzové sázky na internetu (merkurxtip.cz), povolení Ministerstva financí ČR; dále technické a živé hry online',
+    web: 'merkurxtip.cz',
+    summary: 'Online sázková kancelář pod značkou Merkur. Na merkurxtip.cz nabízí kurzové sázky a casino hry.',
+    facts: [
+      { label: 'Kde sázet', value: 'Jen online (merkurxtip.cz), povolení MF je pro internetové hry' },
+    ],
+    features: [
+      'Kurzové sázky na internetu',
+      'Casino hry na stejném účtu (povolení pro technické a živé hry online)',
+    ],
+    pros: [
+      'Kurzové sázky i casino pod jedním účtem',
+    ],
+    limits: [
+      'Kurzy MerkurXtipu zatím nesledujeme, takže je na KurzovémRadaru neporovnáš',
+      'Podle seznamu MF nemá povolení pro sázky na pobočkách, jen online',
+    ],
+    onSite: 'MerkurXtip je náš partner, jeho kurzy ale zatím nemáme připojené. Ve srovnání a v pohybech kurzů proto chybí.',
+    sources: [MF, { label: 'merkurxtip.cz', url: 'https://www.merkurxtip.cz/' }],
+  },
 ];
 
 export const reviewOf = (id: string) => REVIEWS.find((r) => r.id === id);

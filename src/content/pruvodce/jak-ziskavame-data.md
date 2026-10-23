@@ -19,7 +19,7 @@ KurzovýRadar nezobrazuje odhady ani tipy. Ukazuje kurzy, které jsme skutečně
 
 ## Které kanceláře sledujeme
 
-Kurzy dnes načítáme od **Tipsportu** a **Chance**. U dalších kanceláří, například Allwyn, Fortuna nebo Betano, kurzy zatím nesledujeme. Allwyn najdeš v přehledu [Kde vsadit](/sazkove-kancelare/), jeho kurzy ale ve srovnání nejsou.
+Kurzy dnes načítáme od **Tipsportu** a **Chance**. U dalších kanceláří, například Allwyn, MerkurXtip, Fortuna nebo Betano, kurzy zatím nesledujeme. Allwyn najdeš v přehledu [Kde vsadit](/sazkove-kancelare/), jeho kurzy ale ve srovnání nejsou.
 
 ## Co přesně sledujeme
 

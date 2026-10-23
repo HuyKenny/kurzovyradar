@@ -48,6 +48,7 @@ export interface Env {
   TIPSPORT_URL: string;
   CHANCE_URL: string;
   ALLWYN_URL: string;
+  MERKURXTIP_URL: string;
   ENVIRONMENT: string;
   DEMO?: string;
   IMPORT_INTERVAL_MIN?: string;
