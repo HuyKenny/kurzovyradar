@@ -1,0 +1,99 @@
+/**
+ * Glossary of betting terms (Rejstřík pojmů). Plain definitions only: no tips, no probabilities of our own.
+ * Money examples are conditional ("pokud sázka vyhraje") like everywhere else on the site.
+ */
+export interface Term {
+  slug: string;
+  term: string;
+  /** One sentence, shown in the list and as the meta description. */
+  short: string;
+  body: string[];
+  example?: string;
+  see?: string[]; // slugs of related terms
+  link?: { href: string; label: string };
+}
+
+export const TERMS: Term[] = [
+  { slug: '1x2', term: '1X2', short: 'Sázka na výsledek zápasu po základní hrací době: 1 = vyhraje domácí tým, X = remíza, 2 = vyhraje tým hostů.',
+    body: ['Je to nejčastější sázka na fotbal a základ srovnání na KurzovémRadaru. Počítá se stav po základní hrací době, tedy ve fotbale po 90 minutách a nastavení. Prodloužení a penalty se nezapočítávají.', 'U hokeje se 1X2 vyhodnocuje po 60 minutách. Remíza po 60 minutách je pak výsledek „X“, i když zápas pokračuje prodloužením.'],
+    example: 'Zápas Sparta – Slavia, sázka „1“ vyhrává jen tehdy, když Sparta po 90 minutách a nastavení vede.', see: ['zakladni-hraci-doba', 'kurz'], link: { href: '/pruvodce/zakladni-hraci-doba-vs-prodlouzeni/', label: 'Základní hrací doba vs. prodloužení' } },
+  { slug: 'kurz', term: 'Kurz', short: 'Číslo, kterým kancelář násobí vsazenou částku, když sázka vyhraje.',
+    body: ['V Česku se používá desetinný kurz, například 2,10. Je v něm už zahrnutý váš vklad: výplata = vklad × kurz.', 'Kurz určuje kancelář a může se měnit. Dvě kanceláře mohou na stejnou sázku nabízet různý kurz.'],
+    example: 'Pokud sázka s kurzem 2,10 vyhraje, ze 100 Kč dostaneš 210 Kč včetně vkladu. Čistý zisk je 110 Kč.', see: ['desetinny-kurz', 'vyplata', 'cisty-zisk'], link: { href: '/kalkulacky/', label: 'Kalkulačka výplaty' } },
+  { slug: 'desetinny-kurz', term: 'Desetinný kurz', short: 'Kurz zapsaný jako desetinné číslo, třeba 1,85. Výplata včetně vkladu je vklad krát kurz.',
+    body: ['Je to standardní formát u českých kanceláří. Kurz 1,85 znamená, že za každou vsazenou korunu při výhře dostaneš 1,85 Kč zpět včetně vkladu.'],
+    example: 'Při kurzu 1,85 a vkladu 200 Kč je výplata (při výhře) 370 Kč, čistý zisk 170 Kč.', see: ['zlomkovy-kurz', 'americky-kurz', 'kurz'], link: { href: '/pruvodce/desetinne-kurzy/', label: 'Jak fungují desetinné kurzy' } },
+  { slug: 'zlomkovy-kurz', term: 'Zlomkový kurz', short: 'Kurz zapsaný zlomkem, třeba 5/2. Čitatel je čistý zisk na vsazený jmenovatel.',
+    body: ['Používá se hlavně v Británii. Kurz 5/2 znamená, že při výhře dostaneš 5 Kč čistého zisku na každé 2 Kč vkladu.', 'Na desetinný kurz ho převedeš jako zlomek plus 1: 5/2 = 2,5 + 1 = 3,5.'],
+    example: 'Zlomkový kurz 3/2 odpovídá desetinnému 2,50.', see: ['desetinny-kurz', 'americky-kurz'], link: { href: '/kalkulacky/#h-c4', label: 'Převod formátů kurzů' } },
+  { slug: 'americky-kurz', term: 'Americký kurz', short: 'Kurz s plusem nebo mínusem, například +150 nebo −200 (moneyline).',
+    body: ['Kladné číslo říká, kolik čistého zisku získáš z vkladu 100. Záporné číslo říká, kolik musíš vsadit, abys získal čistých 100.', 'Kurz +150 odpovídá desetinnému 2,50, kurz −200 odpovídá 1,50.'],
+    see: ['desetinny-kurz', 'zlomkovy-kurz'], link: { href: '/kalkulacky/#h-c4', label: 'Převod formátů kurzů' } },
+  { slug: 'vyplata', term: 'Výplata', short: 'Celá částka, kterou kancelář vyplatí, když sázka vyhraje. Zahrnuje i tvůj vklad.',
+    body: ['Výplata = vklad × kurz. Od ní se odečítá vklad, když chceš znát čistý zisk.'],
+    example: 'Vklad 100 Kč, kurz 2,10: pokud sázka vyhraje, výplata je 210 Kč.', see: ['cisty-zisk', 'kurz'] },
+  { slug: 'cisty-zisk', term: 'Čistý zisk', short: 'Výplata minus vklad. Je to to, o co jsi po vyhrané sázce bohatší.',
+    body: ['U prohrané sázky je výsledek záporný: ztratíš vklad.', 'Na KurzovémRadaru vždy rozlišujeme výplatu včetně vkladu a čistý zisk, aby se nepletly.'],
+    example: 'Výplata 210 Kč při vkladu 100 Kč = čistý zisk 110 Kč.', see: ['vyplata'] },
+  { slug: 'marze', term: 'Marže kanceláře', short: 'Přirážka, kterou kancelář zabudovává do kurzů, aby měla na sázkách výdělek.',
+    body: ['Spočítáš ji tak, že sečteš převrácené hodnoty kurzů všech výsledků jedné sázky. Součet nad 100 % je marže.', 'Proto procenta odvozená z kurzů nejsou skutečná šance, že výsledek nastane: jsou v nich zahrnuté marže.'],
+    example: 'Kurzy 2,10 / 3,40 / 3,60 dávají 47,6 % + 29,4 % + 27,8 % = 104,8 %. Marže je zhruba 4,8 procentního bodu.', see: ['implikovana-pravdepodobnost'] },
+  { slug: 'implikovana-pravdepodobnost', term: 'Implikovaná pravděpodobnost', short: 'Kurz převedený na procenta jako 1 ÷ kurz. Není to skutečná šance výsledku, je v ní marže kanceláře.',
+    body: ['Kurz 2,00 odpovídá 50 %. Kurz 4,00 odpovídá 25 %.', 'Je to jen jiný zápis kurzu. Říká, jaké procento by kurz vyjadřoval, kdyby v něm nebyla marže.'],
+    see: ['marze', 'kurz'], link: { href: '/kalkulacky/', label: 'Kurz na procenta' } },
+  { slug: 'tiket', term: 'Tiket', short: 'Potvrzení jedné sázky nebo kombinace: co jsi vsadil, za jaký kurz a kolik.',
+    body: ['Tiket může obsahovat jednu sázku (solo) nebo více sázek najednou (kombinace). Výsledek se vyhodnotí podle pravidel kanceláře po skončení zápasů.'], see: ['solo-sazka', 'kombinace'] },
+  { slug: 'solo-sazka', term: 'Solo sázka', short: 'Sázka na jeden výsledek jednoho zápasu.',
+    body: ['Je nejjednodušší: vyhrává, nebo prohrává jedna věc. Výplata je vklad krát kurz.'], see: ['kombinace', 'tiket'] },
+  { slug: 'kombinace', term: 'Kombinace (AKO)', short: 'Sázka, která spojuje víc výsledků do jednoho tiketu. Vyhrává jen tehdy, když vyjde každý z nich.',
+    body: ['Kurzy jednotlivých výsledků se násobí. Výplata je proto vyšší, ale stačí jeden prohraný výsledek a prohrává celý tiket.'],
+    example: 'Kurzy 1,80 a 2,00 dávají kombinaci s kurzem 3,60. Pokud jeden z výsledků nevyjde, tiket prohrává celý.', see: ['solo-sazka', 'system'] },
+  { slug: 'system', term: 'Systém', short: 'Tiket, který z více výsledků vytvoří několik menších kombinací, takže jeden prohraný výsledek nemusí znamenat prohru celého tiketu.',
+    body: ['Systém je dražší než jedna kombinace, protože vlastně vsazuješ na více kombinací najednou. Podmínky a výpočty se u kanceláří liší, proto je vždy čti v pravidlech.'], see: ['kombinace'] },
+  { slug: 'handicap', term: 'Handicap', short: 'Sázka, při které se jednomu týmu před zápasem připíše nebo odečte určitý počet gólů či bodů.',
+    body: ['Handicap vyrovnává rozdíl v kvalitě týmů. Vyhodnocuje se součet skutečného výsledku a handicapu.', 'Pozor na „handicap 3 možnosti“ (s remízou) a „asijský handicap“ (bez remízy, někdy s půlením vkladu). Pravidla ověřuj u kanceláře.'],
+    example: 'Tým A −1: aby sázka vyhrála, musí vyhrát alespoň o dva góly.', see: ['asijsky-handicap'] },
+  { slug: 'asijsky-handicap', term: 'Asijský handicap', short: 'Handicap bez remízy. Při některých hodnotách se vklad půlí na dvě sousední hodnoty.',
+    body: ['Díky půlením se sázka při určitém výsledku vrací nebo vyplácí napůl. Přesné vyhodnocení určují pravidla kanceláře, před sázkou je vždy zkontroluj.'], see: ['handicap'] },
+  { slug: 'vice-mene', term: 'Více / méně (over/under)', short: 'Sázka na to, jestli celkový počet gólů nebo bodů bude vyšší, nebo nižší než zadaná hranice.',
+    body: ['Hranice bývá desetinná, třeba 2,5 gólu, aby nemohla nastat remíza. „Více než 2,5“ vyhrává od tří gólů výše.'],
+    example: 'Zápas skončí 2:1, tedy 3 góly: sázka „více než 2,5“ vyhrává, „méně než 2,5“ prohrává.' },
+  { slug: 'dvojtip', term: 'Dvojtip', short: 'Sázka, kterou pokryješ dva ze tří výsledků zápasu: 1X, X2 nebo 12.',
+    body: ['Kurz je nižší než u jednoduchého 1X2, protože sázka vyhraje při dvou možných výsledcích. Pozor, v kombinacích se někdy používá slovo „dvojtip“ i pro tiket o dvou zápasech.'], see: ['1x2'] },
+  { slug: 'remiza-bez-sazky', term: 'Remíza bez sázky', short: 'Sázka na vítěze zápasu, při které se při remíze vrací vklad.',
+    body: ['Kurz je nižší než u 1X2, protože remíza není prohra. Přesná pravidla (kdy se vrací vklad) určuje kancelář.'], see: ['1x2'] },
+  { slug: 'live-sazka', term: 'Live sázka', short: 'Sázka vsazená během zápasu, kdy kurzy průběžně reagují na dění.',
+    body: ['Kurz se mění po každé větší události. My zatím sledujeme jen předzápasové kurzy, které se mění méně často.'], see: ['predzapasova-sazka'] },
+  { slug: 'predzapasova-sazka', term: 'Předzápasová sázka', short: 'Sázka vsazená před začátkem zápasu. Na KurzovémRadaru sledujeme právě předzápasové kurzy.',
+    body: ['Kurzy se dál mění až do výkopu, ale mění se pomaleji než při live sázení. Naše kontroly probíhají každých 15 minut, změny mezi kontrolami nevidíme.'], see: ['live-sazka'], link: { href: '/radar/', label: 'Pohyby kurzů' } },
+  { slug: 'zakladni-hraci-doba', term: 'Základní hrací doba', short: 'Regulérní délka zápasu bez prodloužení a penaltového rozstřelu. Ve fotbale 90 minut a nastavení, v hokeji 60 minut.',
+    body: ['Většina základních sázek (například 1X2) se vyhodnocuje právě podle stavu po základní hrací době. Vždy ověř, co přesně sázka počítá.'], see: ['1x2', 'prodlouzeni'], link: { href: '/pruvodce/zakladni-hraci-doba-vs-prodlouzeni/', label: 'Průvodce' } },
+  { slug: 'prodlouzeni', term: 'Prodloužení', short: 'Přidaný čas po základní hrací době, který se hraje, když zápas musí mít vítěze.',
+    body: ['Do sázek se prodloužení započítává jen tehdy, když to pravidla výslovně říkají. U 1X2 se nezapočítává.'], see: ['zakladni-hraci-doba'] },
+  { slug: 'cashout', term: 'Cashout', short: 'Funkce, která ti před koncem zápasu nabídne výplatu části tiketu, aby sis zisk (nebo ztrátu) zafixoval.',
+    body: ['Výše nabídky vychází z aktuálních kurzů a kancelář si do ní započítává svou marži. Funkci nemají všechny kanceláře u všech sázek.'] },
+  { slug: 'value-bet', term: 'Value bet', short: 'Sázka, kde je tvůj vlastní odhad šance vyšší, než jakou vyjadřuje kurz. Je to tvůj odhad, ne fakt.',
+    body: ['Jestli je sázka „value“, záleží na tom, jak dobrý je odhad, a ten nikdo nezaručí. KurzovýRadar žádné value sázky nevyhlašuje a žádné šance nepředpovídá.', 'V kalkulačce si můžeš spočítat, co by vyšlo z tvého vlastního odhadu.'],
+    example: 'Pokud odhadneš šanci na 50 % a kurz je 2,20, očekávaná hodnota je +10 % vkladu. Pokud je odhad špatný, výsledek neplatí.', see: ['implikovana-pravdepodobnost'], link: { href: '/kalkulacky/#h-c6', label: 'Value kalkulačka (tvůj odhad)' } },
+  { slug: 'surebet', term: 'Surebet', short: 'Situace, kdy kurzy různých kanceláří na všechny výsledky dávají dohromady zaručený zisk. V praxi je vzácná a krátká.',
+    body: ['Nastane, když součet převrácených hodnot nejvyšších kurzů všech výsledků je menší než 1. Takové rozdíly kanceláře rychle opravují. Praktické omezení: limity sázek, pravidla účtů a čas.', 'Pozor na rizika, například jiné vyhodnocení stejné sázky u dvou kanceláří.'],
+    see: ['holandska-sazka'], link: { href: '/kalkulacky/#h-c5', label: 'Surebet a holandská kalkulačka' } },
+  { slug: 'holandska-sazka', term: 'Holandská sázka (dutching)', short: 'Rozdělení vkladu mezi více výsledků tak, aby výplata byla stejná, ať vyjde kterýkoli z nich.',
+    body: ['Výpočet je jednoduchý: čím vyšší kurz, tím menší část vkladu. Nezaručuje zisk, jen stejnou výplatu při výhře kteréhokoli výsledku.'], example: 'Vklad 100 Kč na dva výsledky s kurzy 2,00 a 4,00: dáš 66,67 Kč na první a 33,33 Kč na druhý, výplata je při obou 133,33 Kč.', see: ['surebet'], link: { href: '/kalkulacky/#h-c5', label: 'Holandská kalkulačka' } },
+  { slug: 'roi', term: 'ROI', short: 'Návratnost vsazených peněz: čistý zisk dělený celkovým vkladem, v procentech.',
+    body: ['Pokud jsi za rok vsadil 10 000 Kč a čistý výsledek je +500 Kč, ROI je 5 %. Je to nejjednodušší měřítko výsledku, ale vyžaduje dost sázek, aby nebylo jen náhodné.'], example: 'Vklady 10 000 Kč, čistý zisk −800 Kč: ROI = −8 %.', see: ['bankroll'] },
+  { slug: 'bankroll', term: 'Bankroll', short: 'Částka vyhrazená jen na sázení, kterou si můžeš dovolit ztratit.',
+    body: ['Určuje se předem a nemění se podle výsledků. Peníze na život, nájem nebo splátky do něj nepatří.'], see: ['odpovedne-hrani'], link: { href: '/odpovedne-hrani/', label: 'Odpovědné hraní' } },
+  { slug: 'free-bet', term: 'Free bet', short: 'Sázka zdarma od kanceláře. Podmínky určuje kancelář: často se vyplácí jen čistý zisk, ne samotný free bet.',
+    body: ['Podmínky free betu (minimální kurz, platnost, co se vyplácí) se liší a mění. Před použitím je čti v pravidlech akce. Free bet není garance výdělku.'] },
+  { slug: 'protoceni', term: 'Protočení bonusu', short: 'Podmínka, že musíš za určitý počet násobků bonusu nebo vkladu vsadit, než se bonus uvolní k výběru.',
+    body: ['Bývá omezené časem a typem sázek (minimální kurz, jen některé hry). Podrobnosti jsou v pravidlech konkrétní akce, a protože se mění, na KurzovémRadaru bonusy záměrně neuvádíme.'] },
+  { slug: 'limit-sazky', term: 'Limit sázky', short: 'Nejvyšší částka, kterou kancelář přijme na jednu sázku nebo tiket. Může záviset na zápase, trhu i na účtu.',
+    body: ['U vyšších částek proto může kancelář sázku odmítnout nebo snížit. Limity se u kanceláří liší.'] },
+  { slug: 'sazkova-kancelar', term: 'Sázková kancelář', short: 'Provozovatel, který přijímá sázky a vyplácí výhry. V ČR k tomu potřebuje povolení Ministerstva financí.',
+    body: ['Seznam povolených provozovatelů zveřejňuje Ministerstvo financí ČR. Přehled kanceláří, které na KurzovémRadaru popisujeme, je v sekci Kde vsadit.'], link: { href: '/sazkove-kancelare/', label: 'Kde vsadit' } },
+  { slug: 'odpovedne-hrani', term: 'Odpovědné hraní', short: 'Sázení s předem určeným rozpočtem a časem, které nepoškozuje peníze ani vztahy.',
+    body: ['Pomáhají limity vkladů, přestávky a pravidlo, že se ztráty nedohánějí. Kanceláře nabízejí v účtu nastavení vlastních limitů.'], link: { href: '/odpovedne-hrani/', label: 'Odpovědné hraní' } },
+];
+
+export const termBySlug = (slug: string) => TERMS.find((t) => t.slug === slug);

@@ -2,10 +2,11 @@
  * Bookmakers and their three independent states. Never merge them into one switch:
  *  - oddsFeed:  do we import their odds?            (only Tipsport and Chance today)
  *  - affiliate: is there an approved partner link?  (Tipsport, Chance, Allwyn, MerkurXtip)
- *  - review:    is a publishable review ready?      (Tipsport, Chance, Allwyn, MerkurXtip)
+ *  - review:    'published' = full review (partners); 'info' = factual overview with sources, no partner link,
+ *               no rating and no bonus figures (Fortuna, Betano, Sazkabet, fBET, SYNOTtip, KingsBet)
  * Link targets live in wrangler vars (TIPSPORT_URL, CHANCE_URL, ALLWYN_URL, MERKURXTIP_URL) and are read only by /go/.
  */
-export type BookId = 'tipsport' | 'chance' | 'allwyn' | 'merkurxtip' | 'fortuna' | 'betano';
+export type BookId = 'tipsport' | 'chance' | 'allwyn' | 'merkurxtip' | 'fortuna' | 'betano' | 'sazkabet' | 'fbet' | 'synottip' | 'kingsbet';
 export type FeedBook = 'tipsport' | 'chance';
 
 export interface Bookmaker {
@@ -15,7 +16,7 @@ export interface Bookmaker {
   locative: string;
   oddsFeed: 'active' | 'none';
   affiliate: 'approved' | 'none';
-  review: 'published' | 'draft' | 'none';
+  review: 'published' | 'info' | 'draft' | 'none';
   /** Brand colour (accent next to the logo only). */
   color: string;
   /** Brand tile (wordmark on the brand background), 2× size; null = show the name as text. */
@@ -32,10 +33,18 @@ export const BOOKMAKERS: Bookmaker[] = [
     logo: { src: '/img/loga/allwyn.webp', w: 214, h: 64 }, site: 'https://www.allwyn.cz' },
   { id: 'merkurxtip', name: 'MerkurXtip', locative: 'u MerkurXtipu', oddsFeed: 'none', affiliate: 'approved', review: 'published', color: '#0b3b8f',
     logo: { src: '/img/loga/merkurxtip.webp', w: 128, h: 128 }, site: 'https://www.merkurxtip.cz' },
-  { id: 'fortuna', name: 'Fortuna', locative: 'u Fortuny', oddsFeed: 'none', affiliate: 'none', review: 'none', color: '#f6c400',
+  { id: 'fortuna', name: 'Fortuna', locative: 'u Fortuny', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#f6c400',
     logo: null, site: 'https://www.ifortuna.cz' },
-  { id: 'betano', name: 'Betano', locative: 'u Betana', oddsFeed: 'none', affiliate: 'none', review: 'none', color: '#ff6a00',
+  { id: 'betano', name: 'Betano', locative: 'u Betana', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#ff6a00',
     logo: null, site: 'https://www.betano.cz' },
+  { id: 'sazkabet', name: 'Sazkabet', locative: 'u Sazkabetu', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#e30613',
+    logo: null, site: 'https://www.sazkabet.cz' },
+  { id: 'fbet', name: 'fBET', locative: 'u fBETu', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#0a7d3c',
+    logo: null, site: 'https://www.fbet.cz' },
+  { id: 'synottip', name: 'SYNOTtip', locative: 'u SYNOTtipu', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#e2001a',
+    logo: null, site: 'https://www.synottip.cz' },
+  { id: 'kingsbet', name: 'KingsBet', locative: 'u KingsBetu', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#c8a24a',
+    logo: null, site: 'https://www.kingsbet.cz' },
 ];
 
 export const BOOK = Object.fromEntries(BOOKMAKERS.map((b) => [b.id, b])) as Record<BookId, Bookmaker>;

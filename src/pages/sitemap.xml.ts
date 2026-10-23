@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import { SITE } from '../config/site';
 import { COMPETITIONS } from '../config/competitions';
 import { BOOKMAKERS } from '../config/bookmakers';
+import { TERMS } from '../config/glossary';
 import { upcoming, listable, cfg, now } from '../lib/data';
 
 export const prerender = false;
@@ -16,11 +17,14 @@ export const GET: APIRoute = async () => {
   const lastmod = up.at ? new Date(up.at * 1000).toISOString() : undefined;
   const guides = await getCollection('pruvodce');
   const urls: { loc: string; lastmod?: string }[] = [
-    ...['/', '/kurzy/', '/radar/', '/fotbal/', '/hokej/'].map((p) => ({ loc: p, lastmod })),
+    ...['/', '/kurzy/', '/dnes/', '/radar/', '/fotbal/', '/hokej/'].map((p) => ({ loc: p, lastmod })),
     ...COMPETITIONS.filter((c) => comps.has(c.slug)).map((c) => ({ loc: `/souteze/${c.slug}/`, lastmod })),
     ...events.map((e) => ({ loc: e.url, lastmod })),
     { loc: '/sazkove-kancelare/' },
-    ...BOOKMAKERS.filter((b) => b.review === 'published').map((b) => ({ loc: `/sazkove-kancelare/${b.id}/` })),
+    { loc: '/sazkove-kancelare/srovnani/' },
+    ...BOOKMAKERS.filter((b) => b.review === 'published' || b.review === 'info').map((b) => ({ loc: `/sazkove-kancelare/${b.id}/` })),
+    { loc: '/pojem/' },
+    ...TERMS.map((t) => ({ loc: `/pojem/${t.slug}/` })),
     { loc: '/pruvodce/' },
     ...guides.map((g) => ({ loc: `/pruvodce/${g.id}/`, lastmod: g.data.updated.toISOString().slice(0, 10) })),
     ...['/kalkulacky/', '/metodika/', '/o-nas/', '/financovani/', '/odpovedne-hrani/', '/soukromi/', '/cookies/'].map((p) => ({ loc: p })),

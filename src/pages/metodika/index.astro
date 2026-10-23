@@ -25,10 +25,14 @@ const d = new Date('2026-10-23');
   <table>
     <thead><tr><th scope="col">Kancelář</th><th scope="col">Kurzy</th><th scope="col">Partnerství</th><th scope="col">Recenze</th></tr></thead>
     <tbody>
-      {BOOKMAKERS.map((b) => <tr><th scope="row">{b.name}</th><td>{b.oddsFeed === 'active' ? 'sledujeme' : 'nesledujeme'}</td><td>{b.affiliate === 'approved' ? 'ano' : 'ne'}</td><td>{b.review === 'published' ? <a href={`/sazkove-kancelare/${b.id}/`}>ano</a> : 'ne'}</td></tr>)}
+      {BOOKMAKERS.map((b) => <tr><th scope="row">{b.name}</th><td>{b.oddsFeed === 'active' ? 'sledujeme' : 'nesledujeme'}</td><td>{b.affiliate === 'approved' ? 'ano' : 'ne'}</td><td>{b.review === 'published' ? <a href={`/sazkove-kancelare/${b.id}/`}>recenze</a> : b.review === 'info' ? <a href={`/sazkove-kancelare/${b.id}/`}>přehled</a> : 'ne'}</td></tr>)}
     </tbody>
   </table>
   <p>Tyto tři údaje evidujeme odděleně. Partnerství neznamená, že kurzy kanceláře sledujeme, a naopak.</p>
+  <h2>Jak ověřujeme údaje o kancelářích</h2>
+  <p>U každé kanceláře uvádíme jen to, co jsme našli u oficiálního zdroje: v seznamu provozovatelů Ministerstva financí, v patičce a pravidlech webu kanceláře nebo ve zveřejněných zprávách. U každého údaje je odkaz na zdroj a datum kontroly. Co nenajdeme, píšeme jako „neověřeno“, nikdy to nedoplňujeme zpaměti.</p>
+  <p>Kanceláře, se kterými nespolupracujeme, mají jen <strong>přehled</strong>: bez hodnocení, bez partnerského odkazu a bez čísel bonusů. Nehodnotíme kanceláře hvězdičkami a netvrdíme, že jsme je testovali, protože jsme je netestovali. Podmínky bonusů se mění, proto je neuvádíme, dokud je neověříme z oficiálního zdroje a nepřipíšeme datum.</p>
+  <p>Na webu schválně nejsou tipy ani předpovědi výsledků. Kurz je cena sázky, ne předpověď, a co z dat spočítáme (rozdíl mezi kancelářemi, pohyb kurzu), je zjištění, ne rada, co vsadit.</p>
 
   <h2>Co sledujeme</h2>
   <ul>

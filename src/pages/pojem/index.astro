@@ -1,0 +1,20 @@
+---
+import Article from '../../components/Article.astro';
+import { TERMS } from '../../config/glossary';
+export const prerender = true;
+const sorted = [...TERMS].sort((a, b) => a.term.localeCompare(b.term, 'cs'));
+const updated = new Date('2026-10-24');
+---
+<Article art="kalkulacka" title="Rejstřík sázkaře: pojmy srozumitelně" metaTitle="Rejstřík sázkaře – vysvětlení pojmů ze sázení | KurzovýRadar"
+  description="Co znamená 1X2, handicap, kombinace, marže, cashout nebo ROI. Krátká vysvětlení pojmů ze sázení s příkladem, bez tipů a bez předpovědí."
+  lead="Krátká vysvětlení pojmů, na které narazíš u kurzů a tiketů. Každý má příklad a odkaz na související pojem."
+  crumbs={[{ name: 'Rejstřík sázkaře', url: '/pojem/' }]} published={updated} updated={updated} checked={updated} schemaType="WebPage">
+  <ul class="not-prose grid gap-3 sm:grid-cols-2 list-none p-0 max-w-[980px]">
+    {sorted.map((t) => (
+      <li class="card p-4">
+        <a class="font-display font-bold text-lg no-underline hover:underline" href={`/pojem/${t.slug}/`}>{t.term}</a>
+        <p class="m-0 mt-1 text-ink-2 text-[0.95rem]">{t.short}</p>
+      </li>
+    ))}
+  </ul>
+</Article>

@@ -1,0 +1,50 @@
+---
+// One table, only columns we could check against the operator's own site or the MF list. "–" = not verified, never "no".
+import Article from '../../../components/Article.astro';
+import { BOOKMAKERS } from '../../../config/bookmakers';
+import { reviewOf } from '../../../config/reviews';
+export const prerender = true;
+// app / bankId come from the fact-check (see config/reviews.ts sources); anything not confirmed stays '–'.
+const EXTRA: Record<string, { app: string; bankId: string }> = {
+  fortuna: { app: 'iOS, Android, Huawei (Fortuna Vegas); zvlášť Sport a Poker', bankId: 'ano' },
+  fbet: { app: 'jen mobilní web', bankId: 'ano' },
+  synottip: { app: 'Android; iOS jen web', bankId: 'ano' },
+  kingsbet: { app: 'iOS, Android', bankId: 'ano' },
+};
+const checked = new Date('2026-10-23');
+const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
+---
+<Article art="kancelar" title="Srovnání sázkových kanceláří v ČR" metaTitle="Srovnání sázkových kanceláří – provozovatel, licence, aplikace | KurzovýRadar"
+  description="Tabulka sázkových kanceláří Tipsport, Chance, Allwyn, MerkurXtip, Fortuna, Betano, Sazkabet, fBET, SYNOTtip a KingsBet. Jen ověřené údaje, u neověřených pomlčka."
+  lead="Porovnáváme jen to, co jsme ověřili u provozovatele nebo v seznamu Ministerstva financí. Pomlčka znamená, že to nevíme, ne že to kancelář nemá."
+  crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: 'Srovnání', url: '/sazkove-kancelare/srovnani/' }]}
+  published={checked} updated={checked} checked={checked} schemaType="WebPage">
+  <div class="not-prose overflow-x-auto max-w-[1100px]">
+    <table class="w-full text-[0.95rem]">
+      <caption class="sr">Srovnání sázkových kanceláří</caption>
+      <thead><tr><th scope="col">Kancelář</th><th scope="col">Provozovatel</th><th scope="col">Naše kurzy</th><th scope="col">Partner</th><th scope="col">Aplikace</th><th scope="col">BankID</th></tr></thead>
+      <tbody>
+        {rows.map(({ b, r, x }) => (
+          <tr>
+            <th scope="row"><a href={`/sazkove-kancelare/${b.id}/`}>{b.name}</a></th>
+            <td>{r && r.ico !== '–' ? `${r.operator}, IČ ${r.ico}` : '–'}</td>
+            <td>{b.oddsFeed === 'active' ? 'sledujeme' : 'ne'}</td>
+            <td>{b.affiliate === 'approved' ? 'ano' : 'ne'}</td>
+            <td>{x?.app ?? '–'}</td>
+            <td>{x?.bankId ?? '–'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <h2>Jak to číst</h2>
+  <ul>
+    <li><strong>Naše kurzy:</strong> kurzy Tipsportu a Chance u každého zápasu porovnáváme. Ostatní kanceláře zatím ne, proto je u nich pomlčka místo srovnání.</li>
+    <li><strong>Partner:</strong> u partnerských kanceláří dostaneme provizi, když se přes náš odkaz zaregistruješ. Do pořadí a do výběru sázek to nezasahuje. Podrobně v <a href="/financovani/">Jak se financujeme</a>.</li>
+    <li><strong>Pomlčka:</strong> údaj jsme na oficiálním webu nenašli nebo ho nemáme ověřený. Nehádáme.</li>
+  </ul>
+  <h2>Co tu schválně není</h2>
+  <p>Bonusy, hodnocení hvězdičkami a platební metody. Podmínky bonusů se mění a platební metody se nám nepodařilo ověřit u všech kanceláří stejně. Až budou ověřené, přidáme je s datem kontroly.</p>
+  <h2>Jak vybrat kancelář</h2>
+  <p>Univerzální vítěz neexistuje. Podívej se, jestli má česká povolení, jestli používáš sporty, které nabízí, a jak vypadá aplikace. Kurzy srovnávej vždy u úplně stejné sázky. My to zatím umíme jen u Tipsportu a Chance, jejich rozdíly ukazuje <a href="/kurzy/">srovnání kurzů</a>, jak porovnávat správně popisuje <a href="/pruvodce/porovnavani-stejnych-sazek/">průvodce</a>. Sázení je placená zábava, ne způsob výdělku: <a href="/odpovedne-hrani/">odpovědné hraní</a>.</p>
+</Article>

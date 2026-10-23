@@ -2,6 +2,8 @@
 import Article from '../../components/Article.astro';
 import { payout, implied } from '../../server/calc/odds';
 import { kc } from '../../lib/format';
+import { convertText, dutchText, valueText } from '../../lib/calc-text';
+import type { OddsFormat } from '../../server/calc/odds';
 
 // Results are computed on the server from the query (works without JS); src/scripts/calc.ts recalculates live.
 const q = Astro.url.searchParams;
@@ -15,10 +17,22 @@ const r2 = pOdds > 1 && pOdds <= 1000 ? implied(pOdds) : null;
 const a = ok(cStake, c1) ? payout(cStake, c1) : null, b = ok(cStake, c2) ? payout(cStake, c2) : null;
 const fmtP = (p: number) => `${(Math.round(p * 1000) / 10).toString().replace('.', ',')} %`;
 const field = 'field num text-lg';
+// Newer calculators (shared sentences in lib/calc-text.ts).
+const kf = q.get('kf') ?? '2,50';
+const ff = (['decimal', 'fractional', 'american'] as OddsFormat[]).find((x) => x === q.get('ff')) ?? 'decimal';
+const dS = num('ds', 100);
+const DEFAULT_ODDS: Record<string, string> = { o1: '1,90', o2: '2,05', o3: '', o4: '' };
+const dRaw = ['o1', 'o2', 'o3', 'o4'].map((k) => (q.has(k) ? q.get(k)! : DEFAULT_ODDS[k]!));
+const dOdds = dRaw.filter((r) => r.trim() !== '').map((r) => Number(r.replace(',', '.')));
+const vo = q.get('vo') ?? '2,20', vp = q.get('vp') ?? '50';
+const rConvert = convertText(kf, ff);
+const rDutch = dutchText(dS, dOdds);
+const rValue = valueText(Number(vo.replace(',', '.')), Number(vp.replace(',', '.')));
+const FMT = { decimal: 'Desetinný (2,50)', fractional: 'Zlomkový (3/2)', american: 'Americký (+150)' };
 const today = new Date('2026-10-23');
 ---
 <Article art="kalkulacka" title="Kolik vyhraju? Kalkulačky kurzů" metaTitle="Kalkulačka kurzů – kolik vyhraju, zisk a pravděpodobnost | KurzovýRadar"
-  description="Zadej sázku a kurz a uvidíš, kolik dostaneš a kolik je z toho zisk. Navíc převod kurzu na procenta a srovnání dvou kurzů."
+  description="Kalkulačky kurzů: výplata a zisk, převod kurzu na procenta, převod desetinných, zlomkových a amerických kurzů, holandská kalkulačka a surebet, value kalkulačka s tvým odhadem."
   lead="Zadej čísla a hned uvidíš výsledek. Nic se nikam neukládá." crumbs={[{ name: 'Kalkulačky', url: '/kalkulacky/' }]}
   published={today} updated={today} checked={today} schemaType="WebPage" noindex={q.size > 0}>
   <div class="not-prose grid gap-6 max-w-[880px]" data-calc>
@@ -61,6 +75,48 @@ const today = new Date('2026-10-23');
         {r2 ? <>Kurz odpovídá zhruba <strong class="num">{fmtP(r2)}</strong>.</> : <span class="text-orange-ink">Zadej kurz větší než 1.</span>}
       </output>
       <p class="text-ink-2 mt-3 mb-0">Počítá se jako 1 ÷ kurz. Pozor: je v tom i marže kanceláře, takže to <strong>není skutečná šance</strong>, že tip vyjde. Je to jen kurz převedený na procenta.</p>
+    </section>
+
+    <section class="card p-5 md:p-6" aria-labelledby="h-c4">
+      <h2 id="h-c4" class="m-0 text-[1.5rem]">Převod desetinných, zlomkových a amerických kurzů</h2>
+      <form method="get" action="/kalkulacky/#h-c4" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end mt-4" data-form="convert">
+        <label class="grid gap-1 font-bold">Kurz<input class={field} name="kf" inputmode="text" value={kf} required /></label>
+        <label class="grid gap-1 font-bold">Zapsaný jako<select class={field} name="ff">{(Object.keys(FMT) as OddsFormat[]).map((k) => <option value={k} selected={k === ff}>{FMT[k]}</option>)}</select></label>
+        <button class="btn" type="submit">Převést</button>
+      </form>
+      <output class="block mt-5 text-[1.15rem]" aria-live="polite" data-out="convert">
+        {'error' in rConvert ? <span class="text-orange-ink">{rConvert.error}</span> : rConvert.map((p) => typeof p === 'string' ? p : <strong class="num">{p.b}</strong>)}
+      </output>
+      <p class="text-ink-2 mt-3 mb-0">České kanceláře používají desetinné kurzy. Ostatní formáty uvidíš u zahraničních kanceláří. Pojmy: <a href="/pojem/desetinny-kurz/">desetinný</a>, <a href="/pojem/zlomkovy-kurz/">zlomkový</a>, <a href="/pojem/americky-kurz/">americký</a>.</p>
+    </section>
+
+    <section class="card p-5 md:p-6" aria-labelledby="h-c5">
+      <h2 id="h-c5" class="m-0 text-[1.5rem]">Holandská kalkulačka a surebet</h2>
+      <form method="get" action="/kalkulacky/#h-c5" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] items-end mt-4" data-form="dutch">
+        <label class="grid gap-1 font-bold">Celkem vsadím (Kč)<input class={field} name="ds" inputmode="decimal" value={String(dS)} required /></label>
+        <label class="grid gap-1 font-bold">Kurz 1<input class={field} name="o1" inputmode="decimal" value={dRaw[0]} required /></label>
+        <label class="grid gap-1 font-bold">Kurz 2<input class={field} name="o2" inputmode="decimal" value={dRaw[1]} required /></label>
+        <label class="grid gap-1 font-bold">Kurz 3 (volitelně)<input class={field} name="o3" inputmode="decimal" value={dRaw[2]} /></label>
+        <label class="grid gap-1 font-bold">Kurz 4 (volitelně)<input class={field} name="o4" inputmode="decimal" value={dRaw[3]} /></label>
+        <button class="btn" type="submit">Rozdělit</button>
+      </form>
+      <output class="block mt-5 text-[1.1rem]" aria-live="polite" data-out="dutch">
+        {'error' in rDutch ? <span class="text-orange-ink">{rDutch.error}</span> : rDutch.map((p) => typeof p === 'string' ? p : <strong class="num">{p.b}</strong>)}
+      </output>
+      <p class="text-ink-2 mt-3 mb-0">Kalkulačka rozdělí vklad tak, aby výplata byla stejná, ať vyhraje kterýkoli ze zadaných výsledků. Zadej kurzy na různé výsledky jednoho zápasu, i od různých kanceláří. Pojmy: <a href="/pojem/holandska-sazka/">holandská sázka</a>, <a href="/pojem/surebet/">surebet</a>.</p>
+    </section>
+
+    <section class="card p-5 md:p-6" aria-labelledby="h-c6">
+      <h2 id="h-c6" class="m-0 text-[1.5rem]">Value kalkulačka s tvým odhadem</h2>
+      <form method="get" action="/kalkulacky/#h-c6" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end mt-4" data-form="value">
+        <label class="grid gap-1 font-bold">Kurz<input class={field} name="vo" inputmode="decimal" value={vo} required /></label>
+        <label class="grid gap-1 font-bold">Tvůj odhad šance (%)<input class={field} name="vp" inputmode="decimal" value={vp} required /></label>
+        <button class="btn" type="submit">Spočítat</button>
+      </form>
+      <output class="block mt-5 text-[1.1rem]" aria-live="polite" data-out="value">
+        {'error' in rValue ? <span class="text-orange-ink">{rValue.error}</span> : rValue.map((p) => typeof p === 'string' ? p : <strong class="num">{p.b}</strong>)}
+      </output>
+      <p class="text-ink-2 mt-3 mb-0">Odhad šance zadáváš ty. KurzovýRadar žádné šance nepředpovídá a žádné „value“ sázky nevyhlašuje. Pojem: <a href="/pojem/value-bet/">value bet</a>.</p>
     </section>
   </div>
 </Article>

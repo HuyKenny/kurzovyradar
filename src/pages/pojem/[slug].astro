@@ -1,0 +1,17 @@
+---
+import Article from '../../components/Article.astro';
+import { TERMS, termBySlug, type Term } from '../../config/glossary';
+export const prerender = true;
+export function getStaticPaths() { return TERMS.map((t) => ({ params: { slug: t.slug }, props: { t } })); }
+const { t } = Astro.props as { t: Term };
+const updated = new Date('2026-10-24');
+const see = (t.see ?? []).map((s) => termBySlug(s)).filter((x): x is Term => !!x);
+---
+<Article title={`${t.term}: co to znamená`} metaTitle={`${t.term} – vysvětlení pojmu | KurzovýRadar`} description={t.short} lead={t.short}
+  crumbs={[{ name: 'Rejstřík sázkaře', url: '/pojem/' }, { name: t.term, url: `/pojem/${t.slug}/` }]} published={updated} updated={updated} checked={updated} schemaType="Article">
+  {t.body.map((p) => <p>{p}</p>)}
+  {t.example && <div class="strucne not-prose"><p class="m-0 font-display font-bold">Příklad</p><p class="m-0 mt-1">{t.example}</p></div>}
+  {t.link && <p><a class="btn btn--ghost btn--sm" href={t.link.href}>{t.link.label}</a></p>}
+  {see.length > 0 && (<><h2>Související pojmy</h2><ul>{see.map((x) => <li><a href={`/pojem/${x.slug}/`}>{x.term}</a></li>)}</ul></>)}
+  <p class="text-sm text-ink-2"><a href="/pojem/">Všechny pojmy</a>. Sázení je placená zábava, ne způsob výdělku. <a href="/odpovedne-hrani/">Odpovědné hraní</a>.</p>
+</Article>

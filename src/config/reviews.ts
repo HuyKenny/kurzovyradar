@@ -1,5 +1,7 @@
 /**
  * Bookmaker reviews: verified facts only, each with its source. No ratings, stars, bonuses or invented experience.
+ * 'info' entries (no partner link) were fact-checked against the operator's own site and the MF list; the working
+ * files with quotes are in reports/spinydnes-casina-fakta-2026-10/ (Fortuna, KingsBet, SYNOTtip, fBET).
  * Licences: Ministry of Finance list of legal operators under act 186/2016 Sb. (state 1. 10. 2026),
  * https://mf.gov.cz/assets/attachments/2026-10-01_Prehled-provozovatelu-ZHH.xlsx — columns "Kursová sázka" (land / internet).
  */
@@ -22,6 +24,8 @@ export interface Review {
   pros: string[];
   limits: string[];
   onSite: string; // what KurzovýRadar shows for this bookmaker
+  /** Things we looked for and could not confirm; shown on 'info' pages so a gap is never read as a "no". */
+  unverified?: string[];
   sources: Source[];
 }
 
@@ -143,6 +147,123 @@ export const REVIEWS: Review[] = [
     ],
     onSite: 'MerkurXtip je náš partner, jeho kurzy ale zatím nemáme připojené. Ve srovnání a v pohybech kurzů proto chybí.',
     sources: [MF, { label: 'merkurxtip.cz', url: 'https://www.merkurxtip.cz/' }],
+  },
+  {
+    id: 'fortuna', checked: '2026-10-19',
+    operator: 'FORTUNA GAME a.s.', ico: '43003575', seat: 'Italská 2584/69, Praha 2 – Vinohrady',
+    licence: 'Povolení Ministerstva financí ČR (rozhodnutí č. MF-24215/2023/73-34, MF-21348/2022/73-80, MF-21362/2022/73-46, MF-22244/2022/73-73)',
+    web: 'ifortuna.cz',
+    inShort: ['Velká česká kancelář: sázky, casino, poker, losy a loterie na jednom účtu.', 'Kurzy Fortuny zatím nesledujeme, takže je u nás neporovnáš.', 'S Fortunou nespolupracujeme. Stránka je jen přehled ověřených údajů.'],
+    summary: 'Česká kancelář FORTUNA GAME a.s. s pobočkami i online. Na webu ifortuna.cz nabízí kurzové sázky, casino, poker, losy a loterie.',
+    facts: [
+      { label: 'Registrace', value: 'Formulářem, nebo přes bankovní identitu (BankID)' },
+      { label: 'Aplikace', value: 'Fortuna Vegas (casino) pro iOS, Android a Huawei; samostatné aplikace Sport a Poker' },
+      { label: 'Pobočky', value: 'Ano, i pro vklady a výběry v hotovosti' },
+    ],
+    features: [
+      'Kurzové sázky, casino, poker, losy a loterie pod jedním účtem',
+      'Kamenná síť poboček Fortuna',
+      'Registrace přes bankovní identitu',
+    ],
+    pros: [], limits: [],
+    onSite: 'Kurzy Fortuny zatím nesledujeme. Ve srovnání ani v radaru proto nejsou.',
+    unverified: ['Aktuální výše a podmínky bonusů (měnily se a nepíšeme je zpaměti)', 'Doba výběru u sázkové části (ověřená data jsou jen pro casino)'],
+    sources: [MF, { label: 'ifortuna.cz – registrační bonus a registrace', url: 'https://www.ifortuna.cz/bonus/registracni-bonus' }, { label: 'casino.ifortuna.cz', url: 'https://casino.ifortuna.cz/' }],
+  },
+  {
+    id: 'betano', checked: '2026-10-23',
+    operator: 'Provozovatele (právnickou osobu a IČ) jsme z veřejných stránek nepotvrdili', ico: '–', seat: '–',
+    licence: 'Betano o sobě na betano.cz/o-nas uvádí, že má licence Ministerstva financí ČR pro kurzové sázení, live sázky, casino a hry s živými dealery',
+    web: 'betano.cz',
+    inShort: ['Značka patří do skupiny Kaizen Gaming (založena 2012).', 'Na svém webu uvádí českou licenci Ministerstva financí.', 'Kurzy Betana zatím nesledujeme. S Betanem nespolupracujeme.'],
+    summary: 'Betano Česká republika je součástí skupiny Kaizen Gaming. Podle vlastního webu nabízí kurzové sázky, live sázky, casino i živé dealery.',
+    facts: [
+      { label: 'Skupina', value: 'Kaizen Gaming, technologická firma pro hry založená v roce 2012 (podle betano.cz/o-nas)' },
+      { label: 'Věk', value: 'Web je dostupný jen osobám starším 18 let' },
+    ],
+    features: [
+      'Kurzové sázky včetně live sázek',
+      'Casino a hry s živými dealery',
+      'Sázkové funkce jako Bet Builder (podle nabídky na betano.cz)',
+    ],
+    pros: [], limits: [],
+    onSite: 'Kurzy Betana zatím nesledujeme. Ve srovnání ani v radaru proto nejsou.',
+    unverified: ['Název provozovatele, IČ a sídlo (na webu jsme je nenašli; platí obchodní podmínky Betana)', 'Čísla povolení Ministerstva financí', 'Aktuální bonusy'],
+    sources: [{ label: 'betano.cz – O nás (licence a regulace)', url: 'https://www.betano.cz/o-nas' }],
+  },
+  {
+    id: 'sazkabet', checked: '2026-10-23',
+    operator: 'Allwyn Česko a.s.', ico: '26493993', seat: 'Evropská 866/69, Vokovice, 160 00 Praha 6',
+    licence: 'Web sazkabet.cz uvádí jako provozovatele Allwyn Česko a.s.; povolení Ministerstva financí ČR najdeš u Allwynu (viz recenze)',
+    web: 'sazkabet.cz',
+    inShort: ['Sazkabet je sázková značka, kterou provozuje Allwyn Česko (dříve Sazka).', 'Web sazkabet.cz se v záhlaví označuje i jako Allwyn.cz.', 'Allwyn je náš partner, jeho recenzi najdeš zvlášť.'],
+    summary: 'Sazkabet je značka kurzových sázek, kterou provozuje Allwyn Česko a.s. (dříve Sazka). Web sazkabet.cz patří pod Allwyn.cz.',
+    facts: [
+      { label: 'Provozovatel webu', value: 'Allwyn Česko a.s., IČ 26493993 (podle patičky sazkabet.cz)' },
+      { label: 'Nabídka', value: 'Kurzové sázky a live sázení (podle titulku stránky)' },
+    ],
+    features: ['Kurzové sázky', 'Live sázení'],
+    pros: [], limits: [],
+    onSite: 'Kurzy Sazkabetu zatím nesledujeme. Allwyn je náš partner, ale jeho kurzy nemáme připojené.',
+    unverified: ['Jestli a kdy se značka Sazkabet sloučí s Allwynem (firma uvedla, že místní značky zatím zůstávají)', 'Aktuální bonusy'],
+    sources: [{ label: 'sazkabet.cz', url: 'https://www.sazkabet.cz/' }, { label: 'Forbes.cz – Allwyn zachová místní značky', url: 'https://forbes.cz/konec-jmena-sazka-komarkuv-allwyn-zmenil-nazvy-ctyr-svych-spolecnosti/' }, MF],
+  },
+  {
+    id: 'fbet', checked: '2026-10-22',
+    operator: 'forBET online CZ s.r.o.', ico: '09063315', seat: 'Holušická 2253/1, 148 00 Praha 4',
+    licence: 'Seznam MF ke dni 1. 10. 2026: internetová kurzová sázka i internetová technická hra na fbet.cz',
+    web: 'fbet.cz',
+    inShort: ['fBET se do 26. 11. 2024 jmenovala forBET.', 'Má povolení MF pro kurzové sázky na internetu i pro casino.', 'Kurzy fBETu zatím nesledujeme. S fBETem nespolupracujeme.'],
+    summary: 'Česká online kancelář fBET (do 26. 11. 2024 forBET). Na fbet.cz nabízí kurzové sázky včetně live a casino fBET Vegas.',
+    facts: [
+      { label: 'Dříve', value: 'forBET (přejmenování 26. 11. 2024); iforbet.cz přesměrovává na fbet.cz' },
+      { label: 'Registrace', value: 'Formulář, potvrzení telefonu a e-mailu, limity a identifikace přes BankID' },
+      { label: 'Aplikace', value: 'Nativní aplikaci jsme na webu nenašli, existuje mobilní verze webu (mobile.fbet.cz)' },
+      { label: 'Pozor na doménu', value: 'Doména forbet.cz s fBET nesouvisí. Oficiální web je fbet.cz' },
+    ],
+    features: ['Kurzové sázky (Sporty, LIVE)', 'Casino fBET Vegas', 'Jeden účet pro sázky i casino'],
+    pros: [], limits: [],
+    onSite: 'Kurzy fBETu zatím nesledujeme. Ve srovnání ani v radaru proto nejsou.',
+    unverified: ['Platební metody a výběr na kartu (web je veřejně neuvádí)', 'Nativní mobilní aplikace', 'Aktuální bonusy'],
+    sources: [MF, { label: 'fbet.cz', url: 'https://www.fbet.cz/' }, { label: 'fbet.cz – přehled bonusů a pravidla', url: 'https://www.fbet.cz/doc/bonus-prehled' }],
+  },
+  {
+    id: 'synottip', checked: '2026-10-19',
+    operator: 'SYNOT TIP, a.s.', ico: '26301091', seat: 'Jaktáře 1475, Uherské Hradiště – Mařatice',
+    licence: 'Povolení Ministerstva financí ČR: kursové sázky (MF-28655/2022/73-77), technická hra (MF-28659/2022/73-159), živá hra (MF-28658/2022/73-84)',
+    web: 'synottip.cz',
+    inShort: ['Česká kancelář ze skupiny SYNOT, s pobočkami i online.', 'Povolení má pro kurzové sázky, technické hry i živou hru.', 'Kurzy SYNOTtipu zatím nesledujeme. S ním nespolupracujeme.'],
+    summary: 'SYNOT TIP, a.s. je česká sázková kancelář ze skupiny SYNOT. Na synottip.cz nabízí kurzové sázky a casino.',
+    facts: [
+      { label: 'Skupina', value: 'SYNOT' },
+      { label: 'Registrace', value: 'Formulář s ověřením přes bankovní identitu, nebo rovnou přes bankovní identitu' },
+      { label: 'Aplikace', value: 'Společná aplikace SYNOTtip pro Android (casino, poker, sázky). Pro iOS jen webová verze' },
+      { label: 'Pobočky', value: 'Ano, herny a pobočky SYNOT TIP' },
+    ],
+    features: ['Kurzové sázky', 'Online casino a živé casino (Synot Live)', 'Poker', 'Sítě poboček'],
+    pros: [], limits: [],
+    onSite: 'Kurzy SYNOTtipu zatím nesledujeme. Ve srovnání ani v radaru proto nejsou.',
+    unverified: ['Doba zpracování výběru (veřejně neuvedena)', 'iOS aplikace', 'Aktuální bonusy a promokódy'],
+    sources: [MF, { label: 'synottip.cz – promoakce a pravidla', url: 'https://muj.synottip.cz/promoakce' }, { label: 'casino.synottip.cz', url: 'https://casino.synottip.cz/' }],
+  },
+  {
+    id: 'kingsbet', checked: '2026-10-19',
+    operator: 'Greentube CZ a.s.', ico: '14383012', seat: 'náměstí Republiky 1081/7, Praha 1',
+    licence: 'Povolení Ministerstva financí ČR: kursové sázky (MF-37496/2023/73-58), technická hra (MF-46776/2024/73-65), živá hra (MF-23675/2024/73-20)',
+    web: 'kingsbet.cz',
+    inShort: ['Česká kancelář, od května 2026 součást Greentube (NOVOMATIC).', 'Povolení má pro kurzové sázky, technické hry i živou hru.', 'Kurzy KingsBetu zatím nesledujeme. S ním nespolupracujeme.'],
+    summary: 'KingsBet provozuje Greentube CZ a.s., od května 2026 součást skupiny Greentube / NOVOMATIC. Nabízí kurzové sázky a casino.',
+    facts: [
+      { label: 'Skupina', value: 'Greentube / NOVOMATIC (od května 2026)' },
+      { label: 'Registrace', value: 'Po registraci do 30 dnů ověření totožnosti přes Bank iD, platební metody a telefonu a nastavení limitů' },
+      { label: 'Aplikace', value: 'Android (Google Play) a iOS (App Store)' },
+      { label: 'Live casino', value: 'Ano (Evolution), od října 2024' },
+    ],
+    features: ['Kurzové sázky', 'Online casino a live casino', 'Aplikace pro Android a iOS', 'Registrace možná i osobně v kiosku'],
+    pros: [], limits: [],
+    onSite: 'Kurzy KingsBetu zatím nesledujeme. Ve srovnání ani v radaru proto nejsou.',
+    unverified: ['Přesný počet her (web uvádí jen „stovky“)', 'Aktuální bonusy'],
+    sources: [MF, { label: 'kingsbet.cz', url: 'https://www.kingsbet.cz/' }],
   },
 ];
 

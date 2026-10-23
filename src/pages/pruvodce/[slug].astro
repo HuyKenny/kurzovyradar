@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Article from '../../components/Article.astro';
+import artManifest from '../../data/art.json';
 export const prerender = true;
 export async function getStaticPaths() {
   const all = (await getCollection('pruvodce')).sort((a, b) => a.data.order - b.data.order);
@@ -9,7 +10,7 @@ export async function getStaticPaths() {
 const { g, others } = Astro.props;
 const { Content } = await render(g);
 ---
-<Article art={`pruvodce-${g.id}`} title={g.data.title} metaTitle={`${g.data.title} | KurzovýRadar`} description={g.data.description} lead={g.data.lead}
+<Article art={`pruvodce-${g.id}` in artManifest ? `pruvodce-${g.id}` : 'pruvodce'} title={g.data.title} metaTitle={`${g.data.title} | KurzovýRadar`} description={g.data.description} lead={g.data.lead}
   crumbs={[{ name: 'Jak na kurzy', url: '/pruvodce/' }, { name: g.data.title, url: `/pruvodce/${g.id}/` }]}
   published={g.data.published} updated={g.data.updated} checked={g.data.checked}>
   <Content />

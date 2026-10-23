@@ -8,12 +8,12 @@ export const prerender = true;
 const STATE = {
   oddsFeed: { active: 'Kurzy porovnáváme', none: 'Kurzy zatím neporovnáváme' },
   affiliate: { approved: 'Spolupracujeme (partnerský odkaz)', none: 'Nespolupracujeme' },
-  review: { published: 'Má recenzi', draft: 'Recenze se připravuje', none: 'Recenzi zatím nemáme' },
+  review: { published: 'Má recenzi', info: 'Má přehled ověřených údajů', draft: 'Recenze se připravuje', none: 'Recenzi zatím nemáme' },
 };
 ---
 <Article art="kancelar" title="Kde vsadit: přehled sázkových kanceláří" metaTitle="Kde vsadit – přehled sázkových kanceláří s licencí v ČR | KurzovýRadar"
-  description="Přehled sázkových kanceláří Tipsport, Chance, Allwyn a MerkurXtip: provozovatel, licence Ministerstva financí, co nabízejí a které kurzy na KurzovémRadaru sledujeme."
- lead="Všechny kanceláře tady mají českou licenci. U každé píšeme, jestli její kurzy porovnáváme a jestli s ní spolupracujeme." crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]}>
+  description="Přehled sázkových kanceláří Tipsport, Chance, Allwyn, MerkurXtip, Fortuna, Betano, Sazkabet, fBET, SYNOTtip a KingsBet: provozovatel, licence, ověřené údaje a které kurzy sledujeme."
+ lead="U každé kanceláře píšeme, jestli její kurzy porovnáváme, jestli s ní spolupracujeme a odkud údaje máme. Srovnání v jedné tabulce je na další stránce." crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]}>
   <div class="not-prose grid gap-4 max-w-[980px]">
     {BOOKMAKERS.map((b) => {
       const r = reviewOf(b.id);
@@ -31,11 +31,12 @@ const STATE = {
           </div>
           <div class="flex md:flex-col gap-2">
             {b.review === 'published' && <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.id}/`}>Recenze</a>}
+            {b.review === 'info' && <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.id}/`}>Přehled</a>}
             {b.affiliate === 'approved' && <a class="btn btn--sm" href={`/go/${b.id}/?p=prehled`} rel="sponsored nofollow">Web {b.name}<Icon name="external-link" size={15} /></a>}
           </div>
         </section>
       );
     })}
   </div>
-  <p class="text-sm text-ink-2">Pořadí určuje jen to, jestli kurzy kanceláře sledujeme, ne výše provize. Všechny uvedené kanceláře mají povolení Ministerstva financí ČR. Jak se web financuje, popisujeme na stránce <a href="/financovani/">Jak se financujeme</a>.</p>
+  <p class="text-sm text-ink-2">Pořadí určuje jen to, jestli kurzy kanceláře sledujeme, ne výše provize. U všech kromě Betana jsme povolení Ministerstva financí ČR ověřili v jeho seznamu nebo v údajích provozovatele. Betano licenci uvádí jen na svém webu, proto to u něj píšeme jako jeho vlastní tvrzení. Jak se web financuje, popisujeme na stránce <a href="/financovani/">Jak se financujeme</a>.</p>
 </Article>

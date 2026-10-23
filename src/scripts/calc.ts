@@ -1,11 +1,17 @@
 // Live recalculation of the calculators (the server already renders results for the submitted values).
 // Built with DOM nodes (no innerHTML of user input).
-import { payout, implied } from '../server/calc/odds';
+import { payout, implied, type OddsFormat } from '../server/calc/odds';
+import { convertText, dutchText, valueText, type Result } from '../lib/calc-text';
 const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2 }).format(Math.round(n * 100) / 100)} Kč`;
 const num = (f: HTMLFormElement, k: string) => Number(String(new FormData(f).get(k) ?? '').replace(',', '.').trim());
 const pctTxt = (p: number) => `${(Math.round(p * 1000) / 10).toString().replace('.', ',')} %`;
 type Part = string | { b: string };
+const text = (f: HTMLFormElement, k: string) => String(new FormData(f).get(k) ?? '');
+const fromResult = (r: Result): Part[] | string => ('error' in r ? r.error : r);
 const RENDER: Record<string, (f: HTMLFormElement) => Part[] | string> = {
+  convert: (f) => fromResult(convertText(text(f, 'kf'), text(f, 'ff') as OddsFormat)),
+  dutch: (f) => fromResult(dutchText(num(f, 'ds'), ['o1', 'o2', 'o3', 'o4'].map((k) => text(f, k).trim()).filter((v) => v !== '').map((v) => Number(v.replace(',', '.'))))),
+  value: (f) => fromResult(valueText(num(f, 'vo'), num(f, 'vp'))),
   payout(f) {
     const s = num(f, 'vklad'), o = num(f, 'kurz');
     if (!(s >= 0 && o > 1 && o <= 1000)) return 'Zadej sázku v Kč a kurz větší než 1.';
