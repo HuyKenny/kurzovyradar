@@ -15,10 +15,10 @@ import { isFresh } from '../../server/store/derive';
 import type { Outcome } from '../../server/types';
 
 const m = /^(.*)-(\d+)$/.exec(Astro.params.slug ?? '');
-if (!m) return new Response(null, { status: 404 });
+if (!m) return Astro.rewrite('/404/');
 const id = Number(m[2]);
 const d = await eventDetail(id);
-if (!d) return new Response(null, { status: 404 });
+if (!d) return Astro.rewrite('/404/');
 const { ev, history } = d;
 if (Astro.url.pathname !== ev.url) return Astro.redirect(ev.url, 301);
 const t = getNow();
@@ -98,30 +98,31 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       <h2 id="h-cmp" class="m-0">Porovnání kurzů</h2>
       <p class="text-ink-2 mt-1.5 mb-4 max-w-[75ch]"><strong class="text-ink">{MARKET_LABEL['1x2'].long}.</strong> {MARKET_LABEL['1x2'].note}</p>
       <div class="card overflow-x-auto">
-        <table class="w-full min-w-[520px]">
+        <table class="w-full">
           <caption class="sr">Kurzy sledovaných kanceláří na výsledek zápasu</caption>
           <thead>
             <tr class="text-sm text-ink-2 border-b border-line">
-              <th scope="col" class="text-left font-semibold p-3">Výsledek</th>
-              {presentBooks.map((b) => <th scope="col" class="p-3 text-center font-semibold"><BookLogo id={b} h={24} lazy={false} /></th>)}
-              <th scope="col" class="p-3 text-left font-semibold">Porovnání</th>
+              <th scope="col" class="text-left font-semibold p-2 sm:p-3">Výsledek</th>
+              {presentBooks.map((b) => <th scope="col" class="p-2 sm:p-3 text-center font-semibold"><BookLogo id={b} h={22} lazy={false} /></th>)}
+              <th scope="col" class="p-3 text-left font-semibold hidden sm:table-cell">Porovnání</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr class="border-b border-line last:border-0">
-                <th scope="row" class="text-left p-3 font-semibold">{OUTCOME_LABEL[r.outcome]} <span class="text-ink-3 font-medium">({r.outcome === 'x' ? 'X' : r.outcome})</span></th>
+                <th scope="row" class="text-left p-2 sm:p-3 font-semibold">{OUTCOME_LABEL[r.outcome]} <span class="text-ink-3 font-medium">({r.outcome === 'x' ? 'X' : r.outcome})</span>
+                  <span class="sm:hidden block mt-1 font-normal text-xs">{r.best.kind === 'single' ? <span class="badge badge--warn">Jen jedna nabídka</span> : r.best.kind === 'best' ? (r.best.tie ? <span class="badge badge--tie">Shoda</span> : <span class="badge badge--best">Nejvyšší {BOOK[r.best.books[0] as FeedBook].locative}</span>) : null}</span></th>
                 {presentBooks.map((b) => {
                   const c = r.cells.find((x) => x.book === b)!;
                   return (
-                    <td class="p-2 text-center">
+                    <td class="p-1.5 sm:p-2 text-center">
                       {c.current && c.odds
-                        ? <span class:list={['odd num mx-auto w-[88px]', c.best && 'odd--best', c.tie && 'odd--tie']}>{c.best && <Icon name="arrow-up" size={14} stroke={2.6} class="text-blue" />}{fmt(c.odds)}</span>
-                        : <span class="odd odd--off num mx-auto w-[88px]">{c.odds ? fmt(c.odds) : '–'}<span class="sr"> (nesrovnáváme)</span></span>}
+                        ? <span class:list={['odd num mx-auto w-[68px] sm:w-[88px]', c.best && 'odd--best', c.tie && 'odd--tie']}>{c.best && <Icon name="arrow-up" size={14} stroke={2.6} class="text-blue" />}{fmt(c.odds)}</span>
+                        : <span class="odd odd--off num mx-auto w-[68px] sm:w-[88px]">{c.odds ? fmt(c.odds) : '–'}<span class="sr"> (nesrovnáváme)</span></span>}
                     </td>
                   );
                 })}
-                <td class="p-3 text-sm">
+                <td class="p-3 text-sm hidden sm:table-cell">
                   {r.best.kind === 'none' ? <span class="text-ink-2">Žádný aktuální kurz</span>
                     : r.best.kind === 'single' ? <span class="badge badge--warn">Jen jedna nabídka</span>
                     : r.best.tie ? <span class="badge badge--tie"><Icon name="equal" size={12} />Shoda</span>

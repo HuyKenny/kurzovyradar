@@ -127,7 +127,7 @@
   .odd--tie { background: var(--color-sunken); }
   .odd--off { color: var(--color-ink-3); background: var(--color-sunken); border-style: dashed; font-weight: 500; }
 
-  .seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--color-sunken); border-radius: 11px; border: 1px solid var(--color-line); }
+  .seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; padding: 3px; gap: 2px; background: var(--color-sunken); border-radius: 11px; border: 1px solid var(--color-line); }
   .seg > a, .seg > label, .seg > button { display: inline-flex; align-items: center; min-height: 38px; padding: 0.3rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; color: var(--color-ink-2); text-decoration: none; cursor: pointer; }
   .seg > a[aria-current="page"], .seg > [aria-pressed="true"], .seg input:checked + span { background: var(--color-surface); color: var(--color-ink); box-shadow: var(--shadow-card); }
   .seg > label { position: relative; padding: 0; }

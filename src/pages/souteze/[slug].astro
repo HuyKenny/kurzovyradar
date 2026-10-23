@@ -6,7 +6,7 @@ import { COMPETITIONS, SPORTS, competitionBySlug } from '../../config/competitio
 import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 
 const c = competitionBySlug(Astro.params.slug ?? '');
-if (!c) return new Response(null, { status: 404 });
+if (!c) return Astro.rewrite('/404/');
 const up = await upcoming();
 const t = getNow();
 const cfg = getCfg();

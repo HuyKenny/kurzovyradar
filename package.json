@@ -13,10 +13,10 @@
     "types": "wrangler types",
     "check": "astro check",
     "test": "vitest run",
-    "preview": "wrangler dev --local --persist-to .wrangler/state --port 8831 --inspector-port 9331 --test-scheduled",
-    "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "deploy": "pnpm build && wrangler deploy",
+    "preview": "wrangler dev -c dist/server/wrangler.json --local --persist-to .wrangler/state --port 8831 --inspector-port 9331 --test-scheduled",
+    "db:migrate:local": "wrangler d1 migrations apply DB -c dist/server/wrangler.json --local --persist-to .wrangler/state",
+    "db:migrate:remote": "wrangler d1 migrations apply DB -c dist/server/wrangler.json --remote",
+    "deploy": "pnpm build && wrangler deploy -c dist/server/wrangler.json",
     "demo": "KR_DEMO=1 astro build && wrangler d1 migrations apply DB --local -c dist-demo/server/wrangler.json --persist-to .wrangler/demo && wrangler dev -c dist-demo/server/wrangler.json --local --persist-to .wrangler/demo --port 8832 --inspector-port 9332 --test-scheduled"
   },
   "dependencies": {
