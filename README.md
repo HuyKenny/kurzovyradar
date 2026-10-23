@@ -109,3 +109,9 @@ Zóna: SSL strict, `browser_cache_ttl` 0, WAF (blok CN, skenerů a bezcenných c
 8. **GA4:** nenasazeno (bez měření, bez cookie lišty). Pokud bude chtít, doplnit `SITE.ga4` a převzít cookie lištu z freespiny.
 
 Podrobnosti: `docs/ASSETS.md` (vizuály a jejich původ), `docs/CAPACITY.md` (měření a odhad kapacity).
+
+## Obsah z content gapu (24. 10. 2026)
+
+- **Přehledy kanceláří** (`review: 'info'` v `src/config/bookmakers.ts`, data v `reviews.ts`): jen fakta se zdrojem a datem, sekce „Co jsme neověřili“, bez partnerského odkazu, hodnocení a čísel bonusů (hlídá `tests/content.test.ts`).
+- **Srovnání** `/sazkove-kancelare/srovnani/`, **rejstřík pojmů** `/pojem/` (`src/config/glossary.ts`), **Zápasy dnes** `/dnes/`, kalkulačky (`src/lib/calc-text.ts` + `src/server/calc/odds.ts`), průvodci v `src/content/pruvodce/`.
+- Záměrně chybí: tipy a predikce, kontrola tiketu, daň z výher (nemáme ověřený oficiální zdroj), forma/H2H/tabulka (nemáme zdroj dat).
