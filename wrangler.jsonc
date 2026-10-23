@@ -20,8 +20,8 @@
     "ENVIRONMENT": "production",
     // Partner links from Kenny (23. 10. 2026, KurzovýRadar's own placements: Tipsport sid 45940, Chance sid 45960).
     // Match deeplinks reuse pid/sid/bid/tid from these on the bookmaker's match path.
-    "TIPSPORT_URL": "https://www.tipsport.cz/PartnerRedirectAction.do?pid=14361&sid=45940&bid=1421&tid=182&urlid=328",
-    "CHANCE_URL": "https://www.chance.cz/PartnerRedirectAction.do?pid=31094&sid=45960&bid=4666&tid=2703&urlid=681",
+    "TIPSPORT_URL": "https://www.tipsport.cz/PartnerRedirectAction.do?pid=14361&sid=45940&bid=3550&tid=2121",
+    "CHANCE_URL": "https://www.chance.cz/PartnerRedirectAction.do?pid=31094&sid=45960&bid=3550&tid=2121",
     "ALLWYN_URL": "https://record.sazka.cz/_8u72YyI1anJ_qrCCt62aAWNd7ZgqdRLk/1/",
     "MERKURXTIP_URL": "https://go.affilmaster.com/scripts/cdvy4d2?a_aid=TTE4W&a_bid=c708e3ae&data1=kurzovyradar",
     "IMPORT_INTERVAL_MIN": "15",
