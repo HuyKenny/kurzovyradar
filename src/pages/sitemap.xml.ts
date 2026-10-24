@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE } from '../config/site';
 import { competitionsIn, sportsIn } from '../lib/catalog';
+import { COMPETITIONS } from '../config/competitions';
 import { BOOKMAKERS } from '../config/bookmakers';
 import { TERMS } from '../config/glossary';
 import { upcoming, listable, cfg, now } from '../lib/data';
@@ -13,13 +14,14 @@ export const GET: APIRoute = async () => {
   const up = await upcoming();
   const t = now();
   const events = listable(up, t, cfg());
-  const lastmod = up.at ? new Date(up.at * 1000).toISOString() : undefined;
   const guides = await getCollection('pruvodce');
   const urls: { loc: string; lastmod?: string }[] = [
-    ...['/', '/kurzy/', '/dnes/', '/radar/', '/sporty/', '/bonusy/'].map((p) => ({ loc: p, lastmod })),
-    ...sportsIn(events).map((s) => ({ loc: s.path, lastmod })),
-    ...competitionsIn(events).map((c) => ({ loc: `/souteze/${c.slug}/`, lastmod })),
-    ...events.map((e) => ({ loc: e.url, lastmod })),
+    // No <lastmod> on listings: their content changes with every import, and a date that always says "now" is noise to crawlers.
+    ...['/', '/kurzy/', '/dnes/', '/radar/', '/sporty/', '/bonusy/', '/souteze/'].map((p) => ({ loc: p })),
+    ...sportsIn(events).map((s) => ({ loc: s.path })),
+    // Curated competitions stay in the sitemap in the off-season; the others only while they have matches.
+    ...[...new Set([...COMPETITIONS.map((c) => c.slug), ...competitionsIn(events).map((c) => c.slug)])].map((slug) => ({ loc: `/souteze/${slug}/` })),
+    ...events.map((e) => ({ loc: e.url })),
     { loc: '/sazkove-kancelare/' },
     { loc: '/sazkove-kancelare/srovnani/' },
     ...BOOKMAKERS.filter((b) => b.review === 'published' || b.review === 'info').map((b) => ({ loc: `/sazkove-kancelare/${b.id}/` })),

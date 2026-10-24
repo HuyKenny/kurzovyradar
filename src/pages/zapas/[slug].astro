@@ -150,10 +150,11 @@ const margins = comparable.map((b) => ({ b, v: overround(Object.fromEntries(OUTS
 const related = listable(up, t, cfg).filter((e) => e.comp === ev.comp && e.id !== ev.id).slice(0, 4);
 const S = SPORTS[ev.sport];
 const title = `${ev.home} – ${ev.away}: kurzy a jejich vývoj (${date(ev.startAt)}) | KurzovýRadar`;
-const desc = `Kurzy na zápas ${ev.home} – ${ev.away} (${ev.compName}, ${date(ev.startAt)} ${time(ev.startAt)}): kolik vyplatí Tipsport a Chance a jak se kurz měnil.`;
+const bestLine = OUTS.map((o) => { const p = pickPricesAll[o][0]; return p ? `${betTarget(ev.sport, o, ev.home, ev.away)} ${fmt(p.odds)}` : null; }).filter(Boolean).join(', ');
+const desc = `Kurzy na zápas ${ev.home} – ${ev.away} (${ev.compName}, ${date(ev.startAt)} ${time(ev.startAt)})${bestLine ? `: nejvyšší kurzy ${bestLine}` : ''}. Tipsport a Chance vedle sebe a jak se kurz měnil.`;
 const schema = [{
   '@type': 'SportsEvent', name: `${ev.home} – ${ev.away}`, startDate: new Date(ev.startAt * 1000).toISOString(), sport: S.name,
-  eventStatus: 'https://schema.org/EventScheduled',
+  eventStatus: 'https://schema.org/EventScheduled', url: new URL(ev.url, 'https://kurzovyradar.cz').href, description: `Kurzy a jejich vývoj na zápas ${ev.home} – ${ev.away}.`,
   homeTeam: { '@type': 'SportsTeam', name: ev.home }, awayTeam: { '@type': 'SportsTeam', name: ev.away },
   superEvent: { '@type': 'SportsEvent', name: ev.compName },
 }];

@@ -8,7 +8,8 @@ const updated = new Date('2026-10-24');
 <Article art="kalkulacka" title="Rejstřík sázkaře: pojmy srozumitelně" metaTitle="Rejstřík sázkaře – vysvětlení pojmů ze sázení | KurzovýRadar"
   description="Co znamená 1X2, handicap, kombinace, marže, cashout nebo ROI. Krátká vysvětlení pojmů ze sázení s příkladem, bez tipů a bez předpovědí."
   lead="Krátká vysvětlení pojmů, na které narazíš u kurzů a tiketů. Každý má příklad a odkaz na související pojem."
-  crumbs={[{ name: 'Rejstřík sázkaře', url: '/pojem/' }]} published={updated} updated={updated} checked={updated} schemaType="WebPage">
+  crumbs={[{ name: 'Rejstřík sázkaře', url: '/pojem/' }]} published={updated} updated={updated} checked={updated} schemaType="WebPage"
+  extraSchema={[{ '@type': 'DefinedTermSet', '@id': 'https://kurzovyradar.cz/pojem/', name: 'Rejstřík sázkaře', inLanguage: 'cs', hasDefinedTerm: sorted.map((t) => ({ '@type': 'DefinedTerm', name: t.term, description: t.short, url: `https://kurzovyradar.cz/pojem/${t.slug}/` })) }]}>
   <ul class="not-prose grid gap-3 sm:grid-cols-2 list-none p-0 max-w-[980px]">
     {sorted.map((t) => (
       <li class="card p-4">

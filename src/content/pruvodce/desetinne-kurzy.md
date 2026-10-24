@@ -6,6 +6,11 @@ order: 1
 published: 2026-10-23
 updated: 2026-10-23
 checked: 2026-10-23
+faq:
+  - q: "Jak spočítám výplatu z desetinného kurzu?"
+    a: "Výplata = sázka × kurz. Při sázce 200 Kč na kurz 1,85 je výplata 370 Kč včetně vkladu, čistý zisk je 170 Kč."
+  - q: "Co je implikovaná pravděpodobnost?"
+    a: "Je to převrácená hodnota kurzu v procentech. Kurz 2,00 odpovídá 50 %. Skutečná šance se liší, protože kurzy obsahují marži kanceláře."
 ---
 
 <div class="strucne">

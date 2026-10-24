@@ -13,7 +13,7 @@ const { Content } = await render(g);
 ---
 <Article art={`pruvodce-${g.id}` in artManifest ? `pruvodce-${g.id}` : 'pruvodce'} title={g.data.title} metaTitle={`${g.data.title} | KurzovýRadar`} description={g.data.description} lead={g.data.lead}
   crumbs={[{ name: 'Jak na kurzy', url: '/pruvodce/' }, { name: g.data.title, url: `/pruvodce/${g.id}/` }]}
-  published={g.data.published} updated={g.data.updated} checked={g.data.checked}>
+  published={g.data.published} updated={g.data.updated} checked={g.data.checked} faq={g.data.faq}>
   <Content />
   {g.id === 'kurzy-pro-zacatecniky' && <BeginnerExample />}
   <aside slot="after" class="mt-12 max-w-[72ch]" aria-labelledby="h-more">

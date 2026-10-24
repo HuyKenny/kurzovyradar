@@ -25,7 +25,8 @@ const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
   description="Tabulka sázkových kanceláří Tipsport, Chance, Allwyn, MerkurXtip, Fortuna, Betano, Sazkabet, fBET, SYNOTtip a KingsBet. Jen ověřené údaje, u neověřených pomlčka."
   lead="Porovnáváme jen to, co jsme ověřili u provozovatele nebo v seznamu Ministerstva financí. Pomlčka znamená, že to nevíme, ne že to kancelář nemá."
   crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: 'Srovnání', url: '/sazkove-kancelare/srovnani/' }]}
-  published={checked} updated={checked} checked={checked} schemaType="WebPage">
+  published={checked} updated={checked} checked={checked} schemaType="WebPage"
+  extraSchema={[{ '@type': 'ItemList', name: 'Sázkové kanceláře v ČR', itemListElement: BOOKMAKERS.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: b.name, url: `https://kurzovyradar.cz/sazkove-kancelare/${b.id}/` })) }]}>
   <div class="not-prose overflow-x-auto max-w-[1100px]">
     <table class="w-full text-[0.95rem]">
       <caption class="sr">Srovnání sázkových kanceláří</caption>

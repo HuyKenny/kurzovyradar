@@ -6,6 +6,11 @@ order: 3
 published: 2026-10-23
 updated: 2026-10-23
 checked: 2026-10-23
+faq:
+  - q: "Kdy jsou dva kurzy opravdu srovnatelné?"
+    a: "Když jde o stejný zápas, stejný trh a stejná pravidla vyhodnocení, například obě sázky bez prodloužení."
+  - q: "Proč je nejvyšší kurz zvýrazněný?"
+    a: "Protože při stejné sázce vyplatí vyšší kurz víc. Zvýrazníme ho ale jen tehdy, když nabídka kanceláře odpovídá a není zastaralá."
 ---
 
 <div class="strucne">

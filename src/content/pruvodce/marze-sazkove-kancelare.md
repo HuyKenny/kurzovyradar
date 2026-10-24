@@ -6,6 +6,11 @@ order: 10
 published: 2026-10-24
 updated: 2026-10-24
 checked: 2026-10-24
+faq:
+  - q: "Jak se počítá marže kanceláře?"
+    a: "Sečti převrácené hodnoty kurzů všech výsledků jedné sázky. Součet nad 100 % je marže kanceláře."
+  - q: "Proč procenta z kurzů nejsou skutečná šance?"
+    a: "Kurzy obsahují marži, takže procenta z nich dávají dohromady víc než 100 %. Kurzy jsou cena, ne předpověď výsledku."
 ---
 
 <div class="strucne">

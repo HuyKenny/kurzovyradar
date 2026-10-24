@@ -31,7 +31,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <Base title={`${c.name} – kurzy a jejich vývoj | KurzovýRadar`}
   description={`Kurzy na zápasy soutěže ${c.name}${c.country ? ` (${c.country})` : ''}: Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný a zaznamenané změny kurzů.`}
-  noindex={events.length === 0} crumbs={[{ name: S.name, url: S.path }, { name: c.name, url: `/souteze/${c.slug}/` }]}>
+  noindex={events.length === 0 && !cur} crumbs={[{ name: S.name, url: S.path }, { name: c.name, url: `/souteze/${c.slug}/` }]}>
   <div class="wrap pt-6">
     <p class="eyebrow m-0">{S.name}{c.country && <> · {c.country}</>}</p>
     <h1 class="mt-2 mb-0"><span class="inline-block px-3 rounded-[10px] border-2 border-ink" style={`background:${c.color}`}>{c.name}</span>: kurzy</h1>
@@ -41,8 +41,9 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     {events.length > 0 && <PicksStrip picks={chosen} now={t} back={`/souteze/${c.slug}/`} scope="v soutěži" />}
     <div class="mt-8">
       {events.length ? <EventList events={events} books={up.books} now={t} cfg={cfg} place={`soutez-${c.slug}`} showComp={false} />
-        : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Teď tu žádný zápas není.</p><p class="mt-2 mb-0">Kanceláře zatím nevypsaly kurzy na další kolo. Jakmile je vypíšou, uvidíš je tady.</p></div>}
+        : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Teď tu žádný zápas není.</p><p class="mt-2 mb-0">Kanceláře zatím nevypsaly kurzy na další kolo (třeba kvůli přestávce v sezóně). Jakmile je vypíšou, uvidíš je tady. Mezitím se podívej na <a href="/souteze/">všechny soutěže</a>.</p></div>}
     </div>
+    <p class="mt-10 max-w-[64ch]">Kurzy na {c.name} sledujeme u Tipsportu a Chance a každé čtvrt hodiny je znovu porovnáváme. U zápasu uvidíš, kdo nabízí vyšší kurz a jak se kurz od začátku sledování měnil. <a href="/pruvodce/porovnavani-stejnych-sazek/">Jak porovnání čteme</a>.</p>
     <nav class="mt-12" aria-labelledby="h-sib">
       <h2 id="h-sib" class="text-xl">Další soutěže – {S.name.toLowerCase()}</h2>
       <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3">{siblings.map((s) => <li><a class="chip" href={`/souteze/${s.slug}/`}>{s.name}<span class="count num">{s.count}</span></a></li>)}</ul>

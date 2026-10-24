@@ -8,7 +8,8 @@ const updated = new Date('2026-10-24');
 const see = (t.see ?? []).map((s) => termBySlug(s)).filter((x): x is Term => !!x);
 ---
 <Article title={`${t.term}: co to znamená`} metaTitle={`${t.term} – vysvětlení pojmu | KurzovýRadar`} description={t.short} lead={t.short}
-  crumbs={[{ name: 'Rejstřík sázkaře', url: '/pojem/' }, { name: t.term, url: `/pojem/${t.slug}/` }]} published={updated} updated={updated} checked={updated} schemaType="Article">
+  crumbs={[{ name: 'Rejstřík sázkaře', url: '/pojem/' }, { name: t.term, url: `/pojem/${t.slug}/` }]} published={updated} updated={updated} checked={updated} schemaType="Article"
+  extraSchema={[{ '@type': 'DefinedTerm', name: t.term, description: t.short, url: `https://kurzovyradar.cz/pojem/${t.slug}/`, inDefinedTermSet: 'https://kurzovyradar.cz/pojem/' }]}>
   {t.body.map((p) => <p>{p}</p>)}
   {t.example && <div class="strucne not-prose"><p class="m-0 font-display font-bold">Příklad</p><p class="m-0 mt-1">{t.example}</p></div>}
   {t.link && <p><a class="btn btn--ghost btn--sm" href={t.link.href}>{t.link.label}</a></p>}

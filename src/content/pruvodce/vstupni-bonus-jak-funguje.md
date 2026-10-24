@@ -6,6 +6,13 @@ order: 13
 published: 2026-10-24
 updated: 2026-10-24
 checked: 2026-10-24
+faq:
+  - q: "Můžu si vstupní bonus vybrat jako hotovost?"
+    a: "Ne. Kancelář bonus obvykle připisuje po částech, až prosázíš určenou částku na tiketech s minimálním kurzem. Přesné podmínky najdeš vždy u kanceláře a na stránce Bonusy."
+  - q: "Co znamená prosázet bonus?"
+    a: "Prosázet znamená vsadit určitou částku na tiketech, které splňují podmínky kanceláře, hlavně minimální kurz. Teprve pak se ti bonus uvolní."
+  - q: "Proč je důležitý minimální kurz a denní strop?"
+    a: "Minimální kurz určuje, jaké tikety se do prosázení počítají, a denní strop kolik sázek se může započítat za den. Od nich závisí, jak dlouho ti prosázení zabere."
 ---
 
 <div class="strucne">

@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import { COMPETITIONS, SPORTS, SPORT_LIST } from '../../config/competitions';
+import { competitionsIn } from '../../lib/catalog';
+import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+
+const up = await upcoming();
+const all = listable(up, getNow(), getCfg());
+const live = competitionsIn(all);
+const count = new Map(live.map((c) => [c.slug, c.count]));
+// Curated competitions always (also off-season), the rest only while they have matches.
+const groups = SPORT_LIST.map((s) => {
+  const cur = COMPETITIONS.filter((c) => c.sport === s).map((c) => ({ slug: c.slug, name: c.name, count: count.get(c.slug) ?? 0 }));
+  const seen = new Set(cur.map((c) => c.slug));
+  const other = live.filter((c) => c.sport === s && !seen.has(c.slug)).map((c) => ({ slug: c.slug, name: c.name, count: c.count }));
+  return { sport: s, items: [...cur, ...other] };
+}).filter((g) => g.items.length);
+Astro.response.headers.set('Cache-Control', cacheHeader());
+const itemList = { '@type': 'ItemList', name: 'Soutěže s kurzy', itemListElement: groups.flatMap((g) => g.items).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: `https://kurzovyradar.cz/souteze/${c.slug}/` })) };
+---
+<Base title="Soutěže: kurzy na ligy a turnaje | KurzovýRadar" description="Přehled soutěží, na které kanceláře vypisují kurzy: fotbal, hokej, basketbal, tenis, esporty a další. U každé soutěže kurzy Tipsportu a Chance vedle sebe." crumbs={[{ name: 'Soutěže', url: '/souteze/' }]} schema={[itemList]}>
+  <div class="wrap pt-6">
+    <p class="eyebrow m-0">Přehled</p>
+    <h1 class="mt-2 mb-0">Soutěže, na které najdeš kurzy</h1>
+    <p class="text-[1.1rem] max-w-[64ch] mt-3">Vyber ligu nebo turnaj a uvidíš kurzy Tipsportu a Chance na jednotlivé zápasy vedle sebe. Číslo u soutěže je počet zápasů, které teď kanceláře nabízejí.</p>
+    {groups.map((g) => (
+      <section class="mt-8" aria-labelledby={`h-${g.sport}`}>
+        <h2 id={`h-${g.sport}`} class="text-xl"><a href={SPORTS[g.sport].path} class="no-underline hover:underline">{SPORTS[g.sport].name}</a></h2>
+        <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3">{g.items.map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}{c.count > 0 && <span class="count num">{c.count}</span>}</a></li>)}</ul>
+      </section>
+    ))}
+  </div>
+</Base>

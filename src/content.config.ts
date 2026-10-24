@@ -12,6 +12,8 @@ const pruvodce = defineCollection({
     published: z.coerce.date(),
     updated: z.coerce.date(),
     checked: z.coerce.date(),
+    /** Shown at the end of the article and emitted as FAQPage; each answer must be visible text. */
+    faq: z.array(z.object({ q: z.string(), a: z.string() })).optional(),
   }),
 });
 

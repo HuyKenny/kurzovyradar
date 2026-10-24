@@ -6,6 +6,13 @@ order: 0
 published: 2026-10-23
 updated: 2026-10-23
 checked: 2026-10-23
+faq:
+  - q: "Co znamená kurz 1,85?"
+    a: "Při výhře ti kancelář vyplatí 1,85násobek vsazené částky včetně vkladu. Ze 100 Kč je to 185 Kč, čistý zisk je 85 Kč."
+  - q: "Co znamenají 1, X a 2?"
+    a: "1 je výhra domácích, X remíza a 2 výhra hostů v základní hrací době. Sázka 1X2 vyhrává jen jeden z těch tří výsledků."
+  - q: "Znamená vyšší kurz lepší sázku?"
+    a: "Ne. Vyšší kurz znamená vyšší výplatu při výhře, ale podle kanceláře také menší šanci, že sázka vyjde. Kurz není předpověď výsledku."
 ---
 
 <div class="strucne">

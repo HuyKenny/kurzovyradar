@@ -21,9 +21,10 @@ const odds = (o: number) => o.toFixed(1).replace('.', ',');
 const d = new Date(`${checked}T12:00:00Z`);
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title="Vstupní bonusy sázkových kanceláří: Tipsport, Chance – podmínky | KurzovýRadar"
-  description="Vstupní bonusy Tipsportu a Chance na sportovní sázky vedle sebe: kolik musíš prosázet, při jakém kurzu a jak dlouho to trvá. Podmínky z oficiálních stránek, ověřeno."
-  canonical="/bonusy/" noindex={q.size > 0} crumbs={[{ name: 'Bonusy', url: '/bonusy/' }]}>
+<Base title="Vstupní bonusy sázkových kanceláří: Tipsport, Chance, Allwyn – podmínky | KurzovýRadar"
+  description="Vstupní bonusy Tipsportu, Chance a Allwynu na sportovní sázky vedle sebe: kolik musíš prosázet, při jakém kurzu a jak dlouho to trvá. Podmínky z oficiálních stránek, ověřeno."
+  canonical="/bonusy/" noindex={q.size > 0} crumbs={[{ name: 'Bonusy', url: '/bonusy/' }]}
+  schema={[{ '@type': 'ItemList', name: 'Vstupní bonusy seřazené podle nejmírnějších podmínek', itemListElement: fresh.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: b.label ?? BOOK[b.book].name, url: `https://kurzovyradar.cz/sazkove-kancelare/${b.book}/` })) }]}>
   <div class="wrap pt-6">
     <div class="flex items-start gap-4">
       <div class="flex-1 max-w-[72ch]">

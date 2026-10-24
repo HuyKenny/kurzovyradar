@@ -25,8 +25,7 @@ const path = Astro.url.pathname;
 const canonical = new URL(canon ?? path, SITE.url).href;
 const ogUrl = new URL(og ?? '/og/default.png', SITE.url).href;
 const graph = [
-  { '@type': 'WebSite', '@id': `${SITE.url}/#web`, url: `${SITE.url}/`, name: SITE.name, inLanguage: 'cs', publisher: { '@id': `${SITE.url}/#org` },
-    potentialAction: { '@type': 'SearchAction', target: `${SITE.url}/hledat/?q={q}`, 'query-input': 'required name=q' } },
+  { '@type': 'WebSite', '@id': `${SITE.url}/#web`, url: `${SITE.url}/`, name: SITE.name, inLanguage: 'cs', publisher: { '@id': `${SITE.url}/#org` } },
   { '@type': 'Organization', '@id': `${SITE.url}/#org`, name: SITE.name, url: `${SITE.url}/`, logo: `${SITE.url}/icon-512.png`, email: SITE.email },
   ...(crumbs.length
     ? [{ '@type': 'BreadcrumbList', itemListElement: [{ name: 'Úvod', url: '/' }, ...crumbs].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: new URL(c.url, SITE.url).href })) }]
@@ -150,6 +149,7 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
           <li><a class={footLink} href="/esporty/">Esporty</a></li>
           <li><a class={footLink} href="/sporty/">Všechny sporty</a></li>
           {topComps.slice(0, 4).map((c) => <li><a class={footLink} href={`/souteze/${c.slug}/`}>{c.name}</a></li>)}
+          <li><a class={footLink} href="/souteze/">Všechny soutěže</a></li>
         </ul></div>
       <div><h2 class="text-white text-lg mb-3">Jak na to</h2>
         <ul class="grid gap-2">
