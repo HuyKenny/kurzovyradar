@@ -45,3 +45,11 @@ for (const f of document.querySelectorAll<HTMLFormElement>('[data-calc] form[dat
     }
   });
 }
+
+// Links to #h-c4 … #h-c6 (guides, glossary) open the advanced part first.
+const advanced = document.getElementById('pokrocile') as HTMLDetailsElement | null;
+const openAdvanced = () => {
+  if (advanced && /^#h-c[456]$/.test(location.hash)) { advanced.open = true; document.querySelector(location.hash)?.scrollIntoView(); }
+};
+openAdvanced();
+window.addEventListener('hashchange', openAdvanced);

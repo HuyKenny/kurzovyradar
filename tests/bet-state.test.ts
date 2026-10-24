@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_STAKE, parseBetState, parseStake, payoutDelta, withBetState, winnings } from '../src/lib/bet-state';
-import { availablePeriods, windowChange } from '../src/lib/context';
+import { availablePeriods, changeAsOf, windowChange } from '../src/lib/context';
 
 const q = (s: string) => new URLSearchParams(s);
 
@@ -80,5 +80,28 @@ describe('period comparison keeps its meaning', () => {
     expect(keys(7 * 3600)).toEqual(['1h', '6h', 'vse']);
     expect(keys(5 * 86400)).toEqual(['1h', '6h', '24h', '3d', 'vse']);
     expect(availablePeriods(null, 5000)).toEqual([]);
+  });
+});
+
+describe('opening the detail later keeps the radar window', () => {
+  const snapshot = 100_000; // when the radar was computed
+  const rows = [
+    { at: 10_000, odds: 3360, enabled: true },
+    { at: snapshot - 3000, odds: 3070, enabled: true }, // 50 min before the snapshot: inside its "last hour"
+  ];
+  it('as of the snapshot the change is inside the last hour', () => {
+    const r = changeAsOf(rows, snapshot, 3600, 10_000);
+    expect(r.atRef).toBe(3070);
+    expect(r.change).toMatchObject({ status: 'moved', from: { odds: 3360 }, to: { odds: 3070 } });
+  });
+  it('measured from "now" 40 minutes later the same change would have vanished: that is the bug this avoids', () => {
+    const later = snapshot + 2400;
+    expect(windowChange(rows, later, 3600, 10_000, 3070)).toMatchObject({ status: 'unchanged' });
+  });
+  it('records made after the snapshot do not leak into the comparison', () => {
+    const withLater = [...rows, { at: snapshot + 600, odds: 2900, enabled: true }];
+    const r = changeAsOf(withLater, snapshot, 3600, 10_000);
+    expect(r.atRef).toBe(3070);
+    expect(r.change).toMatchObject({ status: 'moved', to: { odds: 3070 } });
   });
 });

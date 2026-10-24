@@ -115,3 +115,12 @@ Podrobnosti: `docs/ASSETS.md` (vizuály a jejich původ), `docs/CAPACITY.md` (m�
 - **Přehledy kanceláří** (`review: 'info'` v `src/config/bookmakers.ts`, data v `reviews.ts`): jen fakta se zdrojem a datem, sekce „Co jsme neověřili“, bez partnerského odkazu, hodnocení a čísel bonusů (hlídá `tests/content.test.ts`).
 - **Srovnání** `/sazkove-kancelare/srovnani/`, **rejstřík pojmů** `/pojem/` (`src/config/glossary.ts`), **Zápasy dnes** `/dnes/`, kalkulačky (`src/lib/calc-text.ts` + `src/server/calc/odds.ts`), průvodci v `src/content/pruvodce/`.
 - Záměrně chybí: tipy a predikce, kontrola tiketu, daň z výher (nemáme ověřený oficiální zdroj), forma/H2H/tabulka (nemáme zdroj dat).
+
+## Jedna vybraná sázka, radar a sledování (24. 10. 2026)
+
+- **Stav sázky v URL** (`src/lib/bet-state.ts`, `src/scripts/bet.ts`): `?trh=1x2&vysledek=1|x|2&vklad=…&obdobi=1h|6h|24h|3d|vse&zjisteni=rust|pokles|rozdil|max&zpet=…`; staré `?tip` funguje jako alias. Server vykreslí části všech tří výsledků, nevybrané jsou `hidden`; skript je přepíná, drží vklad a píše URL (pushState / replaceState).
+- **Kontext radaru** (`src/lib/context.ts`, `src/lib/findings.ts`): období se z radaru přenáší do detailu a měří se k času snapshotu (`rd.at`), pozdější změny jsou zvlášť. Karty radaru: `FindingCard.astro`, texty a dopad na výplatu v `findings.ts`.
+- **Filtry radaru** v URL: `pohled, obdobi, den, sport, soutez, od, do, zmena`; „jen moje sledované soutěže“ (`sledovane=1`) filtruje prohlížeč (`src/scripts/radar.ts`). Dny `dnes/zitra/vikend/7` v pražském kalendáři (`src/lib/days.ts`, bez 86 400 s aritmetiky). Počty: `src/lib/counts.ts`.
+- **Cílový kurz** (`src/lib/target.ts`, `/api/cile.json`): uložen v `kr-sledovane` jako `target` (tisíciny) a `targetAt`; starší uložení se načtou beze změny (`parseState` v `follow.ts`).
+- **Ukázka pro začátečníky**: `BeginnerExample.astro` + `src/scripts/priklad.ts` + `/api/priklad.json` (skutečný zápas, jinak označený výukový příklad).
+- Testy: `bet-state`, `findings`, `days`, `counts`, `target`, `follow`, `import` (čas zachycení změny se nepřepisuje).

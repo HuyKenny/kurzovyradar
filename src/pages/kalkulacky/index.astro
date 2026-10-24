@@ -28,6 +28,7 @@ const vo = q.get('vo') ?? '2,20', vp = q.get('vp') ?? '50';
 const rConvert = convertText(kf, ff);
 const rDutch = dutchText(dS, dOdds);
 const rValue = valueText(Number(vo.replace(',', '.')), Number(vp.replace(',', '.')));
+const advancedOpen = ['kf', 'ff', 'ds', 'o1', 'o2', 'o3', 'o4', 'vo', 'vp'].some((k) => q.has(k));
 const FMT = { decimal: 'Desetinný (2,50)', fractional: 'Zlomkový (3/2)', american: 'Americký (+150)' };
 const today = new Date('2026-10-23');
 ---
@@ -77,6 +78,9 @@ const today = new Date('2026-10-23');
       <p class="text-ink-2 mt-3 mb-0">Počítá se jako 1 ÷ kurz. Pozor: je v tom i marže kanceláře, takže to <strong>není skutečná šance</strong>, že tip vyjde. Je to jen kurz převedený na procenta.</p>
     </section>
 
+    <details id="pokrocile" class="card card--flat" open={advancedOpen}>
+      <summary class="px-5 min-h-[56px] flex items-center font-display font-bold text-lg">Pokročilé kalkulačky: převod formátů, rozdělení vkladu, value</summary>
+      <div class="grid gap-6 p-5 pt-2">
     <section class="card p-5 md:p-6" aria-labelledby="h-c4">
       <h2 id="h-c4" class="m-0 text-[1.5rem]">Převod desetinných, zlomkových a amerických kurzů</h2>
       <form method="get" action="/kalkulacky/#h-c4" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end mt-4" data-form="convert">
@@ -90,7 +94,7 @@ const today = new Date('2026-10-23');
       <p class="text-ink-2 mt-3 mb-0">České kanceláře používají desetinné kurzy. Ostatní formáty uvidíš u zahraničních kanceláří. Pojmy: <a href="/pojem/desetinny-kurz/">desetinný</a>, <a href="/pojem/zlomkovy-kurz/">zlomkový</a>, <a href="/pojem/americky-kurz/">americký</a>.</p>
     </section>
 
-    <section class="card p-5 md:p-6" aria-labelledby="h-c5">
+        <section class="card p-5 md:p-6" aria-labelledby="h-c5">
       <h2 id="h-c5" class="m-0 text-[1.5rem]">Holandská kalkulačka a surebet</h2>
       <form method="get" action="/kalkulacky/#h-c5" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] items-end mt-4" data-form="dutch">
         <label class="grid gap-1 font-bold">Celkem vsadím (Kč)<input class={field} name="ds" inputmode="decimal" value={String(dS)} required /></label>
@@ -103,10 +107,18 @@ const today = new Date('2026-10-23');
       <output class="block mt-5 text-[1.1rem]" aria-live="polite" data-out="dutch">
         {'error' in rDutch ? <span class="text-orange-ink">{rDutch.error}</span> : rDutch.map((p) => typeof p === 'string' ? p : <strong class="num">{p.b}</strong>)}
       </output>
-      <p class="text-ink-2 mt-3 mb-0">Kalkulačka rozdělí vklad tak, aby výplata byla stejná, ať vyhraje kterýkoli ze zadaných výsledků. Zadej kurzy na různé výsledky jednoho zápasu, i od různých kanceláří. Pojmy: <a href="/pojem/holandska-sazka/">holandská sázka</a>, <a href="/pojem/surebet/">surebet</a>.</p>
+      <p class="text-ink-2 mt-3 mb-1">Kalkulačka rozdělí vklad tak, aby výplata byla stejná, ať vyhraje kterýkoli ze zadaných výsledků. Zadej kurzy na různé výsledky jednoho zápasu, i od různých kanceláří.</p>
+      <p class="font-bold mt-3 mb-1">Předpoklady výpočtu</p>
+      <ul class="m-0 pl-5 text-ink-2 grid gap-1">
+        <li>Zadané výsledky se vzájemně vylučují (vyhrát může jen jeden z nich).</li>
+        <li>Zisk je zaručený jen tehdy, když zadané výsledky pokrývají <strong>všechno, co se může stát</strong>. U zápasu 1X2 musíš zadat všechny tři výsledky, dva ze tří zisk nezaručují.</li>
+        <li>Všechny sázky se musí vyhodnocovat stejně (stejná doba zápasu, stejná pravidla). Označení surebet má smysl jen při splnění všech tří podmínek.</li>
+        <li>Počítáme s kurzy tak, jak je zadáš. Kurzy se mění, limity sázek a podmínky kanceláří nezahrnujeme.</li>
+      </ul>
+      <p class="text-ink-2 mt-3 mb-0">Pojmy: <a href="/pojem/holandska-sazka/">holandská sázka</a>, <a href="/pojem/surebet/">surebet</a>.</p>
     </section>
 
-    <section class="card p-5 md:p-6" aria-labelledby="h-c6">
+        <section class="card p-5 md:p-6" aria-labelledby="h-c6">
       <h2 id="h-c6" class="m-0 text-[1.5rem]">Value kalkulačka s tvým odhadem</h2>
       <form method="get" action="/kalkulacky/#h-c6" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end mt-4" data-form="value">
         <label class="grid gap-1 font-bold">Kurz<input class={field} name="vo" inputmode="decimal" value={vo} required /></label>
@@ -118,6 +130,8 @@ const today = new Date('2026-10-23');
       </output>
       <p class="text-ink-2 mt-3 mb-0">Odhad šance zadáváš ty. KurzovýRadar žádné šance nepředpovídá a žádné „value“ sázky nevyhlašuje. Pojem: <a href="/pojem/value-bet/">value bet</a>.</p>
     </section>
+      </div>
+    </details>
   </div>
 </Article>
 <script src="../../scripts/calc.ts"></script>

@@ -77,6 +77,20 @@ const d = new Date('2026-10-23');
   </ul>
   <p>Řadíme nejdřív rozdíly mezi kancelářemi, pak velké změny, pak nová maxima, uvnitř podle velikosti. Spolupráce s kanceláří pořadí neovlivňuje. Nepočítáme šance na výhru ani „výhodnost“ sázky a změnám nepřisuzujeme příčiny, které neznáme.</p>
 
+  <h2>Tři různé časy a období</h2>
+  <ul>
+    <li><strong>Kdy jsme změnu zachytili:</strong> čas kontroly, při které jsme poprvé viděli novou cenu. Dalšími kontrolami nezměněného kurzu se nepřepisuje.</li>
+    <li><strong>Kdy jsme kurz naposledy ověřili:</strong> čas poslední úspěšné kontroly dané kanceláře. Mění se při každé kontrole.</li>
+    <li><strong>Jaké období porovnáváme:</strong> hodina, 6 hodin, 24 hodin, 3 dny nebo celé naše sledování. Z radaru se do detailu přenáší vybrané období. Detail ho měří k okamžiku, kdy radar zjištění spočítal, a změny z doby po něm uvádí zvlášť. Souhrny „od začátku našeho sledování“ jsou označené.</li>
+  </ul>
+  <p>Historie ukládá jen změny. Poslední zápis před začátkem období je tedy cena, která na začátku období platila. Chybějící historie není nulová změna: když kurz sledujeme kratší dobu, než je období, změnu nepočítáme.</p>
+
+  <h2>Vybraná sázka v detailu</h2>
+  <p>Detail zápasu pracuje s jednou vybranou sázkou (trh, výsledek, vklad a období). Kalkulačka, název sázky, podmínky výhry, důvody z radaru, porovnání kanceláří, graf a sledování se řídí stejným výběrem a ten je v adrese stránky (<code>?trh=1x2&amp;vysledek=1|x|2&amp;vklad=…&amp;obdobi=…</code>). Odkaz proto otevře stejnou sázku a obnovení nebo návrat zpět nic nerozbije. Kancelář konkrétní výsledek v odkazu nepřebírá, takže partnerský odkaz otevře zápas u kanceláře a výsledek si návštěvník vybere tam.</p>
+
+  <h2>Cílový kurz</h2>
+  <p>U sledované sázky si můžeš nastavit kurz, který tě zajímá. Vyhodnotí se, když otevřeš web, proti platné aktuální ceně (ne proti staré nebo pozastavené). Že byl cíl v minulosti dosažen, napíšeme jen tehdy, když to dokládá zapsaná cena. Neposíláme e-mail ani upozornění. Cíl se ukládá jen v tvém prohlížeči a po začátku zápasu už se nehlídá.</p>
+
   <h2>Mužské a ženské soutěže</h2>
   <p>Kanceláře pojmenovávají mužskou a ženskou ligu stejně (třeba „1. španělská liga“). Rozlišujeme je podle zdrojového označení sportu u každého zápasu, ne podle názvu. Ženské soutěže mají v názvu „žen“ a týmy značku „(ž)“.</p>
 

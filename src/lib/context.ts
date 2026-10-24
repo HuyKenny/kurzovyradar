@@ -59,3 +59,13 @@ export function availablePeriods(firstAt: number | null, endAt: number): PeriodI
   const span = endAt - firstAt;
   return PERIODS.filter((p) => p.seconds === null || span >= p.seconds);
 }
+
+/**
+ * The same comparison as the radar made, reconstructed as of `refAt` (the moment the radar snapshot was computed). Opening the
+ * detail later must not silently shift the window: a change recorded 50 minutes before the snapshot belongs to its "last hour",
+ * even if the page is opened 30 minutes after. `atRef` = the price that was valid at refAt.
+ */
+export function changeAsOf(rows: Rec[], refAt: number, seconds: number | null, trackingSince: number | null): { atRef: number | null; change: Change } {
+  const atRef = [...rows].reverse().find((r) => r.enabled && r.at <= refAt)?.odds ?? null;
+  return { atRef, change: windowChange(rows.filter((r) => r.at <= refAt), refAt, seconds, trackingSince, atRef) };
+}

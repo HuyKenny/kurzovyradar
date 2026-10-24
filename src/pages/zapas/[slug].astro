@@ -11,7 +11,7 @@ import { E, upcoming, radar as getRadar, eventDetail, listable, cfg as getCfg, n
 import { reasons, pricesFor } from '../../lib/picks';
 import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget, selectionName } from '../../lib/market';
 import { parseBetState, winnings, payoutDelta, type FindingKey } from '../../lib/bet-state';
-import { availablePeriods, periodInfo, windowChange, type Change } from '../../lib/context';
+import { availablePeriods, changeAsOf, periodInfo, type Change } from '../../lib/context';
 import { backLink, isOutcome } from '../../lib/links';
 import Icon from '../../components/Icon.astro';
 import { ticketView, atBooks, STATE_TEXT, OUTCOMES, whoOf } from '../../lib/ticket';
@@ -80,26 +80,45 @@ const periodNote = reqPeriod && period !== reqPeriod ? `Pro období „${periodI
 const secondsOf = (k: string) => (k === 'vse' ? span : periodInfo(k as never).seconds ?? span);
 const checkedAtOf = (bs_: FeedBook[]) => Math.min(...bs_.map((b) => books[b]?.lastSuccessAt ?? 0).filter(Boolean), Infinity);
 
-/** What changed at the requested period for one outcome, told once per distinct result (identical books are joined). */
+/**
+ * What changed at the requested period for one outcome, told once per distinct result (identical books are joined).
+ * The period is measured as of the moment the radar snapshot was computed (rd.at), so the detail keeps the meaning of the
+ * finding the visitor clicked even when the page is opened a while later. A change recorded after that moment is added as
+ * a separate sentence, together with the time of the last check.
+ */
 function contextLines(o: Outcome): string[] {
   if (!reqPeriod) return [];
   const info = periodInfo(reqPeriod);
   const target = betTarget(ev.sport, o, ev.home, ev.away);
-  const parts = comparable.filter((b) => isCurrentOffer(b, o)).map((b) => ({
-    b, ch: windowChange(history.filter((h) => h.book === b && h.outcome === o), t, info.seconds, books[b]?.trackingSince ?? null, offer(b, o)?.odds ?? null),
-  }));
+  const refAt = rd && rd.at <= t && t - rd.at < 6 * 3600 ? rd.at : t;
+  const parts = comparable.filter((b) => isCurrentOffer(b, o)).map((b) => {
+    const rows = history.filter((h) => h.book === b && h.outcome === o);
+    const { atRef, change } = changeAsOf(rows, refAt, info.seconds, books[b]?.trackingSince ?? null);
+    return { b, atRef, now: offer(b, o)?.odds ?? null, ch: change };
+  });
   if (!parts.length) return [];
-  const sig = (c: Change) => (c.status === 'moved' ? `m${c.from.odds}>${c.to.odds}@${c.from.at}|${c.to.at}` : c.status === 'unchanged' ? `u${c.odds}` : 'i');
-  const groups = new Map<string, { books: FeedBook[]; ch: Change }>();
-  for (const p of parts) (groups.get(sig(p.ch)) ?? groups.set(sig(p.ch), { books: [], ch: p.ch }).get(sig(p.ch))!).books.push(p.b);
-  return [...groups.values()].map(({ books: bk, ch }) => {
+  const sig = (c: Change, later: boolean) => `${c.status === 'moved' ? `m${c.from.odds}>${c.to.odds}@${c.from.at}|${c.to.at}` : c.status === 'unchanged' ? `u${c.odds}` : 'i'}${later ? 'L' : ''}`;
+  const groups = new Map<string, { books: FeedBook[]; ch: Change; now: number | null; later: boolean }>();
+  for (const p of parts) {
+    const later = p.atRef !== null && p.now !== null && p.atRef !== p.now;
+    const k = `${sig(p.ch, later)}|${p.now}`;
+    (groups.get(k) ?? groups.set(k, { books: [], ch: p.ch, now: p.now, later }).get(k)!).books.push(p.b);
+  }
+  const asOf = t - refAt > 60 ? ` (stav k ${atTime(refAt, t)}, kdy radar zjištění spočítal)` : '';
+  return [...groups.values()].flatMap(({ books: bk, ch, now: cur, later }) => {
     const where = atBooks(bk);
     const verified = checkedAtOf(bk);
     const ver = Number.isFinite(verified) ? ` Naposledy ověřeno ${atTime(verified, t)}.` : '';
-    if (ch.status === 'insufficient') return `${info.label.charAt(0).toUpperCase()}${info.label.slice(1)}: pro toto období ${where} zatím nemáme dost zápisů, takže změnu nepočítáme.`;
-    if (ch.status === 'unchanged') return `Kurz na ${target} se ${where} ${info.since} nezměnil (${fmt(ch.odds)}).${ver}`;
-    const dlt = payoutDelta(100, ch.from.odds, ch.to.odds);
-    return `Kurz na ${target} ${where} ${ch.to.odds < ch.from.odds ? 'klesl' : 'stoupl'} ${info.since} z ${fmt(ch.from.odds)} na ${fmt(ch.to.odds)} (${pct(ch.pct)}). Při vkladu 100 Kč je to ${Math.abs(dlt)} Kč ${dlt < 0 ? 'nižší' : 'vyšší'} výplata při výhře. Porovnáváme zápis z ${dateTime(ch.from.at)} se zápisem z ${dateTime(ch.to.at)}, ověřeno ${atTime(verified, t)}.`;
+    const out: string[] = [];
+    if (ch.status === 'insufficient') out.push(`${info.label.charAt(0).toUpperCase()}${info.label.slice(1)}: pro toto období ${where} zatím nemáme dost zápisů, takže změnu nepočítáme.`);
+    else if (ch.status === 'unchanged') out.push(`Kurz na ${target} se ${where} ${info.since} nezměnil (${fmt(ch.odds)})${asOf}.`);
+    else {
+      const dlt = payoutDelta(100, ch.from.odds, ch.to.odds);
+      out.push(`Kurz na ${target} ${where} ${ch.to.odds < ch.from.odds ? 'klesl' : 'stoupl'} ${info.since} z ${fmt(ch.from.odds)} na ${fmt(ch.to.odds)} (${pct(ch.pct)})${asOf}. Při vkladu 100 Kč je to ${Math.abs(dlt)} Kč ${dlt < 0 ? 'nižší' : 'vyšší'} výplata při výhře. Porovnáváme zápis z ${dateTime(ch.from.at)} se zápisem z ${dateTime(ch.to.at)}.`);
+    }
+    if (later && cur !== null) out.push(`Od té doby se kurz ${where} změnil na ${fmt(cur)}.${ver}`);
+    else out.push(ver.trim());
+    return out.filter(Boolean);
   });
 }
 function isCurrentOffer(b: FeedBook, o: Outcome) { return pickPricesAll[o].some((x) => x.book === b); }

@@ -46,7 +46,7 @@ const checked = new Date(r.checked);
     <ul>{r.unverified.map((u) => <li>{u}</li>)}</ul>
   </>)}
   {info ? (
-    <p class="text-sm text-ink-2">Tohle není recenze: kancelář jsme netestovali, nehodnotíme ji a neuvádíme bonusy. S touto kanceláří nespolupracujeme a odkaz na její web není partnerský. Údaje jsme zkontrolovali {checked.toLocaleDateString('cs-CZ')}, podmínky a nabídka se mění. Jak pracujeme s fakty, popisuje <a href="/metodika/">metodika</a>. Další kanceláře najdeš ve <a href="/sazkove-kancelare/srovnani/">srovnání</a>.</p>
+    <p class="text-sm text-ink-2">Tohle není recenze: kancelář jsme netestovali, nehodnotíme ji a neuvádíme bonusy. {r.partnerNote ?? 'S touto kanceláří nespolupracujeme a odkaz na její web není partnerský.'} Údaje jsme zkontrolovali {checked.toLocaleDateString('cs-CZ')}, podmínky a nabídka se mění. Jak pracujeme s fakty, popisuje <a href="/metodika/">metodika</a>. Další kanceláře najdeš ve <a href="/sazkove-kancelare/srovnani/">srovnání</a>.</p>
   ) : (<>
   <h2>Výhody a omezení</h2>
   <div class="not-prose grid gap-4 sm:grid-cols-2">

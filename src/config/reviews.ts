@@ -24,6 +24,8 @@ export interface Review {
   pros: string[];
   limits: string[];
   onSite: string; // what KurzovýRadar shows for this bookmaker
+  /** Overview pages only: how the partnership works when the brand is run by a partner under another name. */
+  partnerNote?: string;
   /** Things we looked for and could not confirm; shown on 'info' pages so a gap is never read as a "no". */
   unverified?: string[];
   sources: Source[];
@@ -33,13 +35,18 @@ const MF: Source = { label: 'Ministerstvo financí ČR – seznam legálních pr
 
 export const REVIEWS: Review[] = [
   {
-    id: 'tipsport', checked: '2026-10-23',
+    id: 'tipsport', checked: '2026-10-24',
     operator: 'Tipsport.net a.s.', ico: '28178653', seat: 'Politických vězňů 156/21, Beroun',
     licence: 'Kurzové sázky na pobočkách i na internetu (tipsport.cz), povolení Ministerstva financí ČR',
     web: 'tipsport.cz',
     inShort: ['Velká česká kancelář s českou licencí, pobočkami i webem.', 'Její kurzy na fotbal a hokej u nás vidíš u každého zápasu.', 'Kurzy má většinou stejné jako Chance (patří do stejné skupiny).'],
     summary: 'Jedna z největších českých sázkových kanceláří zaměřených na kurzové sázky. Vznikla v roce 1991 v Berouně a online sázky nabízí od ledna 2009.',
     facts: [
+      { label: 'Ověření totožnosti', value: 'Při registraci. Online sázka: identifikace přes orgány veřejné správy, smluvní partnery nebo osobně se zaměstnancem, věk 18 let se ověřuje proti Registru obyvatel (herní plán § 4)' },
+      { label: 'Platební prostředek', value: 'U online sázky se registruje a do 30 dnů ověří vlastní bankovní účet nebo karta. Výběr jde jen na ověřený prostředek (§ 5)' },
+      { label: 'Vklad (podle herního plánu)', value: 'Pobočka do 5 000 Kč, platební karta od 100 Kč, bankovní převod, PayU, Skrill, paysafecard (poplatek 5 %)' },
+      { label: 'Výběr (podle herního plánu)', value: 'Pobočka 100–5 000 Kč, bankovní převod od 1 000 Kč, Skrill 1 000–30 000 Kč' },
+      { label: 'Mobil a orientace v nabídce', value: 'Neověřeno: oficiální zdroj jsme nenašli. Z KurzovéhoRadaru se otevře zápas u kanceláře, výsledek si na něm vybereš sám' },
       { label: 'Založení', value: '1991, Beroun' },
       { label: 'Online sázení', value: 'od 5. 1. 2009' },
       { label: 'Skupina', value: 'Od roku 2013 do skupiny patří i Chance' },
@@ -61,19 +68,25 @@ export const REVIEWS: Review[] = [
     onSite: 'Kurzy Tipsportu sledujeme každých 15 minut a jsou součástí srovnání i radaru.',
     sources: [
       MF,
+      { label: 'Tipsport.net – Herní plán pro kurzové sázky (schválen MF 14. 3. 2019, účinný od 2. 4. 2019)', url: 'https://minshara.tipsport.cz/datafiles/hp-tipsportnet-as-01042019-cz-1554208441.pdf' },
       { label: 'Lupa.cz – Češi sází na síti první týden (2009)', url: 'https://www.lupa.cz/tiskove-zpravy/cesi-sazi-na-siti-prvni-tyden/' },
       { label: 'Deník.cz – Jaká byla cesta k sázení na internetu (2009)', url: 'https://www.denik.cz/moje_penize/penize_jaka_byla_cesta_k_net_sazeni20090111.html' },
       { label: 'Seznam Zprávy – skupina Tipsport', url: 'https://www.seznamzpravy.cz/clanek/314038' },
     ],
   },
   {
-    id: 'chance', checked: '2026-10-23',
+    id: 'chance', checked: '2026-10-24',
     operator: 'CHANCE a.s.', ico: '28178815', seat: 'Politických vězňů 156, Beroun',
     licence: 'Kurzové sázky na pobočkách i na internetu (chance.cz), povolení Ministerstva financí ČR',
     web: 'chance.cz',
     inShort: ['Česká kancelář s licencí, patří do skupiny Tipsport.', 'Její kurzy u nás porovnáváš s Tipsportem u každého zápasu.', 'Většinou nabízí stejné kurzy jako Tipsport, občas se liší.'],
     summary: 'Česká sázková kancelář, od roku 2013 součást skupiny Tipsport. Její jméno nese nejvyšší česká fotbalová soutěž Chance Liga.',
     facts: [
+      { label: 'Ověření totožnosti', value: 'Při registraci. Online sázka: identifikace přes orgány veřejné správy, smluvní partnery nebo osobně se zaměstnancem, věk 18 let se ověřuje proti Registru obyvatel (herní plán § 4)' },
+      { label: 'Platební prostředek', value: 'U online sázky se registruje a do 30 dnů ověří vlastní bankovní účet nebo karta. Výběr jde jen na ověřený prostředek (§ 5)' },
+      { label: 'Vklad (podle herního plánu)', value: 'Pobočka do 5 000 Kč, platební karta od 100 Kč, bankovní převod, PayU, Skrill, paysafecard (poplatek 5 %)' },
+      { label: 'Výběr (podle herního plánu)', value: 'Pobočka 100–5 000 Kč, bankovní převod od 1 000 Kč, Skrill 1 000–30 000 Kč' },
+      { label: 'Mobil a orientace v nabídce', value: 'Neověřeno: oficiální zdroj jsme nenašli. Z KurzovéhoRadaru se otevře zápas u kanceláře, výsledek si na něm vybereš sám' },
       { label: 'Skupina', value: 'Tipsport (od roku 2013)' },
       { label: 'Partnerství', value: 'Název nejvyšší české fotbalové ligy – Chance Liga' },
     ],
@@ -92,6 +105,7 @@ export const REVIEWS: Review[] = [
     onSite: 'Kurzy Chance sledujeme každých 15 minut a jsou součástí srovnání i radaru.',
     sources: [
       MF,
+      { label: 'CHANCE – Herní plán pro kurzové sázky (schválen MF 14. 3. 2019, účinný od 2. 4. 2019)', url: 'https://home.chance.cz/datafiles/hp-internet-chance.pdf' },
       { label: 'Seznam Zprávy – Chance ve skupině Tipsport', url: 'https://www.seznamzpravy.cz/clanek/314038' },
       { label: 'Finance.cz – ÚOHS: Tipsport může převzít Chance (2012)', url: 'https://www.finance.cz/clanky/361532-uohs-tipsport-muze-prevzit-sveho-konkurenta-chance' },
     ],
@@ -106,6 +120,7 @@ export const REVIEWS: Review[] = [
     facts: [
       { label: 'Dříve', value: 'Sazka (přejmenování na Allwyn oznámeno v roce 2025)' },
       { label: 'Skupina', value: 'Allwyn (KKCG)' },
+      { label: 'Sazkabet', value: 'Název Sazkabet označuje kurzové sázky na allwyn.cz. Adresa sazkabet.cz na ně přesměrovává, viz přehled Sazkabetu' },
     ],
     features: [
       'Kurzové sázky na allwyn.cz v sekci Sporty',
@@ -192,20 +207,22 @@ export const REVIEWS: Review[] = [
     sources: [{ label: 'betano.cz – O nás (licence a regulace)', url: 'https://www.betano.cz/o-nas' }],
   },
   {
-    id: 'sazkabet', checked: '2026-10-23',
+    id: 'sazkabet', checked: '2026-10-24',
     operator: 'Allwyn Česko a.s.', ico: '26493993', seat: 'Evropská 866/69, Vokovice, 160 00 Praha 6',
     licence: 'Web sazkabet.cz uvádí jako provozovatele Allwyn Česko a.s.; povolení Ministerstva financí ČR najdeš u Allwynu (viz recenze)',
     web: 'sazkabet.cz',
-    inShort: ['Sazkabet je sázková značka, kterou provozuje Allwyn Česko (dříve Sazka).', 'Web sazkabet.cz se v záhlaví označuje i jako Allwyn.cz.', 'Allwyn je náš partner, jeho recenzi najdeš zvlášť.'],
-    summary: 'Sazkabet je značka kurzových sázek, kterou provozuje Allwyn Česko a.s. (dříve Sazka). Web sazkabet.cz patří pod Allwyn.cz.',
+    inShort: ['Sazkabet je název kurzových sázek, které provozuje Allwyn Česko (dříve Sazka).', 'Adresa sazkabet.cz dnes vede na kurzové sázky na allwyn.cz.', 'Allwyn je náš partner, jeho recenzi najdeš zvlášť.'],
+    summary: 'Sazkabet je název kurzových sázek, které provozuje Allwyn Česko a.s. (dříve Sazka). Adresa sazkabet.cz přesměrovává na kurzové sázky na allwyn.cz.',
     facts: [
       { label: 'Provozovatel webu', value: 'Allwyn Česko a.s., IČ 26493993 (podle patičky sazkabet.cz)' },
+      { label: 'Návaznost názvů', value: 'sazkabet.cz → sazka.cz/kurzove-sazky → allwyn.cz/kurzove-sazky (přesměrování ověřeno 24. 10. 2026). Titulek stránky: „Sazkabet – kurzové sázky, live sázení | Allwyn.cz“' },
       { label: 'Nabídka', value: 'Kurzové sázky a live sázení (podle titulku stránky)' },
     ],
     features: ['Kurzové sázky', 'Live sázení'],
     pros: [], limits: [],
     onSite: 'Kurzy Sazkabetu zatím nesledujeme. Allwyn je náš partner, ale jeho kurzy nemáme připojené.',
-    unverified: ['Jestli a kdy se značka Sazkabet sloučí s Allwynem (firma uvedla, že místní značky zatím zůstávají)', 'Aktuální bonusy'],
+    partnerNote: 'S provozovatelem spolupracujeme jako s Allwynem: partnerský odkaz najdeš v recenzi Allwynu, protože jde o týž provoz. Podle adresy vede na registraci na allwyn.cz v kampani označené jako kurzové sázky Sazkabet.',
+    unverified: ['Jestli a kdy se název Sazkabet přestane používat (Allwyn uvedl, že místní značky zatím zůstávají)', 'Aktuální bonusy'],
     sources: [{ label: 'sazkabet.cz', url: 'https://www.sazkabet.cz/' }, { label: 'Forbes.cz – Allwyn zachová místní značky', url: 'https://forbes.cz/konec-jmena-sazka-komarkuv-allwyn-zmenil-nazvy-ctyr-svych-spolecnosti/' }, MF],
   },
   {

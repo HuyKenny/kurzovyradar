@@ -11,7 +11,9 @@ const EXTRA: Record<string, { app: string; bankId: string }> = {
   synottip: { app: 'Android; iOS jen web', bankId: 'ano' },
   kingsbet: { app: 'iOS, Android', bankId: 'ano' },
 };
-const checked = new Date('2026-10-23');
+const checked = new Date('2026-10-24');
+const LABELS = ['Ověření totožnosti', 'Platební prostředek', 'Vklad (podle herního plánu)', 'Výběr (podle herního plánu)', 'Mobil a orientace v nabídce'];
+const fact = (id: string, label: string) => reviewOf(id)?.facts.find((f) => f.label === label)?.value ?? '–';
 const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
 ---
 <Article art="kancelar" title="Srovnání sázkových kanceláří v ČR" metaTitle="Srovnání sázkových kanceláří – provozovatel, licence, aplikace | KurzovýRadar"
@@ -37,6 +39,18 @@ const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
       </tbody>
     </table>
   </div>
+  <h2>Tipsport a Chance v praxi</h2>
+  <p>Praktické věci, které se u Tipsportu a Chance dají ověřit z oficiálního zdroje: jejich herního plánu schváleného Ministerstvem financí (účinný od 2. 4. 2019, zkontrolováno 24. 10. 2026). Kanceláře podmínky mohou změnit, platné limity a metody najdeš ve svém účtu.</p>
+  <div class="not-prose overflow-x-auto max-w-[1100px]">
+    <table class="w-full text-[0.95rem]">
+      <caption class="sr">Tipsport a Chance v praxi</caption>
+      <thead><tr><th scope="col">Téma</th><th scope="col">Tipsport</th><th scope="col">Chance</th></tr></thead>
+      <tbody>{LABELS.map((l) => <tr><th scope="row">{l.replace(' (podle herního plánu)', '')}</th><td>{fact('tipsport', l)}</td><td>{fact('chance', l)}</td></tr>)}</tbody>
+    </table>
+  </div>
+  <p class="text-sm text-ink-2">Zdroje: <a href="https://minshara.tipsport.cz/datafiles/hp-tipsportnet-as-01042019-cz-1554208441.pdf" rel="nofollow noopener" target="_blank">herní plán Tipsportu</a>, <a href="https://home.chance.cz/datafiles/hp-internet-chance.pdf" rel="nofollow noopener" target="_blank">herní plán Chance</a>. Údaj o mobilu a orientaci v nabídce jsme z oficiálního zdroje neověřili, proto ho nehodnotíme.</p>
+  <h2>Allwyn a Sazkabet</h2>
+  <p>Sazkabet je název kurzových sázek, které provozuje Allwyn Česko a.s. (dříve Sazka). Adresa sazkabet.cz vede přes sazka.cz na stránku kurzových sázek na allwyn.cz. Allwyn a Sazkabet proto není jedna kancelář a druhá: je to jeden provozovatel a jeden partnerský odkaz. Podrobně v <a href="/sazkove-kancelare/allwyn/">recenzi Allwynu</a> a v <a href="/sazkove-kancelare/sazkabet/">přehledu Sazkabetu</a>.</p>
   <h2>Jak to číst</h2>
   <ul>
     <li><strong>Naše kurzy:</strong> kurzy Tipsportu a Chance u každého zápasu porovnáváme. Ostatní kanceláře zatím ne, proto je u nich pomlčka místo srovnání.</li>

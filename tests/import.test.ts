@@ -38,6 +38,17 @@ describe('import', () => {
     expect(count(db, 'SELECT COUNT(*) n FROM odds_history')).toBe(3);
   });
 
+  it('the capture time of a change is not rewritten by later checks of an unchanged price', async () => {
+    const db = testDb();
+    await storeBook(db, res('tipsport', T0, [match('tipsport')]), cfg, T0);
+    await storeBook(db, res('tipsport', T0 + 900, [match('tipsport', {}, [1900, 3400, 3500])]), cfg, T0 + 900);
+    for (const k of [1800, 2700, 3600, 4500]) await storeBook(db, res('tipsport', T0 + k, [match('tipsport', {}, [1900, 3400, 3500])]), cfg, T0 + k);
+    const o = db.raw.prepare("SELECT changed_at FROM offers WHERE outcome = '1'").get() as { changed_at: number };
+    expect(o.changed_at).toBe(T0 + 900); // the change was captured at +900 s; four more checks did not move it
+    const bs = db.raw.prepare("SELECT last_success_at FROM book_state WHERE book = 'tipsport'").get() as { last_success_at: number };
+    expect(bs.last_success_at).toBe(T0 + 4500); // while the "last verified" time does move
+  });
+
   it('records a price change once and tracks min/max', async () => {
     const db = testDb();
     await storeBook(db, res('tipsport', T0, [match('tipsport')]), cfg, T0);

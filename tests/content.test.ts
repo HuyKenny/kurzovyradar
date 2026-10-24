@@ -17,6 +17,7 @@ describe('bookmaker overview pages', () => {
       expect(b.affiliate, b.id).toBe('none');
       const r = REVIEWS.find((x) => x.id === b.id)!;
       const shown = [r.summary, ...r.inShort, ...r.facts.map((f) => `${f.label} ${f.value}`), ...r.features, r.onSite].join(' ');
+      expect(r.partnerNote === undefined || b.id === 'sazkabet', b.id).toBe(true); // only Sazkabet shares a partner campaign (Allwyn)
       expect(shown, b.id).not.toMatch(/bonus|promo|free ?spin|zdarma|\d[\d  ]*\s?Kč|hvězd|testovali jsme/i);
       expect(r.sources.length, b.id).toBeGreaterThan(0);
       expect(r.unverified?.length ?? 0, b.id).toBeGreaterThan(0); // every gap is stated, never silently dropped
