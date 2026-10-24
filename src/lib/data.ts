@@ -28,7 +28,13 @@ async function derived<T>(key: string): Promise<T | null> {
   }
 }
 
-export const upcoming = async () => (await derived<UpcomingSnapshot>('upcoming')) ?? EMPTY_UP;
+/** Set when the last snapshot read came back empty (D1 hiccup, first run): such a page must not be cached for half an hour. */
+let degraded = false;
+export const upcoming = async () => {
+  const s = await derived<UpcomingSnapshot>('upcoming');
+  degraded = !s;
+  return s ?? EMPTY_UP;
+};
 export const radar = async () => derived<RadarSnapshot>('radar');
 
 export { OUTCOMES, outcomesFor } from './ticket';
@@ -106,7 +112,7 @@ export async function eventDetail(id: number): Promise<EventDetail | null> {
 }
 
 /** Cache-Control for SSR pages: the worker keeps them `CACHE_TTL_S` at the edge (stale-while-revalidate). */
-export const cacheHeader = () => `public, max-age=0, s-maxage=${cfg().cacheTtlS}`;
+export const cacheHeader = () => (degraded ? 'no-store' : `public, max-age=0, s-maxage=${cfg().cacheTtlS}`);
 
 /** Same event, outcome and recorded change at several books → one radar item listing every book. */
 export function mergeMoves<T extends { eventId: number; outcome: string; from: { odds: number; at: number }; to: { odds: number; at: number }; book: FeedBook }>(list: T[]): (T & { books: FeedBook[] })[] {
