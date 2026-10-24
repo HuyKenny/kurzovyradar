@@ -69,13 +69,15 @@ export interface Env {
   WINDOW_DAYS?: string;
   MAX_NEW_EVENTS?: string;
   CLICKS?: AnalyticsEngineDataset;
+  /** Pre-rendered HTML of the busiest pages (server/warm.ts); optional, the Worker works without it. */
+  HTML?: KVNamespace;
 }
 
 export function settings(env: Partial<Env>): Settings {
   const n = (v: string | undefined, d: number) => (v && Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : d);
   return {
     importIntervalMin: n(env.IMPORT_INTERVAL_MIN, 15),
-    cacheTtlS: n(env.CACHE_TTL_S, 300),
+    cacheTtlS: n(env.CACHE_TTL_S, 600),
     staleAfterMin: n(env.STALE_AFTER_MIN, 45),
     historyDays: n(env.HISTORY_DAYS, 30),
     startToleranceMin: n(env.START_TOLERANCE_MIN, 0),

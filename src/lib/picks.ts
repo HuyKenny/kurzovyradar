@@ -46,8 +46,20 @@ export interface Pick { ev: EventView; outcome: Outcome; reason: Reason; all: Re
 
 const key = (id: number, o: Outcome) => `${id}|${o}`;
 
-/** All reasons for every (event, outcome) that is still current. */
+// The snapshot object is shared by a warm isolate (lib/data.ts), so the whole pass over ~1 000 events is done once a minute, not per page and per call.
+const reasonsMemo = new WeakMap<UpcomingSnapshot, { radar: RadarSnapshot | null; minute: number; value: Map<string, Reason[]> }>();
+
+/** All reasons for every (event, outcome) that is still current. Callers must not modify the result. */
 export function reasons(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: number, cfg: Settings): Map<string, Reason[]> {
+  const minute = Math.floor(now / 60);
+  const hit = reasonsMemo.get(up);
+  if (hit && hit.radar === radar && hit.minute === minute) return hit.value;
+  const value = computeReasons(up, radar, now, cfg);
+  reasonsMemo.set(up, { radar, minute, value });
+  return value;
+}
+
+function computeReasons(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: number, cfg: Settings): Map<string, Reason[]> {
   const out = new Map<string, Reason[]>();
   const add = (id: number, o: Outcome, r: Reason) => (out.get(key(id, o)) ?? out.set(key(id, o), []).get(key(id, o))!).push(r);
   const byId = new Map(up.events.map((e) => [e.id, e]));

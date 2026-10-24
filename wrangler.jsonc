@@ -14,7 +14,9 @@
   "assets": { "directory": "./dist/client", "binding": "ASSETS", "html_handling": "force-trailing-slash", "not_found_handling": "none" },
   // Secrets (wrangler secret put): TIPSPORT_CLIENT_ID/SECRET, CHANCE_API_USER/PASS. Values: ~/ai/credentials/.kurzovyradar-credentials.env
   // Every 15 min, offset from sportstreamy (which runs on */15): 2 requests per run (one bulk call per bookmaker).
-  "triggers": { "crons": ["4,19,34,49 * * * *"] },
+  "triggers": { "crons": ["4,19,34,49 * * * *", "9,24,39,54 * * * *"] },
+  // Second cron: 5 min after each import it pre-renders the key pages into KV (server/warm.ts), so a cold data centre reads HTML instead of rendering.
+  "kv_namespaces": [{ "binding": "HTML", "id": "5a9ec1dee46b400dad561dbe65cc9075" }],
   "d1_databases": [{ "binding": "DB", "database_name": "kurzovyradar", "database_id": "af52d462-e199-4497-8605-89f9a73e3c3e", "migrations_dir": "migrations" }],
   "vars": {
     "ENVIRONMENT": "production",
@@ -25,7 +27,7 @@
     "ALLWYN_URL": "https://record.sazka.cz/_8u72YyI1anJ_qrCCt62aAWNd7ZgqdRLk/1/",
     "MERKURXTIP_URL": "https://go.affilmaster.com/scripts/cdvy4d2?a_aid=TTE4W&a_bid=c708e3ae&data1=kurzovyradar",
     "IMPORT_INTERVAL_MIN": "15",
-    "CACHE_TTL_S": "300",
+    "CACHE_TTL_S": "600",
     "STALE_AFTER_MIN": "45",
     "HISTORY_DAYS": "30",
     "START_TOLERANCE_MIN": "0",

@@ -2,7 +2,6 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE } from '../config/site';
 import { competitionsIn, sportsIn } from '../lib/catalog';
-import { COMPETITIONS } from '../config/competitions';
 import { BOOKMAKERS } from '../config/bookmakers';
 import { TERMS } from '../config/glossary';
 import { BONUSES } from '../config/bonuses';
@@ -21,8 +20,8 @@ export const GET: APIRoute = async () => {
     // No <lastmod> on listings: their content changes with every import, and a date that always says "now" is noise to crawlers.
     ...['/', '/kurzy/', '/dnes/', '/radar/', '/sporty/', '/bonusy/', '/souteze/'].map((p) => ({ loc: p })),
     ...sportsIn(events).map((s) => ({ loc: s.path })),
-    // Curated competitions stay in the sitemap in the off-season; the others only while they have matches.
-    ...[...new Set([...COMPETITIONS.map((c) => c.slug), ...competitionsIn(events).map((c) => c.slug)])].map((slug) => ({ loc: `/souteze/${slug}/` })),
+    // Only competitions with matches: an empty one is noindex (a page without matches is thin) and so does not belong here.
+    ...competitionsIn(events).map((c) => ({ loc: `/souteze/${c.slug}/` })),
     ...events.map((e) => ({ loc: e.url })),
     ...BONUSES.filter((b) => isFresh(b, Date.now())).map((b) => ({ loc: `/bonusy/${b.book}/` })),
     { loc: '/sazkove-kancelare/' },

@@ -8,17 +8,34 @@ export const pct0 = (n: number) => `${Math.round(n * 100)} %`;
 export const int = (n: number) => new Intl.NumberFormat('cs-CZ').format(n);
 export const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(Math.round(n * 100) / 100)} Kč`;
 
-const parts = (s: number, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, ...o }).format(new Date(s * 1000));
+// Intl.DateTimeFormat is expensive to construct (and these run per event, thousands of times on a listing page): build each once.
+const fmtTime = new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+const fmtDate = new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, day: 'numeric', month: 'numeric', year: 'numeric' });
+const fmtDateShort = new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, day: 'numeric', month: 'numeric' });
+const fmtWeekday = new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, weekday: 'short' });
+const fmtDay = new Intl.DateTimeFormat('sv-SE', { timeZone: TZ });
+const at = (f: Intl.DateTimeFormat, s: number) => f.format(new Date(s * 1000));
 
-export const time = (s: number) => parts(s, { hour: '2-digit', minute: '2-digit' });
-export const date = (s: number) => parts(s, { day: 'numeric', month: 'numeric', year: 'numeric' });
-export const dateShort = (s: number) => parts(s, { day: 'numeric', month: 'numeric' });
+export const time = (s: number) => at(fmtTime, s);
+export const date = (s: number) => at(fmtDate, s);
+export const dateShort = (s: number) => at(fmtDateShort, s);
 export const dateTime = (s: number) => `${dateShort(s)} ${time(s)}`;
-export const weekday = (s: number) => parts(s, { weekday: 'short' });
+export const weekday = (s: number) => at(fmtWeekday, s);
 export const isoLocal = (s: number) => new Date(s * 1000).toISOString();
 
 /** Prague calendar day key "2026-10-24". */
-export const dayKey = (s: number) => new Intl.DateTimeFormat('sv-SE', { timeZone: TZ }).format(new Date(s * 1000));
+const dayCache = new Map<number, string>();
+/** Memoised per 15-minute bucket: Prague's UTC offset is a whole number of hours, so a bucket never straddles midnight. */
+export const dayKey = (s: number) => {
+  const b = Math.floor(s / 900);
+  let k = dayCache.get(b);
+  if (k === undefined) {
+    if (dayCache.size > 4000) dayCache.clear();
+    k = at(fmtDay, b * 900);
+    dayCache.set(b, k);
+  }
+  return k;
+};
 
 /** "Dnes 20:45", "Zítra 18:00", "So 25. 10. 15:30". */
 export function kickoff(s: number, now: number): string {

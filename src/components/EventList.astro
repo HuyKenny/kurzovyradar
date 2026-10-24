@@ -20,7 +20,7 @@ const n = (c: number) => `${c} ${c === 1 ? 'zápas' : c < 5 ? 'zápasy' : 'zápa
   {[...days.values()].map((list) => (
     <section aria-label={title(list[0]!.startAt)}>
       <h2 class="text-[1.5rem] mb-4 flex items-baseline gap-3">{title(list[0]!.startAt)} <span class="hand text-[1.25rem]">{n(list.length)}</span></h2>
-      <div class="grid gap-5 lg:grid-cols-2">{list.map((ev) => <Ticket ev={ev} books={books} now={now} cfg={cfg} place={place} showComp={showComp} />)}</div>
+      <div class="grid gap-5 lg:grid-cols-2 cv-list">{list.map((ev) => <Ticket ev={ev} books={books} now={now} cfg={cfg} place={place} showComp={showComp} />)}</div>
     </section>
   ))}
 </div>

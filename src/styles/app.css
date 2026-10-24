@@ -174,3 +174,14 @@
   .odd-picked-tag { position: absolute; top: -0.65rem; left: 0.5rem; z-index: 1; padding: 0 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
     background: var(--color-orange); color: var(--color-ink); border: 2px solid var(--color-ink); line-height: 1.3; }
 }
+
+/* Long lists: skip rendering of what is far below the fold (the browser remembers the real height after the first paint). */
+@layer components {
+  .cv-list > .ticket, .cv-list > li { content-visibility: auto; contain-intrinsic-size: auto 360px; }
+  /* Touch targets: at least 44 px where the pointer is a finger. */
+  @media (pointer: coarse) {
+    .btn--sm, .chip, .seg > a, .seg > label > span, .souhlas__odkaz, .pata-cookies { min-height: 44px; }
+    .fav { min-width: 44px; }
+    footer ul a { display: inline-flex; align-items: center; min-height: 44px; }
+  }
+}

@@ -61,7 +61,7 @@ run.ts                  jeden běh importu (obě kanceláře nezávisle)
 | Proměnná | Výchozí | Význam |
 |---|---|---|
 | `IMPORT_INTERVAL_MIN` | 15 | interval importu (musí odpovídat cronu; text na webu se bere odsud) |
-| `CACHE_TTL_S` | 300 | `s-maxage` stránek; worker drží stale kopii 6× déle a obnovuje na pozadí |
+| `CACHE_TTL_S` | 600 | `s-maxage` stránek; worker drží stale kopii 3× déle (30 min) a obnovuje na pozadí; po každém importu je klíčové stránky předrenderuje druhý cron do KV `HTML` (`src/server/warm.ts`) |
 | `STALE_AFTER_MIN` | 45 | po této době bez úspěšné kontroly kurz nesoutěží o „nejvyšší“ |
 | `HISTORY_DAYS` | 30 | podrobná historie po začátku zápasu, pak úklid (běh ve 03:xx UTC) |
 | `START_TOLERANCE_MIN` | 0 | tolerance začátku při párování |

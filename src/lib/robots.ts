@@ -10,6 +10,7 @@ export const ROBOTS = [
   'Disallow: /api/',
   'Disallow: /hledat/',
   'Disallow: /oblibene/',
+  'Disallow: /tipsport-zapas/',
   ...PARAMS.flatMap((p) => [`Disallow: /*?${p}=`, `Disallow: /*&${p}=`]),
   '',
   ...AI_TRAINING_BOTS.flatMap((b) => [`User-agent: ${b}`, 'Disallow: /', '']),

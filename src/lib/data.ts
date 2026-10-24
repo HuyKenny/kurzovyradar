@@ -18,10 +18,21 @@ export const now = () => Math.floor(Date.now() / 1000);
 
 const EMPTY_UP: UpcomingSnapshot = { at: 0, books: {}, events: [], stats: { events: 0, offers: 0, changes24h: 0, firstRecordAt: null } };
 
+// A warm isolate keeps the parsed snapshot: only the row's timestamp is read, and the 1 MB JSON is fetched and parsed again
+// only when an import has replaced it. Pages never mutate the snapshot, so sharing the object between requests is safe.
+const memo = new Map<string, { at: number; value: unknown }>();
+
 async function derived<T>(key: string): Promise<T | null> {
   try {
-    const row = await E.DB.prepare('SELECT json FROM derived WHERE key = ?').bind(key).first<{ json: string }>();
-    return row ? (JSON.parse(row.json) as T) : null;
+    const head = await E.DB.prepare('SELECT at FROM derived WHERE key = ?').bind(key).first<{ at: number }>();
+    if (!head) return null;
+    const hit = memo.get(key);
+    if (hit && hit.at === head.at) return hit.value as T;
+    const row = await E.DB.prepare('SELECT json, at FROM derived WHERE key = ?').bind(key).first<{ json: string; at: number }>();
+    if (!row) return null;
+    const value = JSON.parse(row.json) as T;
+    memo.set(key, { at: row.at, value });
+    return value;
   } catch (e) {
     console.error('derived read failed', key, String(e));
     return null;
@@ -112,7 +123,7 @@ export async function eventDetail(id: number): Promise<EventDetail | null> {
 }
 
 /** Cache-Control for SSR pages: the worker keeps them `CACHE_TTL_S` at the edge (stale-while-revalidate). */
-export const cacheHeader = () => (degraded ? 'no-store' : `public, max-age=0, s-maxage=${cfg().cacheTtlS}`);
+export const cacheHeader = () => (degraded ? 'no-store' : `public, max-age=60, s-maxage=${cfg().cacheTtlS}`);
 
 /** Same event, outcome and recorded change at several books → one radar item listing every book. */
 export function mergeMoves<T extends { eventId: number; outcome: string; from: { odds: number; at: number }; to: { odds: number; at: number }; book: FeedBook }>(list: T[]): (T & { books: FeedBook[] })[] {

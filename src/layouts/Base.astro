@@ -43,7 +43,7 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
@@ -67,7 +67,7 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="build" content={__BUILD_ID__} />
-  <script type="speculationrules" set:html={JSON.stringify({ prerender: [{ where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/go/*' } }, { not: { href_matches: '/api/*' } }] }, eagerness: 'moderate' }] })} />
+  <script type="speculationrules" set:html={JSON.stringify({ prefetch: [{ where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/go/*' } }, { not: { href_matches: '/api/*' } }, { not: { href_matches: '/*\\?*' } }, { not: { href_matches: '/oblibene/*' } }, { not: { href_matches: '/hledat/*' } }, { not: { selector_matches: '[rel~=nofollow]' } }] }, eagerness: 'moderate' }] })} />
   <script type="application/ld+json" set:html={ld} />
   <slot name="head" />
 </head>
@@ -78,7 +78,7 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
       <div class="wrap py-2 flex items-center gap-2"><Icon name="circle-alert" size={16} />Demonstrační data – smyšlené zápasy a kurzy pro vývoj webu. Nejsou to skutečné nabídky.</div>
     </div>
   )}
-  <header class="sticky top-0 z-40 bg-paper/95 backdrop-blur border-b-2 border-ink" data-header>
+  <header class="sticky top-0 z-40 bg-paper border-b-2 border-ink" data-header>
     <div class="wrap flex items-center gap-2 sm:gap-3 min-h-[64px]">
       <a href="/" class="no-underline shrink-0 rounded-lg" aria-label={`${SITE.name} – úvod`}><Logo /></a>
       <nav class="hidden lg:flex items-center gap-1 ml-5" aria-label="Hlavní menu">

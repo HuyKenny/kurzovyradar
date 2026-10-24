@@ -27,5 +27,15 @@ export function daysOf(f: DayFilter, now: number): string[] {
   return weekday(first) === 6 ? [first, addDays(first, 1)] : [first];
 }
 
-export const inDays = (startAt: number, f: DayFilter, now: number) => daysOf(f, now).includes(dayKey(startAt));
+const dayList = new Map<string, Set<string>>();
+export const inDays = (startAt: number, f: DayFilter, now: number) => {
+  const k = `${f}|${dayKey(now)}`;
+  let set = dayList.get(k);
+  if (!set) {
+    if (dayList.size > 200) dayList.clear();
+    set = new Set(daysOf(f, now));
+    dayList.set(k, set);
+  }
+  return set.has(dayKey(startAt));
+};
 export const DAY_LABEL: Record<DayFilter, string> = { dnes: 'Dnes', zitra: 'Zítra', vikend: 'Víkend', '7': '7 dní' };

@@ -146,7 +146,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       {view.key !== 'rozdily' && !win ? (
         <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Pro tohle zatím nemáme dost zápisů.</p><p class="mt-2 mb-0">{since ? `Kurzy si zapisujeme od ${dateTime(since)}. První pohyby uvidíš zhruba hodinu po začátku.` : 'Zapisování ještě nezačalo.'}</p></div>
       ) : groups.size ? (
-        <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0" data-groups>
+        <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0 cv-list" data-groups>
           {[...groups.values()].map((g) => (
             <li class="grid gap-3 content-start" data-group data-comp={compSlug(g[0]!)} data-n={g.length}>
               <FindingCard f={g[0]!} now={t} checkedAt={checkedOf(g[0]!)} back={here} />

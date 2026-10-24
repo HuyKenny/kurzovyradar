@@ -24,14 +24,14 @@ import type { Outcome } from '../../server/types';
 const m = /^(.*)-(\d+)$/.exec(Astro.params.slug ?? '');
 if (!m) return Astro.rewrite('/404/');
 const id = Number(m[2]);
-const d = await eventDetail(id);
+// The three reads are independent: start them together (the event row, the snapshot for the comparison, the radar for the reasons).
+const [d, up, rd] = await Promise.all([eventDetail(id), upcoming(), getRadar()]);
 if (!d) return Astro.rewrite('/404/');
 const { ev, history } = d;
 if (Astro.url.pathname !== ev.url) return Astro.redirect(ev.url, 301);
 const t = getNow();
 const cfg = getCfg();
 if (ev.startAt < t - 7 * 86400) return new Response('Zápas skončil a jeho kurzy už nezobrazujeme.', { status: 410, headers: { 'content-type': 'text/plain; charset=utf-8' } });
-const up = await upcoming();
 const books = up.books;
 const started = ev.startAt <= t;
 const v = ticketView(ev, books, t, cfg);
@@ -47,7 +47,6 @@ const bs = parseBetState(q, v.favourite?.outcome ?? '1');
 const pick: Outcome = OUTS.includes(bs.outcome) ? bs.outcome : OUTS[0]!;
 const stake = bs.stake;
 const back = backLink(q.get('zpet'));
-const rd = await getRadar();
 const allReasons = reasons(up, rd, t, cfg);
 const oddsOf = (o: Outcome) => v.outcomes.find((x) => x.outcome === o)?.best?.odds ?? null;
 const sel = (o: Outcome) => selectionName(ev.sport, o, ev.home, ev.away, ev.market);
@@ -152,18 +151,19 @@ const S = SPORTS[ev.sport];
 const title = `${ev.home} – ${ev.away}: kurzy a jejich vývoj (${date(ev.startAt)}) | KurzovýRadar`;
 const bestLine = OUTS.map((o) => { const p = pickPricesAll[o][0]; return p ? `${betTarget(ev.sport, o, ev.home, ev.away)} ${fmt(p.odds)}` : null; }).filter(Boolean).join(', ');
 const desc = `Kurzy na zápas ${ev.home} – ${ev.away} (${ev.compName}, ${date(ev.startAt)} ${time(ev.startAt)})${bestLine ? `: nejvyšší kurzy ${bestLine}` : ''}. Tipsport a Chance vedle sebe a jak se kurz měnil.`;
-const schema = [{
+// A WebPage about the match: Google wants a venue (`location`) for an Event rich result and we do not know it, so the match is only described.
+const schema = [{ '@type': 'WebPage', url: new URL(ev.url, 'https://kurzovyradar.cz').href, name: `${ev.home} – ${ev.away}: kurzy a jejich vývoj`, inLanguage: 'cs', about: {
   '@type': 'SportsEvent', name: `${ev.home} – ${ev.away}`, startDate: new Date(ev.startAt * 1000).toISOString(), sport: S.name,
   eventStatus: 'https://schema.org/EventScheduled', url: new URL(ev.url, 'https://kurzovyradar.cz').href, description: `Kurzy a jejich vývoj na zápas ${ev.home} – ${ev.away}.`,
   homeTeam: { '@type': 'SportsTeam', name: ev.home }, awayTeam: { '@type': 'SportsTeam', name: ev.away },
   superEvent: { '@type': 'SportsEvent', name: ev.compName },
-}];
+} }];
 const offState = (o: (typeof v.outcomes)[number]) => STATE_TEXT[o.cells.find((c) => c.state !== 'missing')?.state ?? 'missing'];
 const lastKnown = (o: Outcome) => comparable.map((b) => offer(b, o)).find(Boolean);
 // Coming from the radar (zjisteni/obdobi) the page must match what the radar just showed: short edge cache for those.
 Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi') ? 'public, max-age=0, s-maxage=60' : cacheHeader());
 ---
-<Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0} canonical={ev.url}
+<Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0 || started} canonical={ev.url}
   crumbs={[{ name: S.name, url: S.path }, { name: ev.compName, url: `/souteze/${ev.comp}/` }, { name: `${ev.home} – ${ev.away}`, url: ev.url }]}>
   <div class="wrap pt-6" data-bet-root data-bet={betData}>
     {back && <p class="m-0 mb-4"><a href={back.href} class="font-bold inline-flex items-center gap-1 min-h-[44px] no-underline hover:underline"><span aria-hidden="true">←</span>{back.label}</a></p>}
