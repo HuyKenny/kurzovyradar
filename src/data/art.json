@@ -74,6 +74,101 @@
   "w": 67,
   "h": 67
  },
+ "basketbal": {
+  "file": "basketbal.svg",
+  "w": 67,
+  "h": 67
+ },
+ "tenis": {
+  "file": "tenis.svg",
+  "w": 67,
+  "h": 67
+ },
+ "volejbal": {
+  "file": "volejbal.svg",
+  "w": 67,
+  "h": 67
+ },
+ "americky-fotbal": {
+  "file": "americky-fotbal.svg",
+  "w": 67,
+  "h": 67
+ },
+ "stolni-tenis": {
+  "file": "stolni-tenis.svg",
+  "w": 67,
+  "h": 67
+ },
+ "hazena": {
+  "file": "hazena.svg",
+  "w": 67,
+  "h": 67
+ },
+ "esporty": {
+  "file": "esporty.svg",
+  "w": 67,
+  "h": 67
+ },
+ "bojove-sporty": {
+  "file": "bojove-sporty.svg",
+  "w": 67,
+  "h": 67
+ },
+ "box": {
+  "file": "box.svg",
+  "w": 67,
+  "h": 67
+ },
+ "florbal": {
+  "file": "florbal.svg",
+  "w": 67,
+  "h": 67
+ },
+ "rugby": {
+  "file": "rugby.svg",
+  "w": 67,
+  "h": 67
+ },
+ "sipky": {
+  "file": "sipky.svg",
+  "w": 67,
+  "h": 67
+ },
+ "futsal": {
+  "file": "futsal.svg",
+  "w": 67,
+  "h": 67
+ },
+ "badminton": {
+  "file": "badminton.svg",
+  "w": 67,
+  "h": 67
+ },
+ "baseball": {
+  "file": "baseball.svg",
+  "w": 67,
+  "h": 67
+ },
+ "vodni-polo": {
+  "file": "vodni-polo.svg",
+  "w": 67,
+  "h": 67
+ },
+ "kriket": {
+  "file": "kriket.svg",
+  "w": 67,
+  "h": 67
+ },
+ "snooker": {
+  "file": "snooker.svg",
+  "w": 67,
+  "h": 67
+ },
+ "squash": {
+  "file": "squash.svg",
+  "w": 67,
+  "h": 67
+ },
  "logo-symbol": {
   "file": "logo-symbol.svg",
   "w": 66,
