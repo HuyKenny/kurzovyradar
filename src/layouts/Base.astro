@@ -93,12 +93,12 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
           <label for="q-head" class="sr">Hledat tým, soutěž nebo zápas</label>
           <Icon name="search" size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-2 pointer-events-none" />
           <input id="q-head" name="q" type="search" autocomplete="off" placeholder="Najdi tým nebo soutěž" minlength="2"
-            class="field !min-h-[44px] w-[190px] xl:w-[250px] pl-10 text-[16px]" aria-controls="q-head-list" aria-expanded="false" aria-autocomplete="list" role="combobox" />
+            class="field !min-h-[44px] w-[150px] xl:w-[250px] pl-10 text-[16px]" aria-controls="q-head-list" aria-expanded="false" aria-autocomplete="list" role="combobox" />
           <ul id="q-head-list" role="listbox" hidden class="absolute right-0 top-[calc(100%+8px)] w-[360px] max-h-[70vh] overflow-auto card p-1.5"></ul>
         </form>
         <a href="/hledat/" class="lg:hidden btn btn--quiet min-w-[44px]" aria-label="Hledat"><Icon name="search" size={22} /></a>
         <a href="/oblibene/" class="btn btn--quiet min-w-[44px] relative text-ink" aria-label="Moje sledované" data-fav-link>
-          <Icon name="star" size={22} /><span class="hidden sm:inline font-display">Sledované</span>
+          <Icon name="star" size={22} /><span class="hidden xl:inline font-display">Sledované</span>
           <span data-fav-count hidden class="absolute -top-0.5 -right-0.5 sm:static min-w-[22px] h-[22px] px-1 rounded-full bg-orange text-ink border-2 border-ink text-xs font-bold grid place-items-center num"></span>
         </a>
         <details class="lg:hidden relative" data-menu>
