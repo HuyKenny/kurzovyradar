@@ -5,6 +5,7 @@ import FreshNote from '../../components/FreshNote.astro';
 import Icon from '../../components/Icon.astro';
 import { SPORTS, competitionBySlug, stubColor, isSport, type Sport } from '../../config/competitions';
 import { competitionsIn } from '../../lib/catalog';
+import { ON_SPORTSTREAMY, ON_ZIVEPRENOSY, SPORTSTREAMY, ZIVEPRENOSY } from '../../config/sister';
 import PicksStrip from '../../components/PicksStrip.astro';
 import { picks as pickList } from '../../lib/picks';
 import { E, upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
@@ -44,6 +45,12 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Teď tu žádný zápas není.</p><p class="mt-2 mb-0">Kanceláře zatím nevypsaly kurzy na další kolo (třeba kvůli přestávce v sezóně). Jakmile je vypíšou, uvidíš je tady. Mezitím se podívej na <a href="/souteze/">všechny soutěže</a>.</p></div>}
     </div>
     <p class="mt-10 max-w-[64ch]">Kurzy na {c.name} sledujeme u Tipsportu a Chance a každé čtvrt hodiny je znovu porovnáváme. U zápasu uvidíš, kdo nabízí vyšší kurz a jak se kurz od začátku sledování měnil. <a href="/pruvodce/porovnavani-stejnych-sazek/">Jak porovnání čteme</a>.</p>
+    {(ON_SPORTSTREAMY[c.slug] || ON_ZIVEPRENOSY[c.slug]) && (
+      <p class="mt-4 max-w-[64ch]">
+        {ON_SPORTSTREAMY[c.slug] && <>Kde zápasy {c.name} sledovat a jaký je program přenosů najdeš na <a href={`${SPORTSTREAMY}${ON_SPORTSTREAMY[c.slug]}`}>sportstreamy.cz</a> (náš sesterský web). </>}
+        {ON_ZIVEPRENOSY[c.slug] && <>Slovenské vysielanie: <a href={`${ZIVEPRENOSY}${ON_ZIVEPRENOSY[c.slug]}`} rel="nofollow noopener" hreflang="sk" lang="sk">ziveprenosy.sk</a>.</>}
+      </p>
+    )}
     <nav class="mt-12" aria-labelledby="h-sib">
       <h2 id="h-sib" class="text-xl">Další soutěže – {S.name.toLowerCase()}</h2>
       <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3">{siblings.map((s) => <li><a class="chip" href={`/souteze/${s.slug}/`}>{s.name}<span class="count num">{s.count}</span></a></li>)}</ul>
