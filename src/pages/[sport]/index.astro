@@ -1,8 +1,12 @@
 ---
 // /tenis/, /basketbal/, /sipky/ … one page per sport (football and hockey keep their own files and share the component).
 import SportPage from '../../components/SportPage.astro';
+import { upcoming, cacheHeader } from '../../lib/data';
 import { isSport } from '../../config/competitions';
 const sport = Astro.params.sport;
 if (!isSport(sport)) return Astro.rewrite('/404/');
+// Headers must be set here: a component renders after the response has started streaming, so its header would never be sent.
+await upcoming();
+Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <SportPage sport={sport} />

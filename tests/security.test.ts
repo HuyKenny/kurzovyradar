@@ -41,3 +41,23 @@ describe('robots.txt', () => {
     expect(ROBOTS).toContain('Sitemap: https://kurzovyradar.cz/sitemap.xml');
   });
 });
+
+describe('cache key parameters', () => {
+  it('every query parameter a page or form uses is in KNOWN_PARAMS (an unknown one is stripped before rendering)', async () => {
+    const { readdirSync, readFileSync, statSync } = await import('node:fs');
+    const { KNOWN_PARAMS } = await import('../src/lib/params');
+    const walk = (d: URL, out: string[] = []): string[] => {
+      for (const f of readdirSync(d)) { const u = new URL(f, new URL(`${d.href}/`.replace(/\/+$/, '/'))); statSync(u).isDirectory() ? walk(u, out) : out.push(u.pathname); }
+      return out;
+    };
+    const files = ['pages', 'components', 'lib'].flatMap((x) => walk(new URL(`../src/${x}/`, import.meta.url))).filter((f) => /\.(astro|ts)$/.test(f) && !/\/api\//.test(f) && !/go-guard|params|robots/.test(f));
+    const used = new Set<string>();
+    for (const f of files) {
+      const t = readFileSync(f, 'utf8');
+      for (const m of t.matchAll(/\b(?:q|params)\.(?:get|has)\('([a-z0-9_]+)'\)|\bnum\('([a-z0-9_]+)'|searchParams\.get\('([a-z0-9_]+)'\)|\bname="([a-z0-9_]+)"/g)) used.add((m[1] ?? m[2] ?? m[3] ?? m[4])!);
+    }
+    // Form field names that are not query parameters of a cached page.
+    for (const ignore of ['after', 'clock', 'fotbal', 'hero', 'kalkulacka', 'minus', 'pruvodce', 'radar', 'search', 'star', 'x', 'e', 'b', 'p', 'ids', 'souteze', 'sporty']) used.delete(ignore);
+    for (const k of used) expect(KNOWN_PARAMS.has(k), `parameter "${k}" is read by a page but missing in src/lib/params.ts`).toBe(true);
+  });
+});

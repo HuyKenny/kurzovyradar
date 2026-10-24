@@ -4,6 +4,7 @@ import { runImport } from './server/run';
 import { seedDemo } from './server/demo';
 import { securityHeaders } from './lib/security';
 import { warm, type KvMeta } from './server/warm';
+import { KNOWN_PARAMS } from './lib/params';
 
 /** Never cached: tracked redirects, APIs that depend on the query, Cloudflare internals. */
 const NO_CACHE = /^\/(go|cdn-cgi)\/|^\/api\//;
@@ -20,9 +21,6 @@ function finish(res: Response, env: Env): Response {
 /** How long past its TTL a cached page may still be served while a fresh copy renders in the background. */
 const STALE_FACTOR = 3;
 
-/** Query parameters the pages actually read. Everything else is dropped before rendering and caching, so `/?x=<random>` cannot
- *  create cold renders and an unknown parameter can never turn the cached base page into its noindex variant. */
-const KNOWN_PARAMS = new Set(['den', 'do', 'ds', 'e', 'ff', 'k', 'kancelar', 'kf', 'kurz', 'obdobi', 'od', 'pohled', 'q', 'sledovane', 'soutez', 'sport', 'strana', 'tip', 'trh', 'vklad', 'vo', 'vp', 'vysledek', 'zjisteni', 'zmena', 'zpet']);
 
 /** Renders in flight in this isolate: concurrent misses for one URL share a single render. */
 const inflight = new Map<string, Promise<Response>>();

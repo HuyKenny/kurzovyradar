@@ -1,4 +1,8 @@
 ---
 import SportPage from '../../components/SportPage.astro';
+import { upcoming, cacheHeader } from '../../lib/data';
+// Headers must be set here: a component renders after the response has started streaming, so its header would never be sent.
+await upcoming();
+Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <SportPage sport="hokej" />
