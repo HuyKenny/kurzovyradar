@@ -34,6 +34,8 @@ export function terms(b: Bonus): string[] {
     `Abys ho dostal, musíš prosázet ${kc(t.wager)} na tiketech s kurzem aspoň ${odds(t.minOdds)}.`,
     `Do nároku se denně počítají sázky nejvýš ${kc(t.dailyCap)}, takže to trvá nejméně ${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.`,
     `Bonus se vyplácí po částech: za každých ${kc(t.payEvery)} prosázených ${kc(t.pay)}.`,
+    ...(t.deadlineDays ? [`Sázky musíš uzavřít do ${t.deadlineDays} dní od aktivace bonusu.${days >= t.deadlineDays ? ' Při denním stropu to vychází přesně na celou lhůtu, takže nemáš žádnou rezervu.' : ''}`] : []),
+    ...(t.excludes ? [t.excludes] : []),
   ];
 }
 

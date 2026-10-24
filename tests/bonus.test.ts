@@ -11,7 +11,7 @@ describe('bonus data', () => {
   it('every bonus has a source, a check date and consistent figures', () => {
     for (const b of BONUSES) {
       expect(b.sources.length, b.book).toBeGreaterThan(0);
-      for (const s of b.sources) expect(s.url).toMatch(/^https:\/\/www\.(tipsport|chance)\.cz\//);
+      for (const s of b.sources) expect(s.url).toMatch(/^https:\/\/(www\.(tipsport|chance|allwyn)\.cz|sazkacdn\.imagelance\.com)\//);
       expect(b.verifiedAt, b.book).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(b.tier.wager).toBeGreaterThan(b.tier.bonus);
       expect(b.tier.minOdds).toBeGreaterThan(1);
@@ -28,8 +28,8 @@ describe('bonus data', () => {
 });
 
 describe('ranking and wording', () => {
-  it('easiest terms first: Tipsport before Chance; the order is by stakes per Kč of bonus, then minimum odds', () => {
-    expect(rank().map((b) => b.book)).toEqual(['tipsport', 'chance']);
+  it('easiest terms first: Tipsport (10× at 1,5), Allwyn (10× at 2,5), Chance (14× at 2,0); by stakes per Kč of bonus, then minimum odds', () => {
+    expect(rank().map((b) => b.book)).toEqual(['tipsport', 'allwyn', 'chance']);
     const a = { ...BONUSES[0]!, book: 'chance' as const, tier: { ...BONUSES[0]!.tier, wager: 10_000, minOdds: 2 } };
     expect(rank([a, BONUSES[0]!]).map((b) => b.tier.minOdds)).toEqual([1.5, 2]);
   });
@@ -50,6 +50,20 @@ describe('ranking and wording', () => {
     expect(NOTICE.age).toMatch(/18/);
     expect(NOTICE.age).toMatch(/závislost/);
     expect(NOTICE.ad).toMatch(/partnerské/);
+  });
+});
+
+describe('Allwyn (Sazkabet) terms from its PDF rules of 30. 1. 2026', () => {
+  const a = BONUSES.find((b) => b.book === 'allwyn')!;
+  it('10× the bonus at odds 2,5, 5 % of the turnover counted a day, 20 days to do it: no slack', () => {
+    expect(wagerMultiple(a)).toBe(10);
+    expect(a.tier.minOdds).toBe(2.5);
+    expect(a.tier.dailyCap).toBe(a.tier.wager * 0.05);
+    expect(minDays(a)).toBe(20);
+    const t = terms(a).map(n);
+    expect(t.some((x) => x.includes('do 20 dní od aktivace') && x.includes('žádnou rezervu'))).toBe(true);
+    expect(t.some((x) => x.includes('kombinované sázky'))).toBe(true);
+    expect(a.tier.pay / a.tier.payEvery).toBeCloseTo(a.tier.bonus * 0.05 / (a.tier.wager / 20), 10); // 5 % of the bonus per twentieth of the turnover
   });
 });
 

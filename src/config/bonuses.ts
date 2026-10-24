@@ -4,7 +4,7 @@
  * than FRESH_DAYS the site stops showing the figures (lib/bonus.ts) and sends the visitor to the bookmaker instead.
  * Re-check weekly: scripts/kurzovyradar/bonusy-over.mjs (Chance) and the Apify fetch of tipsport.cz/bonusy (JS page).
  */
-import type { FeedBook } from './bookmakers';
+import type { BookId } from './bookmakers';
 
 export const FRESH_DAYS = 21;
 
@@ -20,13 +20,19 @@ export interface BonusTier {
   minOdds: number;
   /** The most stakes that count towards the bonus per day, Kč. */
   dailyCap: number;
-  /** The bonus is paid in parts: `pay` Kč for every `every` Kč of stakes. */
+  /** The bonus is paid in parts: `pay` Kč for every `payEvery` Kč of stakes. */
   payEvery: number;
   pay: number;
+  /** Days from activation to place the stakes, when the bookmaker states a deadline. */
+  deadlineDays?: number;
+  /** What does not count towards the stakes, when the bookmaker lists it. */
+  excludes?: string;
 }
 
 export interface Bonus {
-  book: Extract<FeedBook, 'tipsport' | 'chance'>;
+  book: Extract<BookId, 'tipsport' | 'chance' | 'allwyn'>;
+  /** Name when it differs from the bookmaker's (Allwyn runs the betting as Sazkabet). */
+  label?: string;
   /** What the bookmaker advertises, in our words (no quotation marks: a paraphrase of its banner). */
   headline: string;
   /** What the bookmaker says about the registration bonus, and any difference between its own pages. */
@@ -64,5 +70,21 @@ export const BONUSES: Bonus[] = [
     verifiedAt: '2026-10-24',
   },
 ];
+
+export const ALLWYN: Bonus = {
+  book: 'allwyn',
+  label: 'Allwyn (Sazkabet)',
+  headline: 'Allwyn uvádí 500 Kč za dokončení registrace a k prvnímu vkladu 100 % až do 3 000 Kč.',
+  registration: '500 Kč na Můj účet za dokončení plné registrace (podle Allwynu)',
+  registrationNote: 'Allwyn bonus podmiňuje registrací přes stránku allwyn.cz/kurzove-sazky, ověřením totožnosti a vkladem do 5 dní od zaslání nabídky (aspoň 100 Kč). Nárok má jen nově registrovaný zákazník.',
+  maxBonus: 3000,
+  tier: { deposit: 1000, bonus: 1000, wager: 10_000, minOdds: 2.5, dailyCap: 500, payEvery: 500, pay: 50, deadlineDays: 20, excludes: 'Nezapočítávají se kombinované sázky, sázky na výkony hráčů a dlouhodobé sázky.' },
+  sources: [
+    { label: 'Allwyn – Vstupní bonus Sazkabet', url: 'https://www.allwyn.cz/kurzove-sazky/vyhody/bonusy' },
+    { label: 'Allwyn – pravidla akce (PDF, 30. 1. 2026)', url: 'https://sazkacdn.imagelance.com/vyhody/d_sb_bonusy-podminky_26_allwyn-3500.pdf' },
+  ],
+  verifiedAt: '2026-10-24',
+};
+BONUSES.push(ALLWYN);
 
 export const bonusOf = (book: string) => BONUSES.find((b) => b.book === book);

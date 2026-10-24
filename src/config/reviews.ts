@@ -221,7 +221,7 @@ export const REVIEWS: Review[] = [
     features: ['Kurzové sázky', 'Live sázení'],
     pros: [], limits: [],
     onSite: 'Kurzy Sazkabetu zatím nesledujeme. Allwyn je náš partner, ale jeho kurzy nemáme připojené.',
-    partnerNote: 'S provozovatelem spolupracujeme jako s Allwynem: partnerský odkaz najdeš v recenzi Allwynu, protože jde o týž provoz. Podle adresy vede na registraci na allwyn.cz v kampani označené jako kurzové sázky Sazkabet.',
+    partnerNote: 'S provozovatelem spolupracujeme jako s Allwynem: partnerský odkaz najdeš v recenzi Allwynu, protože jde o týž provoz. Podle adresy vede na registraci na allwyn.cz v kampani označené jako kurzové sázky Sazkabet. Vstupní bonus Allwynu na sázky najdeš na stránce Bonusy.',
     unverified: ['Jestli a kdy se název Sazkabet přestane používat (Allwyn uvedl, že místní značky zatím zůstávají)', 'Aktuální bonusy'],
     sources: [{ label: 'sazkabet.cz', url: 'https://www.sazkabet.cz/' }, { label: 'Forbes.cz – Allwyn zachová místní značky', url: 'https://forbes.cz/konec-jmena-sazka-komarkuv-allwyn-zmenil-nazvy-ctyr-svych-spolecnosti/' }, MF],
   },

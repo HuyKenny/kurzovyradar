@@ -15,7 +15,7 @@ const fresh = isFresh(b, Date.now());
 <article class="ticket p-5 grid gap-3 content-start" data-bonus={b.book} data-placement={placement}>
   <div class="flex items-center gap-3 flex-wrap">
     <BookLogo id={b.book} h={30} />
-    <h3 class="m-0 text-[1.2rem]">{book.name}: vstupní bonus</h3>
+    <h3 class="m-0 text-[1.2rem]">{b.label ?? book.name}: vstupní bonus</h3>
     {first && <span class="badge badge--green ml-auto">Nejmírnější podmínky</span>}
   </div>
   {fresh ? (

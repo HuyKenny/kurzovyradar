@@ -35,12 +35,12 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     </div>
   {fresh.length > 0 ? (
     <>
-      <div class="grid gap-5 md:grid-cols-2 mt-8">
+      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3 mt-8">
         {fresh.map((b, i) => <BonusCard b={b} placement="bonus-stranka" first={i === 0 && fresh.length > 1} />)}
       </div>
 
       <div class="prose max-w-[72ch] mt-12"><h2>Podmínky vedle sebe</h2>
-      <p>Údaje platí pro první vklad 1 000 Kč, který kanceláře na své stránce předvádějí. Pro jiné vklady se podmínky mohou lišit, najdeš je u kanceláře.</p>
+      <p>Údaje platí pro první vklad 1 000 Kč (u Allwynu platí bonus 100 % vkladu). Pro jiné vklady se podmínky mohou lišit, najdeš je u kanceláře. Pomlčka znamená, že to kancelář na své stránce o bonusu neuvádí: najdeš to v podmínkách akce.</p>
       </div>
       <div class="overflow-x-auto mt-4">
         <table class="w-full text-[0.97rem]">
@@ -55,6 +55,8 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
             <tr><th scope="row">Denně se počítá nejvýš</th>{fresh.map((b) => <td>{kc(b.tier.dailyCap)}</td>)}</tr>
             <tr><th scope="row">Nejméně dní</th>{fresh.map((b) => <td>{minDays(b)}</td>)}</tr>
             <tr><th scope="row">Výplata</th>{fresh.map((b) => <td>{kc(b.tier.pay)} za každých {kc(b.tier.payEvery)}</td>)}</tr>
+            <tr><th scope="row">Lhůta na prosázení</th>{fresh.map((b) => <td>{b.tier.deadlineDays ? `${b.tier.deadlineDays} dní od aktivace` : '–'}</td>)}</tr>
+            <tr><th scope="row">Co se nepočítá</th>{fresh.map((b) => <td>{b.tier.excludes ? b.tier.excludes.replace('Nezapočítávají se ', '').replace(/\.$/, '') : '–'}</td>)}</tr>
           </tbody>
         </table>
       </div>
@@ -62,8 +64,8 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       <p class="text-sm text-ink-2">Zdroje: {fresh.flatMap((b) => b.sources).map((s, i) => <>{i > 0 && ', '}<a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></>)}. Ověřeno {czDate(checked)}.</p>
 
       <h2>Jak jsme je seřadili</h2>
-      <p>Podle toho, kolik musíš prosázet na každou korunu bonusu: u {BOOK[fresh[0]!.book].name} {wagerMultiple(fresh[0]!)}× při kurzu {odds(fresh[0]!.tier.minOdds)}{fresh.length > 1 && <>, u {BOOK[fresh[1]!.book].name} {wagerMultiple(fresh[1]!)}× při kurzu {odds(fresh[1]!.tier.minOdds)}</>}. Při stejné hodnotě rozhoduje nižší minimální kurz. Řazení tedy nezávisí na výši provize. Do srovnání dáváme jen kanceláře, se kterými spolupracujeme a jejichž podmínky jsme ověřili.</p>
-      <p><strong>Nejvyšší číslo není nejlepší nabídka.</strong> „Až {kc(Math.max(...fresh.map((b) => b.maxBonus)))}“ je strop pro nejvyšší první vklad: kanceláře na svých stránkách píšou, že čím vyšší vklad, tím vyšší bonus, a že je potřeba splnit podmínky. Rychlost ovlivňuje i denní strop: {fresh.map((b) => `${BOOK[b.book].name} ${minDays(b)} dní`).join(', ')} nejméně.</p>
+      <p>Podle toho, kolik musíš prosázet na každou korunu bonusu: {fresh.map((b, i) => `${i > 0 ? ', ' : ''}${b.label ?? BOOK[b.book].name} ${wagerMultiple(b)}× při kurzu ${odds(b.tier.minOdds)}`).join('')}. Při stejné hodnotě rozhoduje nižší minimální kurz. Řazení tedy nezávisí na výši provize. Do srovnání dáváme jen kanceláře, se kterými spolupracujeme a jejichž podmínky jsme ověřili.</p>
+      <p><strong>Nejvyšší číslo není nejlepší nabídka.</strong> „Až {kc(Math.max(...fresh.map((b) => b.maxBonus)))}“ je strop pro nejvyšší první vklad: kanceláře na svých stránkách píšou, že čím vyšší vklad, tím vyšší bonus, a že je potřeba splnit podmínky. Rychlost ovlivňuje i denní strop: {fresh.map((b) => `${b.label ?? BOOK[b.book].name} ${minDays(b)} dní`).join(', ')} nejméně.</p>
 
       <h2 id="kalkulacka">Za jak dlouho prosázím?</h2>
       <form method="get" action="/bonusy/#kalkulacka" data-autosubmit class="flex flex-wrap items-end gap-3">
@@ -72,7 +74,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       </form>
       <ul>
         {fresh.map((b) => { const counted = Math.min(perDay, b.tier.dailyCap); const days = Math.ceil(b.tier.wager / counted); return (
-          <li><strong>{BOOK[b.book].name}:</strong> při {kc(perDay)} denně se počítá {kc(counted)}, takže prosázet {kc(b.tier.wager)} potrvá nejméně {days} {days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.</li>
+          <li><strong>{b.label ?? BOOK[b.book].name}:</strong> při {kc(perDay)} denně se počítá {kc(counted)}, takže prosázet {kc(b.tier.wager)} potrvá nejméně {days} {days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.</li>
         ); })}
       </ul>
       <p class="text-sm text-ink-2">Je to jen výpočet z podmínek kanceláře. Nezahrnuje, jestli sázky vyjdou, a nic neslibuje. Sázej jen částku, kterou si můžeš dovolit ztratit.</p>
@@ -84,7 +86,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
 
   <div class="prose max-w-[72ch] mt-2">
   <h2>Co tu není</h2>
-  <p>U Allwynu (Sazkabet) je na stránce kurzových sázek soutěž v tipování, ne vstupní bonus, a oficiální podmínky bonusu na sázky u MerkurXtipu jsme nepřečetli. Proto je tady neuvádíme. Jejich přehledy najdeš v sekci <a href="/sazkove-kancelare/">Kde vsadit</a>. Jak bonus funguje, vysvětluje <a href="/pruvodce/vstupni-bonus-jak-funguje/">průvodce</a>.</p>
+  <p>Oficiální podmínky bonusu na sázky u MerkurXtipu jsme nepřečetli, proto je tady neuvádíme. Jeho přehled najdeš v sekci <a href="/sazkove-kancelare/">Kde vsadit</a>. Jak bonus funguje, vysvětluje <a href="/pruvodce/vstupni-bonus-jak-funguje/">průvodce</a>.</p>
   </div>
   <div class="max-w-[72ch] mt-8"><BonusNotice checked={checked} /></div>
   </div>
