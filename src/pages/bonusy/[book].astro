@@ -1,0 +1,69 @@
+---
+// /bonusy/<kancelar>/: one welcome bonus in full, from the figures in config/bonuses.ts (verified, dated). Server-rendered because the
+// figures are shown only while the check is recent.
+import Article from '../../components/Article.astro';
+import BonusCard from '../../components/BonusCard.astro';
+import { BOOK } from '../../config/bookmakers';
+import { BONUSES } from '../../config/bonuses';
+import { czDate, isFresh, minDays, rank, wagerMultiple } from '../../lib/bonus';
+import { kc } from '../../lib/format';
+import { cacheHeader } from '../../lib/data';
+
+const b = BONUSES.find((x) => x.book === Astro.params.book);
+if (!b) return Astro.rewrite('/404/');
+const book = BOOK[b.book];
+const name = b.label ?? book.name;
+const fresh = isFresh(b, Date.now());
+const t = b.tier;
+const days = minDays(b);
+const odds = (o: number) => o.toFixed(1).replace('.', ',');
+const steps = Math.round(t.bonus / t.pay);
+const stride = Math.max(1, Math.ceil(steps / 10));
+const schedule = Array.from({ length: steps }, (_, i) => ({ staked: (i + 1) * t.payEvery, paid: (i + 1) * t.pay })).filter((_, i) => (i + 1) % stride === 0 || i === steps - 1);
+const others = rank().filter((x) => x.book !== b.book && isFresh(x, Date.now()));
+const checked = new Date(`${b.verifiedAt}T12:00:00Z`);
+const wm = wagerMultiple(b);
+const faq = fresh ? [
+  { q: `Kolik musím prosázet, abych dostal bonus ${book.locative}?`, a: `Při prvním vkladu ${kc(t.deposit)} je bonus ${kc(t.bonus)} a podle podmínek, které ${name} uvádí, je potřeba prosázet ${kc(t.wager)} na tiketech s kurzem aspoň ${odds(t.minOdds)}. To je ${wm}násobek bonusu.` },
+  { q: `Jak dlouho prosazení trvá?`, a: `Denně se do nároku počítají sázky nejvýš ${kc(t.dailyCap)}, takže to trvá nejméně ${days} dní.${t.deadlineDays ? ` Lhůta je ${t.deadlineDays} dní od aktivace bonusu.` : ''}` },
+  { q: `Dostanu bonus najednou?`, a: `Ne. ${name} ho vyplácí po částech: za každých ${kc(t.payEvery)} prosázených ${kc(t.pay)}.` },
+  { q: `Co dostanu jen za registraci ${book.locative}?`, a: `${b.registration}. ${b.registrationNote ?? ''}`.trim() },
+] : [];
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Article art="kancelar" title={`${name}: vstupní bonus a jeho podmínky`}
+  metaTitle={fresh ? `${name} bonus za registraci: podmínky, prosázení, kurz | KurzovýRadar` : `${name} – vstupní bonus | KurzovýRadar`}
+  description={fresh ? `Vstupní bonus ${book.locative}: při vkladu ${kc(t.deposit)} je bonus ${kc(t.bonus)}, prosázet ${kc(t.wager)} při kurzu ${odds(t.minOdds)}+, nejméně ${days} dní. Podmínky z oficiálních stránek, ověřeno ${czDate(b.verifiedAt)}.` : `Aktuální vstupní bonus ${book.locative} najdeš přímo u kanceláře. Naše údaje jsou starší než tři týdny.`}
+  lead={fresh ? b.headline : `Naše údaje o bonusu ${book.locative} jsou starší než tři týdny, proto je neuvádíme.`}
+  crumbs={[{ name: 'Bonusy', url: '/bonusy/' }, { name, url: `/bonusy/${b.book}/` }]}
+  published={new Date('2026-10-24')} updated={checked} checked={checked} schemaType="Article" noindex={!fresh} faq={faq}>
+  <div class="not-prose max-w-[720px]"><BonusCard b={b} placement="bonus-podrobne" /></div>
+  {fresh && (<>
+    <h2>Co se musí stát, aby se bonus uvolnil</h2>
+    <p>Příklad platí pro první vklad {kc(t.deposit)}, který {name} předvádí na své stránce. Pro jiné vklady se podmínky mohou lišit.</p>
+    <ol>
+      <li>Zaregistruješ se a při prvním vkladu vložíš {kc(t.deposit)}. Bonus je {kc(t.bonus)}.</li>
+      <li>Sázíš na tiketech s kurzem aspoň {odds(t.minOdds)}. Do nároku se denně počítá nejvýš {kc(t.dailyCap)}.</li>
+      <li>Za každých {kc(t.payEvery)} prosázených se ti uvolní {kc(t.pay)}.</li>
+      <li>Po prosázení {kc(t.wager)} je uvolněných celých {kc(t.bonus)}.</li>
+    </ol>
+    <h2>Kolik se kdy uvolní</h2>
+    <table>
+      <caption class="sr">Postup uvolňování bonusu</caption>
+      <thead><tr><th scope="col">Prosázeno</th><th scope="col">Uvolněno z bonusu</th></tr></thead>
+      <tbody>{schedule.map((s) => <tr><td class="num">{kc(s.staked)}</td><td class="num">{kc(s.paid)}</td></tr>)}</tbody>
+    </table>
+    <p class="text-sm text-ink-2">Jde o výpočet z podmínek kanceláře. Nezahrnuje, jestli sázky vyjdou, a nic neslibuje. Kolikrát prosázíš, to neznamená, že vyděláš.</p>
+    <h2>Na co si dát pozor</h2>
+    <ul>
+      <li>Při minimálním kurzu {odds(t.minOdds)} se do prosázení nepočítají sázky s nižším kurzem. {wm}násobné prosázení znamená, že musíš vsadit {kc(t.wager)}, i když bonus je {kc(t.bonus)}.</li>
+      {t.deadlineDays && <li>Lhůta je {t.deadlineDays} dní. Při nejvyšším započítaném denním objemu to vychází na {days} dní, takže když jeden den vynecháš, hrozí, že ji nestihneš.</li>}
+      {t.excludes && <li>{t.excludes}</li>}
+      <li>Čísla se mění: ověřili jsme je {czDate(b.verifiedAt)}. Platné znění je vždy na stránkách kanceláře.</li>
+    </ul>
+    <h2>Jak to vypadá proti ostatním</h2>
+    <ul>{others.map((o) => <li><a href={`/bonusy/${o.book}/`}>{o.label ?? BOOK[o.book].name}</a>: prosázet {wagerMultiple(o)}× při kurzu {odds(o.tier.minOdds)}, nejméně {minDays(o)} dní.</li>)}</ul>
+    <p>{name}: prosázet {wm}× při kurzu {odds(t.minOdds)}, nejméně {days} dní. Celé <a href="/bonusy/">srovnání vedle sebe</a> a <a href="/pruvodce/vstupni-bonus-jak-funguje/">jak vstupní bonus funguje</a>.</p>
+    <p class="text-sm text-ink-2">Zdroje: {b.sources.map((s, i) => <>{i > 0 && ', '}<a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></>)}. Recenze: <a href={`/sazkove-kancelare/${b.book}/`}>{book.name}</a>.</p>
+  </>)}
+</Article>

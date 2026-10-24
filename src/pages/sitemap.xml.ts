@@ -5,6 +5,8 @@ import { competitionsIn, sportsIn } from '../lib/catalog';
 import { COMPETITIONS } from '../config/competitions';
 import { BOOKMAKERS } from '../config/bookmakers';
 import { TERMS } from '../config/glossary';
+import { BONUSES } from '../config/bonuses';
+import { isFresh } from '../lib/bonus';
 import { upcoming, listable, cfg, now } from '../lib/data';
 
 export const prerender = false;
@@ -22,8 +24,10 @@ export const GET: APIRoute = async () => {
     // Curated competitions stay in the sitemap in the off-season; the others only while they have matches.
     ...[...new Set([...COMPETITIONS.map((c) => c.slug), ...competitionsIn(events).map((c) => c.slug)])].map((slug) => ({ loc: `/souteze/${slug}/` })),
     ...events.map((e) => ({ loc: e.url })),
+    ...BONUSES.filter((b) => isFresh(b, Date.now())).map((b) => ({ loc: `/bonusy/${b.book}/` })),
     { loc: '/sazkove-kancelare/' },
     { loc: '/sazkove-kancelare/srovnani/' },
+    { loc: '/sazkove-kancelare/tipsport-vs-chance/' },
     ...BOOKMAKERS.filter((b) => b.review === 'published' || b.review === 'info').map((b) => ({ loc: `/sazkove-kancelare/${b.id}/` })),
     { loc: '/pojem/' },
     ...TERMS.map((t) => ({ loc: `/pojem/${t.slug}/` })),

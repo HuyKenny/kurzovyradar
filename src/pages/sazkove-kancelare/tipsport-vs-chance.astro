@@ -1,0 +1,57 @@
+---
+import Article from '../../components/Article.astro';
+import BookLogo from '../../components/BookLogo.astro';
+import BonusNotice from '../../components/BonusNotice.astro';
+import { BONUSES } from '../../config/bonuses';
+import { REVIEWS } from '../../config/reviews';
+import { czDate, isFresh, minDays, wagerMultiple } from '../../lib/bonus';
+import { kc } from '../../lib/format';
+import { cacheHeader } from '../../lib/data';
+export const prerender = false;
+const tip = BONUSES.find((b) => b.book === 'tipsport')!;
+const cha = BONUSES.find((b) => b.book === 'chance')!;
+const fresh = isFresh(tip, Date.now()) && isFresh(cha, Date.now());
+const rt = REVIEWS.find((r) => r.id === 'tipsport')!;
+const rc = REVIEWS.find((r) => r.id === 'chance')!;
+const odds = (o: number) => o.toFixed(1).replace('.', ',');
+const checked = new Date(`${tip.verifiedAt}T12:00:00Z`);
+Astro.response.headers.set('Cache-Control', cacheHeader());
+const faq = [
+  { q: 'Mají Tipsport a Chance stejné kurzy?', a: 'Většinou ano. Patří do stejné skupiny a nabídku mají postavenou na stejné platformě. KurzovýRadar je u každého zápasu porovnává a ukazuje, kde se liší.' },
+  ...(fresh ? [{ q: 'Kde je vstupní bonus mírnější?', a: `Podle podmínek při vkladu ${kc(1000)}: Tipsport vyžaduje prosázet ${wagerMultiple(tip)}× bonus při kurzu ${odds(tip.tier.minOdds)}, Chance ${wagerMultiple(cha)}× při kurzu ${odds(cha.tier.minOdds)}. Chance ale denně počítá víc sázek, takže jde rychleji (nejméně ${minDays(cha)} dní proti ${minDays(tip)} u Tipsportu).` }] : []),
+];
+---
+<Article art="kancelar" title="Tipsport vs Chance: srovnání kanceláří" metaTitle="Tipsport vs Chance: kurzy, bonus, licence – srovnání | KurzovýRadar"
+  description="Tipsport a Chance vedle sebe: provozovatel, licence, kurzy a vstupní bonus. Obě kanceláře patří do jedné skupiny. Jen ověřené údaje."
+  lead="Dvě největší české kanceláře ze stejné skupiny. Rozdíly jsou menší, než by se zdálo, ale jsou."
+  crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: 'Tipsport vs Chance', url: '/sazkove-kancelare/tipsport-vs-chance/' }]}
+  published={new Date('2026-10-24')} updated={checked} checked={checked} schemaType="Article" faq={faq}>
+  <div class="not-prose flex flex-wrap gap-6 items-center"><BookLogo id="tipsport" h={36} lazy={false} /><span class="font-display font-bold text-xl">vs</span><BookLogo id="chance" h={36} lazy={false} /></div>
+  <h2>Základní údaje</h2>
+  <table>
+    <thead><tr><th scope="col">&nbsp;</th><th scope="col">Tipsport</th><th scope="col">Chance</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Provozovatel</th><td>{rt.operator}, IČ {rt.ico}</td><td>{rc.operator}, IČ {rc.ico}</td></tr>
+      <tr><th scope="row">Povolení</th><td>{rt.licence}</td><td>{rc.licence}</td></tr>
+      <tr><th scope="row">Kurzy u nás</th><td>porovnáváme u každého zápasu</td><td>porovnáváme u každého zápasu</td></tr>
+    </tbody>
+  </table>
+  <p>Podrobnosti: <a href="/sazkove-kancelare/tipsport/">Tipsport</a>, <a href="/sazkove-kancelare/chance/">Chance</a>. Obě kanceláře patří do stejné skupiny, takže kurzy mívají většinou shodné. Rozdíl uvidíš u konkrétního zápasu na stránce <a href="/kurzy/">Kurzy</a>.</p>
+  {fresh && (<>
+    <h2>Vstupní bonus při vkladu {kc(1000)}</h2>
+    <table>
+      <thead><tr><th scope="col">&nbsp;</th><th scope="col">Tipsport</th><th scope="col">Chance</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Bonus</th><td>{kc(tip.tier.bonus)}</td><td>{kc(cha.tier.bonus)}</td></tr>
+        <tr><th scope="row">Prosázet</th><td>{kc(tip.tier.wager)} ({wagerMultiple(tip)}×)</td><td>{kc(cha.tier.wager)} ({wagerMultiple(cha)}×)</td></tr>
+        <tr><th scope="row">Minimální kurz</th><td>{odds(tip.tier.minOdds)}</td><td>{odds(cha.tier.minOdds)}</td></tr>
+        <tr><th scope="row">Denně se počítá</th><td>{kc(tip.tier.dailyCap)}</td><td>{kc(cha.tier.dailyCap)}</td></tr>
+        <tr><th scope="row">Nejméně dní</th><td>{minDays(tip)}</td><td>{minDays(cha)}</td></tr>
+      </tbody>
+    </table>
+    <p>Jak jsme je seřadili a podmínky podrobně: <a href="/bonusy/tipsport/">bonus Tipsportu</a>, <a href="/bonusy/chance/">bonus Chance</a>, <a href="/bonusy/">všechny bonusy</a>. Ověřeno {czDate(tip.verifiedAt)}.</p>
+    <div class="not-prose max-w-[72ch]"><BonusNotice checked={tip.verifiedAt} /></div>
+  </>)}
+  <h2>Která je lepší</h2>
+  <p>Neříkáme, která je lepší: záleží na tom, co hledáš. U kurzů rozhoduje konkrétní zápas, u bonusu to, jak rychle chceš prosázet a při jakém kurzu sázíš. Vždy si přečti podmínky přímo u kanceláře.</p>
+</Article>
