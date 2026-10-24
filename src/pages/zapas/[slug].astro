@@ -15,7 +15,7 @@ import { availablePeriods, changeAsOf, periodInfo, type Change } from '../../lib
 import { backLink, isOutcome } from '../../lib/links';
 import Icon from '../../components/Icon.astro';
 import { ticketView, atBooks, STATE_TEXT, OUTCOMES, whoOf } from '../../lib/ticket';
-import { odds as fmt, pct, dateTime, date, time, kickoff, ago, kc, atTime } from '../../lib/format';
+import { odds as fmt, pct, dateTime, date, time, kickoff, ago, kc, atTime, dayKey } from '../../lib/format';
 import { changePct, overround, implied } from '../../server/calc/odds';
 import type { Outcome } from '../../server/types';
 
@@ -97,14 +97,15 @@ function contextLines(o: Outcome): string[] {
     return { b, atRef, now: offer(b, o)?.odds ?? null, ch: change };
   });
   if (!parts.length) return [];
-  const sig = (c: Change, later: boolean) => `${c.status === 'moved' ? `m${c.from.odds}>${c.to.odds}@${c.from.at}|${c.to.at}` : c.status === 'unchanged' ? `u${c.odds}` : 'i'}${later ? 'L' : ''}`;
+  const five = (n: number) => Math.round(n / 300); // both books are stored seconds apart in one run: within 5 min = the same change
+  const sig = (c: Change, later: boolean) => `${c.status === 'moved' ? `m${c.from.odds}>${c.to.odds}@${five(c.from.at)}|${five(c.to.at)}` : c.status === 'unchanged' ? `u${c.odds}` : 'i'}${later ? 'L' : ''}`;
   const groups = new Map<string, { books: FeedBook[]; ch: Change; now: number | null; later: boolean }>();
   for (const p of parts) {
     const later = p.atRef !== null && p.now !== null && p.atRef !== p.now;
     const k = `${sig(p.ch, later)}|${p.now}`;
     (groups.get(k) ?? groups.set(k, { books: [], ch: p.ch, now: p.now, later }).get(k)!).books.push(p.b);
   }
-  const asOf = t - refAt > 60 ? ` (stav k ${atTime(refAt, t)}, kdy radar zjištění spočítal)` : '';
+  const asOf = t - refAt > 60 ? ` (stav ${dayKey(refAt) === dayKey(t) ? `v ${time(refAt)}` : dateTime(refAt)}, kdy radar zjištění spočítal)` : '';
   return [...groups.values()].flatMap(({ books: bk, ch, now: cur, later }) => {
     const where = atBooks(bk);
     const verified = checkedAtOf(bk);
@@ -155,7 +156,8 @@ const schema = [{
 }];
 const offState = (o: (typeof v.outcomes)[number]) => STATE_TEXT[o.cells.find((c) => c.state !== 'missing')?.state ?? 'missing'];
 const lastKnown = (o: Outcome) => comparable.map((b) => offer(b, o)).find(Boolean);
-Astro.response.headers.set('Cache-Control', cacheHeader());
+// Coming from the radar (zjisteni/obdobi) the page must match what the radar just showed: short edge cache for those.
+Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi') ? 'public, max-age=0, s-maxage=60' : cacheHeader());
 ---
 <Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0} canonical={ev.url}
   crumbs={[{ name: S.name, url: S.path }, { name: ev.compName, url: `/souteze/${ev.comp}/` }, { name: `${ev.home} – ${ev.away}`, url: ev.url }]}>
