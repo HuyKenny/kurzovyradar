@@ -20,6 +20,20 @@ export function normalize(book: FeedBook, raw: unknown[], fetchedAt: number): Pr
   return { book, fetchedAt, matches, rawCount: raw.length };
 }
 
+/**
+ * A response that answered 200 but lost most of the offer (empty or cut-off body, an incident at the provider) must not be stored:
+ * every missing match would be marked as withdrawn and the book would look freshly checked. It is recorded as a failure instead, so the
+ * last valid prices stay and age out honestly. A real lasting drop (end of season) is accepted after it repeats `REPEATS` times in a row.
+ */
+export const COLLAPSE_RATIO = 0.4;
+export const COLLAPSE_MIN_PREVIOUS = 100;
+export const REPEATS = 3;
+export function collapsed(current: number, previous: number | null, rejectedInRow: number): boolean {
+  if (previous === null || previous < COLLAPSE_MIN_PREVIOUS) return false;
+  if (rejectedInRow >= REPEATS - 1) return false;
+  return current < previous * COLLAPSE_RATIO;
+}
+
 export interface RunReport { books: (BookOutcome & { rowsRead: number; rowsWritten: number; queries: number; ms: number })[]; derived: { events: number; rowsRead: number; rowsWritten: number } }
 
 export async function runImport(env: Env, db: Db = env.DB as unknown as Db, now = Math.floor(Date.now() / 1000)): Promise<RunReport> {
@@ -40,6 +54,16 @@ export async function runImport(env: Env, db: Db = env.DB as unknown as Db, now 
       continue;
     }
     try {
+      const last = await db.prepare("SELECT matches_seen FROM import_runs WHERE book = ? AND status = 'ok' ORDER BY started_at DESC LIMIT 1").bind(book).first<{ matches_seen: number }>();
+      const recent = await db.prepare('SELECT status, error FROM import_runs WHERE book = ? ORDER BY started_at DESC LIMIT ?').bind(book, REPEATS - 1).all<{ status: string; error: string | null }>();
+      let inRow = 0;
+      for (const x of recent.results ?? []) { if (x.status === 'error' && (x.error ?? '').startsWith('collapse:')) inRow++; else break; }
+      if (collapsed(r.value.matches.length, last?.matches_seen ?? null, inRow)) {
+        const msg = `collapse: ${r.value.matches.length} matches (raw ${r.value.rawCount}) after ${last!.matches_seen}`;
+        await recordFailure(db, book, now, msg);
+        report.books.push({ book, status: 'error', seen: 0, changed: 0, error: msg, rowsRead: 0, rowsWritten: 0, queries: 0, ms: Date.now() - t0 });
+        continue;
+      }
       const out = await storeBook(db, r.value, cfg, now);
       report.books.push({ book: out.book, status: out.status, seen: out.seen, changed: out.changed, error: out.error,
         rowsRead: out.meter.read, rowsWritten: out.meter.written, queries: out.meter.queries, ms: Date.now() - t0 });

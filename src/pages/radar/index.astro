@@ -45,8 +45,14 @@ const live = <T extends { startAt: number }>(l: T[]) => l.filter((m) => m.startA
 const pool: Finding[] = !rd ? [] : view.key === 'rozdily' ? live(rd.diffs).map(fromDiff)
   : !w || !win ? [] : mergeMoves(live(view.key === 'poklesy' ? w.drops : view.key === 'rusty' ? w.rises : w.highs)).map((m) => fromMove(m, win.key));
 const compSlug = (f: Finding) => f.comp || compsAll.find((c) => c.name === f.compName && c.sport === f.sport)?.slug || '';
-const shown = pool.filter((f) => (!den || inDays(f.startAt, den, t)) && (!sport || f.sport === sport) && (!soutez || compSlug(f) === soutez)
+// Without a price filter, prices above 10 (long shots) are left out by default: a change of 15 → 21 is +40 % and would flood the list,
+// yet it is the least useful information for most visitors. The count is shown with a link to see them all (filter "do" = 1000).
+const LONGSHOT = 10;
+const capped = !od && !doo;
+const matched = pool.filter((f) => (!den || inDays(f.startAt, den, t)) && (!sport || f.sport === sport) && (!soutez || compSlug(f) === soutez)
   && (!od || currentOdds(f) >= od * 1000) && (!doo || currentOdds(f) <= doo * 1000) && (!zmena || Math.abs(f.pct) >= zmena));
+const shown = capped ? matched.filter((f) => currentOdds(f) <= LONGSHOT * 1000) : matched;
+const hiddenLong = matched.length - shown.length;
 const groups = new Map<number, Finding[]>(); // one card per match first, the other outcomes of that match unfold
 for (const f of shown) (groups.get(f.eventId) ?? groups.set(f.eventId, []).get(f.eventId)!).push(f);
 const checkedOf = (f: Finding) => { const v = f.books.map((b: FeedBook) => up.books[b]?.lastSuccessAt ?? 0).filter(Boolean); return v.length ? Math.min(...v) : null; };
@@ -142,6 +148,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         : ''}
     </p>
 
+    {hiddenLong > 0 && <p class="m-0 mb-4 text-ink-2">Bez filtru kurzu skrýváme {hiddenLong} {plural(hiddenLong, 'změnu', 'změny', 'změn')} u kurzů nad {LONGSHOT} (velcí outsideři), aby nezahltily přehled. <a href={href({ do: '1000' })}>Zobrazit i je</a>.</p>}
     <div>
       {view.key !== 'rozdily' && !win ? (
         <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Pro tohle zatím nemáme dost zápisů.</p><p class="mt-2 mb-0">{since ? `Kurzy si zapisujeme od ${dateTime(since)}. První pohyby uvidíš zhruba hodinu po začátku.` : 'Zapisování ještě nezačalo.'}</p></div>

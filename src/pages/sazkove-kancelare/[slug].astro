@@ -6,7 +6,7 @@ import { BOOK } from '../../config/bookmakers';
 import { REVIEWS, SECTION_TITLES, type SectionKey } from '../../config/reviews';
 import BonusCard from '../../components/BonusCard.astro';
 import { bonusOf } from '../../config/bonuses';
-import { cacheHeader } from '../../lib/data';
+import { cacheHeader, cfg as getCfg } from '../../lib/data';
 import { REVIEW_ON_KRATKERECENZE } from '../../config/sister';
 // Server-rendered (not prerendered): the bonus box shows figures only while the check is recent, which depends on today's date.
 const r = REVIEWS.find((x) => x.id === Astro.params.slug && BOOK[x.id].review !== 'none' && BOOK[x.id].review !== 'draft');
@@ -25,7 +25,7 @@ const faq = [
   ...faqOf('aplikace', `Má ${b.name} mobilní aplikaci?`),
   ...faqOf('platby', `Jak se u ${b.name} vkládá a vybírá?`),
   { q: `Je ${b.name} legální v ČR?`, a: `${r.operator} (IČ ${r.ico}) je podle seznamu Ministerstva financí ČR držitelem povolení. Seznam je uvedený ve zdrojích níže.` },
-  ...(b.oddsFeed === 'active' ? [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: 'Ano, kurzy sledujeme každých 15 minut a ukazujeme je u každého zápasu vedle ostatních kanceláří.' }] : [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: 'Zatím ne, kurzy této kanceláře nemáme připojené, takže je ve srovnání nebudeš hledat.' }]),
+  ...(b.oddsFeed === 'active' ? [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: `Ano, kurzy kontrolujeme každých ${getCfg().importIntervalMin} minut a ukazujeme je u každého zápasu vedle ostatních kanceláří.` }] : [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: 'Zatím ne, kurzy této kanceláře nemáme připojené, takže je ve srovnání nebudeš hledat.' }]),
 ];
 ---
 <Article art="kancelar" title={info ? `${b.name}: přehled sázkové kanceláře` : `${b.name}: recenze sázkové kanceláře`} metaTitle={info ? `${b.name} – přehled, provozovatel a licence | KurzovýRadar` : `${b.name} – recenze, licence a kurzy | KurzovýRadar`}

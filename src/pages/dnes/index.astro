@@ -7,6 +7,7 @@ import PicksStrip from '../../components/PicksStrip.astro';
 import { picks as pickList } from '../../lib/picks';
 import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { inDays } from '../../lib/days';
+import { FEED_GENITIVE } from '../../config/coverage';
 import { countLine } from '../../lib/counts';
 
 const [up, rd] = await Promise.all([upcoming(), radar()]);
@@ -24,7 +25,7 @@ const day = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', weekda
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <Base title="Zápasy dnes: kurzy na všechny sporty | KurzovýRadar"
-  description="Dnešní zápasy všech sportů s kurzy Tipsportu a Chance vedle sebe, seřazené podle začátku. Aktualizujeme každých 15 minut."
+  description={`Dnešní zápasy všech sportů s kurzy ${FEED_GENITIVE} vedle sebe, seřazené podle začátku. Kurzy kontrolujeme každých ${cfg.importIntervalMin} minut.`}
   canonical="/dnes/" noindex={page > 1} crumbs={[{ name: 'Zápasy dnes', url: '/dnes/' }]}>
   <div class="wrap pt-6">
     <h1 class="m-0">Zápasy dnes: kurzy na všechny sporty</h1>

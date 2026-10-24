@@ -13,11 +13,24 @@ export const eventUrl = (slug: string, id: number) => `/zapas/${slug}-${id}/`;
 export const isFresh = (b: BookStateView | undefined, now: number, cfg: Settings) =>
   !!b?.lastSuccessAt && now - b.lastSuccessAt <= cfg.staleAfterMin * 60;
 
-/** Current = may take part in "highest odds": fresh book, offered, paired, still listed, not started. */
+/**
+ * In step with the other books: its last successful check is at most `maxSkewMin` older than the newest fresh book's. Both feeds are
+ * fetched in the same run seconds apart, so a bigger gap means this book's last runs failed and its prices are older than the others'.
+ * Comparing them would present an old price as a current difference.
+ */
+export function inSync(books: UpcomingSnapshot['books'], book: FeedBook, now: number, cfg: Settings): boolean {
+  const own = books[book]?.lastSuccessAt;
+  if (!own) return false;
+  const newest = Math.max(...FEED_BOOKS.filter((b) => isFresh(books[b], now, cfg)).map((b) => books[b]!.lastSuccessAt!), own);
+  return newest - own <= cfg.maxSkewMin * 60;
+}
+
+/** Current = may take part in "highest odds": fresh and in-step book, offered, paired, still listed, not started. */
 export function isCurrent(ev: EventView, book: FeedBook, outcome: Outcome, books: UpcomingSnapshot['books'], now: number, cfg: Settings): boolean {
   const b = ev.books[book];
   const o = b?.outcomes[outcome];
-  return !!o && !!b && !b.mismatch && !b.removed && o.enabled && o.removedAt === null && ev.startAt > now && isFresh(books[book], now, cfg);
+  return !!o && !!b && !b.mismatch && !b.removed && o.enabled && o.removedAt === null && ev.startAt > now && isFresh(books[book], now, cfg)
+    && inSync(books, book, now, cfg);
 }
 
 export async function derive(db: Db, cfg: Settings, now: number): Promise<{ meter: Meter; events: number }> {
@@ -91,17 +104,27 @@ export async function derive(db: Db, cfg: Settings, now: number): Promise<{ mete
   }
 
   const tracked: TrackedOffer[] = [];
+  // Differences between books need every current offer, not only the ones that moved in 24 h: a price unchanged for two days still
+  // differs from the other book's price that moved this morning.
+  const all: TrackedOffer[] = [];
   const evList = [...events.values()];
   for (const ev of evList) {
     for (const book of FEED_BOOKS) {
       for (const [outcome, o] of Object.entries(ev.books[book]?.outcomes ?? {}) as [Outcome, OfferView][]) {
         const history = byOffer.get(`${ev.id}|${book}|${outcome}`);
-        if (!history) continue;
-        tracked.push({ event: ev, book, outcome, odds: o.odds, changedAt: o.changedAt, current: isCurrent(ev, book, outcome, books, now, { ...cfg }), history });
+        const item: TrackedOffer = { event: ev, book, outcome, odds: o.odds, changedAt: o.changedAt, current: isCurrent(ev, book, outcome, books, now, cfg), history: history ?? [] };
+        all.push(item);
+        if (history) tracked.push(item);
       }
     }
   }
-  const radar = computeRadar(tracked, Object.fromEntries(FEED_BOOKS.map((b) => [b, books[b]?.trackingSince ?? null])), now);
+  // Successful runs of the last 25 h per book: a period is measured for a book only if one of them confirmed its prices near the period start.
+  const runRows = await m.all<{ book: FeedBook; started_at: number }>(db.prepare(
+    "SELECT book, started_at FROM import_runs WHERE status = 'ok' AND started_at >= ? ORDER BY started_at").bind(now - 25 * 3600));
+  const runs: Partial<Record<FeedBook, number[]>> = {};
+  for (const r of runRows) (runs[r.book] ??= []).push(r.started_at);
+  const radar = computeRadar(tracked, Object.fromEntries(FEED_BOOKS.map((b) => [b, books[b]?.trackingSince ?? null])), now,
+    { runs, gapS: 2 * cfg.importIntervalMin * 60, diffs: all });
   const tracking = FEED_BOOKS.map((b) => books[b]?.trackingSince).filter((x): x is number => !!x);
   const upcoming: UpcomingSnapshot = {
     at: now, books, events: evList,

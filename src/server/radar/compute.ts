@@ -21,11 +21,26 @@ export interface TrackedOffer {
 /** Per list and period. The radar filters on the page (day, competition, price range) work inside this many strongest findings. */
 const LIMIT = 100;
 
-export function computeRadar(offers: TrackedOffer[], trackingSince: Partial<Record<FeedBook, number | null>>, now: number): RadarSnapshot {
+export interface RadarOptions {
+  /** Start times of successful imports per book. When given, a period is measured for a book only if one of them falls within `gapS`
+   *  before the period start: the base price must have been confirmed close to the start, not before an outage. */
+  runs?: Partial<Record<FeedBook, number[]>>;
+  gapS?: number;
+  /** Offers to compare between books (all current ones); defaults to `offers`. */
+  diffs?: TrackedOffer[];
+}
+
+/** Did a successful check confirm this book's prices shortly before `start`? */
+export const coveredAt = (runs: number[] | undefined, start: number, gapS: number) => !!runs?.some((t) => t <= start + 60 && t >= start - gapS);
+
+export function computeRadar(offers: TrackedOffer[], trackingSince: Partial<Record<FeedBook, number | null>>, now: number, opts: RadarOptions = {}): RadarSnapshot {
   const windows = {} as RadarSnapshot['windows'];
+  const gapS = opts.gapS ?? 1800;
+  const covered = (book: FeedBook, start: number) => !opts.runs || coveredAt(opts.runs[book], start, gapS);
   for (const w of WINDOWS) {
     const start = now - w.seconds;
-    const available = Object.values(trackingSince).some((t) => t !== null && t !== undefined && t <= start);
+    const available = (Object.entries(trackingSince) as [FeedBook, number | null | undefined][])
+      .some(([b, t]) => t !== null && t !== undefined && t <= start && covered(b, start));
     const drops: MoveItem[] = [];
     const rises: MoveItem[] = [];
     const highs: MoveItem[] = [];
@@ -33,7 +48,7 @@ export function computeRadar(offers: TrackedOffer[], trackingSince: Partial<Reco
       for (const o of offers) {
         if (!o.current) continue;
         const since = trackingSince[o.book];
-        if (since === null || since === undefined || since > start) continue;
+        if (since === null || since === undefined || since > start || !covered(o.book, start)) continue;
         const enabled = o.history.filter((h) => h.enabled);
         const base = [...enabled].reverse().find((h) => h.at <= start);
         if (!base) continue;
@@ -59,7 +74,7 @@ export function computeRadar(offers: TrackedOffer[], trackingSince: Partial<Reco
     highs.sort((a, b) => b.pct - a.pct || a.startAt - b.startAt);
     windows[w.key as WindowKey] = { available, drops: drops.slice(0, LIMIT), rises: rises.slice(0, LIMIT), highs: highs.slice(0, LIMIT) };
   }
-  return { at: now, windows, diffs: computeDiffs(offers) };
+  return { at: now, windows, diffs: computeDiffs(opts.diffs ?? offers) };
 }
 
 /** Same event and outcome, two current paired offers with different prices. */

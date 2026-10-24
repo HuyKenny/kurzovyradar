@@ -55,3 +55,18 @@ describe('guide links', () => {
     for (const g of guides) expect(g.text, g.id).toMatch(/\nchecked: 20\d\d-\d\d-\d\d/);
   });
 });
+
+describe('one source of truth for coverage claims', () => {
+  it('pages take the check frequency from settings, not a typed number', async () => {
+    const { readdirSync, readFileSync, statSync } = await import('node:fs');
+    const walk = (d: string, out: string[] = []): string[] => { for (const f of readdirSync(d)) { const p = `${d}/${f}`; statSync(p).isDirectory() ? walk(p, out) : out.push(p); } return out; };
+    const root = new URL('../src/', import.meta.url).pathname;
+    for (const f of [...walk(`${root}pages`), ...walk(`${root}components`)].filter((x) => x.endsWith('.astro'))) {
+      expect(readFileSync(f, 'utf8'), f).not.toMatch(/každých 15 minut|na fotbal a hokej\./);
+    }
+  });
+  it('guides that name the compared books still match the feed (update src/content/pruvodce when FEED_BOOKS changes)', async () => {
+    const { FEED_NAMES } = await import('../src/config/coverage');
+    expect(FEED_NAMES).toBe('Tipsport a Chance');
+  });
+});

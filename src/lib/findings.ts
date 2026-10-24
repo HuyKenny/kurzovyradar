@@ -83,8 +83,16 @@ export function findingText(f: Finding, now: number, checkedAt: number | null, s
   return {
     what,
     against: `Porovnáváme platnou cenu z ${dateTime(from.at)} (začátek období ${since}) s poslední změnou z ${dateTime(to.at)}.${ver}`,
-    impact: `Při vkladu ${stake} Kč je výplata při výhře ${Math.round((stake * to.odds) / 1000)} Kč místo ${Math.round((stake * from.odds) / 1000)} Kč, tedy o ${Math.abs(d)} Kč ${d < 0 ? 'nižší' : 'vyšší'}.${f.kind === 'pokles' ? '' : ' Vyšší výplata neznamená výhodnější sázku.'}`,
+    impact: `Při vkladu ${stake} Kč je výplata při výhře ${Math.round((stake * to.odds) / 1000)} Kč místo ${Math.round((stake * from.odds) / 1000)} Kč, tedy o ${Math.abs(d)} Kč ${d < 0 ? 'nižší' : 'vyšší'}.${f.kind === 'pokles' ? '' : ' Vyšší výplata neznamená výhodnější sázku.'} ${impliedLine(from.odds, to.odds)}`,
   };
+}
+
+/** The implied probability in percentage points (not percent): 2,00 → 2,20 is 50,0 % → 45,5 %, −4,5 p. b., while the price moved +10 %. */
+export function impliedLine(fromOdds: number, toOdds: number): string {
+  const a = 100000 / fromOdds, b = 100000 / toOdds;
+  const f1 = (n: number) => n.toFixed(1).replace('.', ',');
+  const dpp = b - a;
+  return `Kurz tak odpovídá ${f1(b)} % místo ${f1(a)} % (${dpp < 0 ? '−' : '+'}${f1(Math.abs(dpp))} procentního bodu). To je jen přepočet ceny včetně marže kanceláře, ne skutečná šance výsledku.`;
 }
 
 /** Name of the selection for headings: "Výhra domácích v základní době". */

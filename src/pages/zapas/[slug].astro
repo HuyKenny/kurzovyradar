@@ -31,7 +31,9 @@ const { ev, history } = d;
 if (Astro.url.pathname !== ev.url) return Astro.redirect(ev.url, 301);
 const t = getNow();
 const cfg = getCfg();
-if (ev.startAt < t - 7 * 86400) return new Response('Zápas skončil a jeho kurzy už nezobrazujeme.', { status: 410, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+// The recorded history stays useful after kick-off, so the page stays (indexable) until the daily cleanup removes its rows
+// (HISTORY_DAYS); only then it answers 410. One rule, independent of feed outages.
+if (ev.startAt < t - cfg.historyDays * 86400) return new Response('Zápas skončil a jeho kurzy už nezobrazujeme.', { status: 410, headers: { 'content-type': 'text/plain; charset=utf-8' } });
 const books = up.books;
 const started = ev.startAt <= t;
 const v = ticketView(ev, books, t, cfg);
@@ -163,7 +165,7 @@ const lastKnown = (o: Outcome) => comparable.map((b) => offer(b, o)).find(Boolea
 // Coming from the radar (zjisteni/obdobi) the page must match what the radar just showed: short edge cache for those.
 Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi') ? 'public, max-age=0, s-maxage=60' : cacheHeader());
 ---
-<Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0 || started} canonical={ev.url}
+<Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0} canonical={ev.url}
   crumbs={[{ name: S.name, url: S.path }, { name: ev.compName, url: `/souteze/${ev.comp}/` }, { name: `${ev.home} – ${ev.away}`, url: ev.url }]}>
   <div class="wrap pt-6" data-bet-root data-bet={betData}>
     {back && <p class="m-0 mb-4"><a href={back.href} class="font-bold inline-flex items-center gap-1 min-h-[44px] no-underline hover:underline"><span aria-hidden="true">←</span>{back.label}</a></p>}

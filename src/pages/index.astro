@@ -15,6 +15,7 @@ import { picks as pickList, MIN_DIFF_PCT, BIG_MOVE_PCT, MIN_HIGH_PCT } from '../
 import Photo from '../components/Photo.astro';
 import art from '../data/art.json';
 import { BOOKMAKERS } from '../config/bookmakers';
+import { FEED_NAMES, FEED_GENITIVE } from '../config/coverage';
 import { competitionsIn, sportsIn } from '../lib/catalog';
 import { upcoming, radar, listable, lastCheck, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
 import { int, time, dayKey } from '../lib/format';
@@ -46,14 +47,14 @@ const ex = next.map((e) => ({ e, v: ticketView(e, up.books, t, cfg) })).find((x)
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <Base title="KurzovýRadar – kurzy na sport přehledně, i jak se mění"
-  description="Kolik vyplácí Tipsport a Chance za fotbal, hokej, tenis, esporty a další sporty a jestli kurz roste, nebo padá. Srozumitelně, bez registrace. Kurzy kontrolujeme každých 15 minut.">
+  description={`Kolik vyplácí ${FEED_NAMES} za fotbal, hokej, tenis, esporty a další sporty a jestli kurz roste, nebo padá. Srozumitelně, bez registrace. Kurzy kontrolujeme každých ${cfg.importIntervalMin} minut.`}>
   <section class="wrap pt-8 md:pt-14 grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
     <div>
       <p class="hand m-0 text-[1.6rem] -rotate-2 origin-left">fotbal, hokej, tenis & další, bez registrace</p>
-      <h1 class="mt-2 mb-4 text-balance">Porovnej kurzy. Sleduj jejich pohyb.</h1>
-      <p class="text-[1.2rem] max-w-[46ch] m-0">Uvidíš, kolik vyplatí Tipsport a Chance za fotbal, hokej, tenis, esporty a další sporty a jestli kurz roste, nebo padá.</p>
+      <h1 class="mt-2 mb-4 text-balance">Kurzy přehledně. Změny pod kontrolou.</h1>
+      <p class="text-[1.2rem] max-w-[46ch] m-0">Sleduj vývoj kurzů {FEED_GENITIVE}, porovnej stejné sázky a ulož si zápasy, které tě zajímají. Fotbal, hokej, tenis, esporty a další sporty.</p>
       <div class="flex flex-wrap gap-3 mt-7">
-        <a href="/kurzy/" class="btn">Porovnat kurzy<Icon name="arrow-right" size={18} /></a>
+        <a href="/dnes/" class="btn">Prohlédnout dnešní zápasy<Icon name="arrow-right" size={18} /></a>
         <a href="/radar/" class="btn btn--ghost">Otevřít radar</a>
       </div>
       {checked && <p class="mt-6 mb-0 text-ink-2 flex items-baseline gap-2"><span class="shrink-0 inline-block w-2.5 h-2.5 rounded-full bg-green border-2 border-ink" aria-hidden="true"></span><span>Naposledy zkontrolováno v {time(checked)} · {int(events.length)} zápasů s kurzy{today ? `, z toho ${today} dnes` : ''}</span></p>}
@@ -90,20 +91,6 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         </form></div></li>
     </ul>
   </section>
-
-  {bonusList.length > 0 && (
-    <section class="wrap mt-14" aria-labelledby="h-bonus">
-      <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
-        <div class="max-w-[70ch]">
-          <p class="hand m-0 text-[1.35rem] -rotate-1 origin-left">bonus pro nové hráče</p>
-          <h2 id="h-bonus" class="m-0 mt-1">Vstupní bonusy na sportovní sázky</h2>
-          <p class="mt-2 mb-0 text-ink-2">Podmínky z oficiálních stránek kanceláří, nahoře ty nejmírnější. Pod číslem vždy najdeš, kolik musíš prosázet.</p>
-        </div>
-        <a href="/bonusy/" class="font-bold inline-flex items-center gap-1 min-h-[44px]">Všechny podmínky<Icon name="arrow-right" size={16} /></a>
-      </div>
-      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{bonusList.map((b, i) => <BonusCard b={b} placement="bonus-home" compact first={i === 0 && bonusList.length > 1} />)}</div>
-    </section>
-  )}
 
   <div class="wrap mt-10" data-follow-strip hidden></div>
 
@@ -186,6 +173,21 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     </div>
   </section>
 
+  {bonusList.length > 0 && (
+    <section class="wrap mt-16" aria-labelledby="h-bonus">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+        <div class="max-w-[70ch]">
+          <p class="hand m-0 text-[1.35rem] -rotate-1 origin-left">bonus pro nové hráče</p>
+          <h2 id="h-bonus" class="m-0 mt-1">Vstupní bonusy na sportovní sázky</h2>
+          <p class="mt-2 mb-0 text-ink-2">Podmínky z oficiálních stránek kanceláří, nahoře ty nejmírnější. Pod číslem vždy najdeš, kolik musíš prosázet.</p>
+        </div>
+        <a href="/bonusy/" class="font-bold inline-flex items-center gap-1 min-h-[44px]">Všechny podmínky<Icon name="arrow-right" size={16} /></a>
+      </div>
+      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{bonusList.map((b, i) => <BonusCard b={b} placement="bonus-home" compact first={i === 0 && bonusList.length > 1} />)}</div>
+    </section>
+  )}
+
+
   {sportList.length > 1 && (
     <section class="wrap mt-16" aria-labelledby="h-sporty">
       <h2 id="h-sporty" class="mb-2">Sporty</h2>
@@ -210,7 +212,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <section class="wrap mt-16" aria-labelledby="h-how">
     <h2 id="h-how" class="mb-6">Jak KurzovýRadar funguje</h2>
     <ol class="grid gap-5 md:grid-cols-3 list-none p-0 m-0">
-      <li class="card p-5"><Art name="krok-kontrola" size={56} /><h3 class="mt-3 mb-1">1. Každých {cfg.importIntervalMin} minut kontrolujeme kurzy</h3><p class="m-0 text-ink-2">U Tipsportu a Chance na fotbal a hokej. Nemusíš nic obnovovat ani se registrovat.</p></li>
+      <li class="card p-5"><Art name="krok-kontrola" size={56} /><h3 class="mt-3 mb-1">1. Každých {cfg.importIntervalMin} minut kontrolujeme kurzy</h3><p class="m-0 text-ink-2">U {FEED_GENITIVE} na všechny sporty, které nabízejí jako souboj dvou soupeřů. Nemusíš nic obnovovat ani se registrovat.</p></li>
       <li class="card p-5"><Art name="krok-porovnani" size={56} /><h3 class="mt-3 mb-1">2. Dáme vedle sebe stejné sázky</h3><p class="m-0 text-ink-2">Jen stejný zápas a stejnou sázku. Kde kancelář vyplatí víc, označíme zeleně.</p></li>
       <li class="card p-5"><Art name="krok-historie" size={56} /><h3 class="mt-3 mb-1">3. Zapisujeme, co se mezi kontrolami změnilo</h3><p class="m-0 text-ink-2">Proto uvidíš, jestli kurz roste, nebo padá. Změny mezi kontrolami nevidíme, nic nedopočítáváme a nedáváme tipy.</p></li>
     </ol>

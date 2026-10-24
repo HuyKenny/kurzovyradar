@@ -28,3 +28,11 @@ describe('followed items survive format extensions', () => {
     expect(parseState('{nope', null).state).toEqual({ v: 2, events: [], bets: [], comps: [], sports: [] });
   });
 });
+
+describe('followed bet stays the same bet', () => {
+  it('a swap of home and away is detected (outcome "1" would mean the other team)', async () => {
+    const { swapped } = await import('../src/scripts/follow');
+    expect(swapped({ home: 'Brno', away: 'Sparta' }, { home: 'Sparta', away: 'Brno' })).toBe(true);
+    expect(swapped({ home: 'Sparta', away: 'Brno' }, { home: 'Sparta', away: 'Brno' })).toBe(false);
+  });
+});

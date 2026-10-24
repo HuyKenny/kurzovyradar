@@ -1,7 +1,7 @@
 // /oblibene/ ("Moje sledované"): everything comes from localStorage (follow.ts) + current prices from the site's API.
 // "Co se změnilo" compares today's highest price with what the visitor saw last (or when they saved it), then
 // moves that point to now. DOM is built with createElement only (no innerHTML of stored or fetched data).
-import { load, save, nowS, type FollowBet, type FollowState, type Odds3 } from './follow';
+import { load, save, nowS, swapped, type FollowBet, type FollowState, type Odds3 } from './follow';
 import { evaluateTarget, parseTarget } from '../lib/target';
 import { betTarget } from '../lib/market';
 import { SPORTS, type Sport } from '../config/competitions';
@@ -105,6 +105,15 @@ async function render(markSeen: boolean) {
     const now = e?.outcomes[b.outcome]?.odds ?? null;
     if (!b.seen) continue;
     note(b.seen.at);
+    if (e && swapped(e, b)) {
+      // The bookmaker swapped home and away: "1" now means the other team. Never compare it as if it were the same bet.
+      changes.push(card(
+        el('p', 'm-0 text-ink-2 text-[0.95rem]', `${b.home} vs ${b.away} · ${b.comp}`),
+        el('p', 'm-0 text-[1.05rem]', `Kancelář u zápasu prohodila domácí a hosty (teď ${e.home} vs ${e.away}). Sledovanou sázku proto neporovnáváme. Otevři zápas a vyber ji znovu.`),
+        link('Otevřít zápas →', e.url),
+      ));
+      continue;
+    }
     if (e && !e.started && now !== null && b.seen.odds !== null && now !== b.seen.odds) {
       changes.push(card(
         el('p', 'm-0 text-ink-2 text-[0.95rem]', `${b.home} vs ${b.away} · ${b.comp}`),
@@ -179,16 +188,32 @@ async function render(markSeen: boolean) {
     el('p', 'm-0 num', (['1', 'x', '2'] as const).map((o) => e.outcomes[o]?.odds ? `${e.outcomes[o]!.who} ${fmt(e.outcomes[o]!.odds!)}` : null).filter(Boolean).join(' · ')),
   )));
 
-  // The comparison point moves to now: next visit shows what changed since this one.
-  if (markSeen) {
-    const t = nowS();
-    for (const b of s.bets) { const e = byId.get(b.id); if (e && !e.started) b.seen = { at: t, odds: e.outcomes[b.outcome]?.odds ?? null, via: 'zobrazeni' }; }
-    for (const f of s.events) {
-      const e = byId.get(f.id);
-      if (e && !e.started) f.seen = { at: t, odds: Object.fromEntries((['1', 'x', '2'] as const).filter((o) => e.outcomes[o]?.odds).map((o) => [o, e.outcomes[o]!.odds!])), via: 'zobrazeni' };
-    }
-    save(s);
+  // The comparison point moves to now: next visit shows what changed since this one. Only once the visitor has actually seen this
+  // summary (the tab is visible), and only to a price we have now: an outage or a suspended offer must not erase the old baseline.
+  if (markSeen) whenVisible(() => markAllSeen(byId));
+}
+
+function whenVisible(fn: () => void) {
+  if (document.visibilityState === 'visible') { setTimeout(fn, 1500); return; }
+  const on = () => { if (document.visibilityState === 'visible') { document.removeEventListener('visibilitychange', on); setTimeout(fn, 1500); } };
+  document.addEventListener('visibilitychange', on);
+}
+
+function markAllSeen(byId: Map<number, Ev>) {
+  const s: FollowState = load(); // fresh copy: the visitor may have followed or unfollowed something meanwhile
+  const t = nowS();
+  for (const b of s.bets) {
+    const e = byId.get(b.id);
+    const odds = e?.outcomes[b.outcome]?.odds ?? null;
+    if (e && !e.started && odds && !swapped(e, b)) b.seen = { at: t, odds, via: 'zobrazeni' };
   }
+  for (const f of s.events) {
+    const e = byId.get(f.id);
+    if (!e || e.started) continue;
+    const odds = Object.fromEntries((['1', 'x', '2'] as const).filter((o) => e.outcomes[o]?.odds).map((o) => [o, e.outcomes[o]!.odds!]));
+    if (Object.keys(odds).length) f.seen = { at: t, odds, via: 'zobrazeni' };
+  }
+  save(s);
 }
 
 let first = true;

@@ -54,3 +54,6 @@ export function save(s: FollowState) {
 }
 
 export const nowS = () => Math.floor(Date.now() / 1000);
+
+/** Home and away of the event are the other way round than when the bet was followed. */
+export const swapped = (e: { home: string; away: string }, b: { home: string; away: string }) => e.home === b.away && e.away === b.home && e.home !== e.away;

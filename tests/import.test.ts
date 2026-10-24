@@ -134,8 +134,18 @@ describe('snapshots and freshness', () => {
     expect(up.stats.changes24h).toBe(3);
   });
 
+  it('radar: a period is not measured when no successful check confirmed prices near its start (outage = no claim)', async () => {
+    const db = await seeded(); // checks at T0 and T0 + 7200 only: nobody saw the price at T0 + 3700
+    await derive(db, cfg, T0 + 7300);
+    const radar = JSON.parse((db.raw.prepare("SELECT json FROM derived WHERE key = 'radar'").get() as { json: string }).json) as RadarSnapshot;
+    expect(radar.windows['1h'].available).toBe(false);
+    expect(radar.windows['1h'].drops).toHaveLength(0);
+  });
+
   it('radar: movement against a recorded base; no history = not available', async () => {
     const db = await seeded();
+    // An unchanged check in between confirms the price at the start of the 1 h period.
+    for (const b of ['tipsport', 'chance']) db.raw.prepare("INSERT INTO import_runs (book, started_at, finished_at, status) VALUES (?, ?, ?, 'ok')").run(b, T0 + 3600, T0 + 3600);
     await derive(db, cfg, T0 + 7300);
     const radar = JSON.parse((db.raw.prepare("SELECT json FROM derived WHERE key = 'radar'").get() as { json: string }).json) as RadarSnapshot;
     expect(radar.windows['1h'].available).toBe(true);
@@ -145,5 +155,18 @@ describe('snapshots and freshness', () => {
     expect(radar.windows['6h'].available).toBe(false); // we have tracked for only ~2 h
     expect(radar.windows['6h'].drops).toHaveLength(0);
     expect(radar.diffs[0]).toMatchObject({ outcome: '2', high: { book: 'tipsport', odds: 3900 }, low: { book: 'chance', odds: 3500 } });
+  });
+});
+
+describe('collapsed responses are not stored', () => {
+  it('a 200 with most of the offer missing is a failure; a lasting drop is accepted after repeating', async () => {
+    const { collapsed } = await import('../src/server/run');
+    expect(collapsed(1200, 1250, 0)).toBe(false); // normal
+    expect(collapsed(0, 1250, 0)).toBe(true); // empty body
+    expect(collapsed(300, 1250, 0)).toBe(true); // cut off
+    expect(collapsed(300, 1250, 1)).toBe(true);
+    expect(collapsed(300, 1250, 2)).toBe(false); // third time in a row: the offer really shrank
+    expect(collapsed(10, 50, 0)).toBe(false); // too small to judge (first runs, demo)
+    expect(collapsed(10, null, 0)).toBe(false);
   });
 });

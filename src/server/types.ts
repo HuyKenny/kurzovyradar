@@ -47,6 +47,9 @@ export interface Settings {
   windowDays: number;
   /** New events one run may create per book: a first import of the whole offer is spread over several runs (D1 allows 1 000 queries per invocation). */
   maxNewEvents: number;
+  /** Two books are compared only when their last successful checks are at most this far apart (both run in the same cron, so a
+   *  larger gap means one feed failed and its prices are older than the other's). */
+  maxSkewMin: number;
 }
 
 export interface Env {
@@ -68,6 +71,7 @@ export interface Env {
   START_TOLERANCE_MIN?: string;
   WINDOW_DAYS?: string;
   MAX_NEW_EVENTS?: string;
+  MAX_SKEW_MIN?: string;
   CLICKS?: AnalyticsEngineDataset;
   /** Pre-rendered HTML of the busiest pages (server/warm.ts); optional, the Worker works without it. */
   HTML?: KVNamespace;
@@ -83,5 +87,6 @@ export function settings(env: Partial<Env>): Settings {
     startToleranceMin: n(env.START_TOLERANCE_MIN, 0),
     windowDays: n(env.WINDOW_DAYS, 7),
     maxNewEvents: n(env.MAX_NEW_EVENTS, 250),
+    maxSkewMin: n(env.MAX_SKEW_MIN, 20),
   };
 }

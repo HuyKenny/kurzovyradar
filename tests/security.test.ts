@@ -39,6 +39,9 @@ describe('robots.txt', () => {
     for (const b of AI_TRAINING_BOTS) expect(ROBOTS).toContain(`User-agent: ${b}\nDisallow: /`);
     for (const ok of ['OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Claude-User', 'Googlebot', 'bingbot']) expect(ROBOTS).not.toContain(`User-agent: ${ok}`);
     expect(ROBOTS).toContain('Sitemap: https://kurzovyradar.cz/sitemap.xml');
+    // noindex filter pages must stay crawlable, otherwise Google never sees the noindex
+    expect(ROBOTS).not.toMatch(/Disallow: \/\*\?/);
+    expect(ROBOTS.split('\n\n')[0]).not.toMatch(/^Disallow: \/$/m); // the general block never closes the whole site
   });
 });
 
