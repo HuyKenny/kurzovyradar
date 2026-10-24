@@ -2,7 +2,8 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Ticket from '../components/Ticket.astro';
-import MoveItem from '../components/MoveItem.astro';
+import FindingCard from '../components/FindingCard.astro';
+import { fromMove } from '../lib/findings';
 import BookLogo from '../components/BookLogo.astro';
 import Icon from '../components/Icon.astro';
 import Art from '../components/Art.astro';
@@ -30,8 +31,9 @@ const checked = lastCheck(up);
 const chosen = pickList(up, rd, t, cfg);
 const win = rd ? [...WINDOWS].reverse().find((w) => rd.windows[w.key].available) : undefined;
 const moves = win && rd
-  ? [...mergeMoves(rd.windows[win.key].drops.filter((m) => m.startAt > t)).slice(0, 2), ...mergeMoves(rd.windows[win.key].rises.filter((m) => m.startAt > t)).slice(0, 1)]
+  ? [...mergeMoves(rd.windows[win.key].drops.filter((m) => m.startAt > t)).slice(0, 2), ...mergeMoves(rd.windows[win.key].rises.filter((m) => m.startAt > t)).slice(0, 1)].map((m) => fromMove(m, win.key))
   : [];
+const checkedOf = (books: string[]) => { const v = books.map((b) => up.books[b as 'tipsport']?.lastSuccessAt ?? 0).filter(Boolean); return v.length ? Math.min(...v) : null; };
 const compCounts = new Map<string, number>();
 for (const e of events) compCounts.set(e.comp, (compCounts.get(e.comp) ?? 0) + 1);
 const comps = COMPETITIONS.filter((c) => compCounts.has(c.slug)).sort((a, b) => Number(!!b.top) - Number(!!a.top) || (compCounts.get(b.slug)! - compCounts.get(a.slug)!));
@@ -68,6 +70,25 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     </div>
   </section>
 
+  <section class="wrap mt-10" aria-label="Kde začít">
+    <ul class="grid gap-4 md:grid-cols-3 list-none p-0 m-0">
+      <li><a href="/pruvodce/kurzy-pro-zacatecniky/#priklad" class="ticket no-underline text-ink p-5 flex flex-col gap-2 h-full">
+        <Art name="pruvodce" size={52} /><span class="font-display font-bold text-[1.2rem]">Začínám a chci tomu rozumět</span>
+        <span class="text-ink-2">Krátké vysvětlení a vyzkoušení výpočtu na skutečném zápase.</span>
+        <span class="mt-auto font-bold text-green-ink inline-flex items-center gap-1">Vyzkoušet na příkladu<Icon name="arrow-right" size={15} /></span></a></li>
+      <li><a href="/dnes/" class="ticket no-underline text-ink p-5 flex flex-col gap-2 h-full">
+        <Art name="fotbal" size={52} /><span class="font-display font-bold text-[1.2rem]">Hledám dnešní zápasy</span>
+        <span class="text-ink-2">{today ? `Dnes máme ${today} ${today === 1 ? 'zápas' : today < 5 ? 'zápasy' : 'zápasů'} s kurzy, které ještě nezačaly.` : 'Dnešní nabídka a zápasy na další dny.'}</span>
+        <span class="mt-auto font-bold text-green-ink inline-flex items-center gap-1">Dnešní zápasy<Icon name="arrow-right" size={15} /></span></a></li>
+      <li><div class="ticket p-5 flex flex-col gap-2 h-full">
+        <Art name="radar" size={52} /><span class="font-display font-bold text-[1.2rem]">Už mám vybraný zápas</span>
+        <form action="/hledat/" method="get" role="search" class="grid gap-2">
+          <label class="grid gap-1 text-ink-2" for="q-home">Napiš tým nebo soutěž</label>
+          <div class="flex gap-2"><input id="q-home" name="q" type="search" minlength="2" required placeholder="Např. Sparta" class="field flex-1 min-w-0" /><button class="btn btn--sm" type="submit">Najít</button></div>
+        </form></div></li>
+    </ul>
+  </section>
+
   <div class="wrap mt-10" data-follow-strip hidden></div>
 
   <section class="wrap mt-14" aria-labelledby="h-picks" id="vybrano">
@@ -88,8 +109,9 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <details class="mt-5 text-ink-2 max-w-[80ch]">
       <summary class="font-bold text-ink min-h-[44px] inline-flex items-center">Jak vybíráme a řadíme</summary>
       <ul class="mt-2 mb-0 pl-5 list-disc grid gap-1">
-        <li><strong>Vyšší kurz jinde:</strong> jedna kancelář změnila kurz a druhá ho při pozdější kontrole měla pořád původní, nebo se kurzy obou kanceláří na stejnou sázku liší aspoň o {MIN_DIFF_PCT} %.</li>
-        <li><strong>Zajímavý pohyb:</strong> kurz se za sledované období změnil aspoň o {BIG_MOVE_PCT} %, nebo stoupl aspoň o {MIN_HIGH_PCT} % a je na nejvyšší hodnotě, jakou jsme v tom období zapsali (první zápis za maximum nepovažujeme).</li>
+        <li><strong>Vyšší kurz u druhé kanceláře:</strong> jedna kancelář změnila kurz a druhá ho při pozdější kontrole měla pořád původní, nebo se kurzy obou kanceláří na stejnou sázku liší aspoň o {MIN_DIFF_PCT} %.</li>
+        <li><strong>Kurz klesl / Kurz vzrostl:</strong> kurz se za sledované období změnil aspoň o {BIG_MOVE_PCT} %. Karta řekne, jestli klesl, nebo vzrostl, a za jaké období.</li>
+        <li><strong>Nejvyšší zachycený kurz:</strong> kurz stoupl aspoň o {MIN_HIGH_PCT} % a je na nejvyšší hodnotě, jakou jsme v tom období při kontrolách zapsali (první zápis za maximum nepovažujeme).</li>
         <li>Pořadí: nejdřív rozdíly mezi kancelářemi, pak velké změny, pak nová maxima; uvnitř podle velikosti rozdílu. Nejvýš 6 položek, z každého zápasu jedna.</li>
         <li>Bereme jen aktuální kurzy z posledních kontrol. Na pořadí ani na to, kde je kurz vyšší, nemá vliv, se kterou kanceláří spolupracujeme.</li>
       </ul>
@@ -120,7 +142,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       </div>
       <a href="/radar/" class="font-bold inline-flex items-center gap-1 min-h-[44px]">Všechny pohyby kurzů<Icon name="arrow-right" size={16} /></a>
     </div>
-    {moves.length ? <ul class="grid gap-4 lg:grid-cols-3 list-none p-0 m-0">{moves.map((m) => <MoveItem m={m} now={t} windowLabel={win!.since} compact back="/" />)}</ul>
+    {moves.length ? <div class="grid gap-4 lg:grid-cols-3">{moves.map((f) => <FindingCard f={f} now={t} checkedAt={checkedOf(f.books)} back="/" compact />)}</div>
       : <p class="card p-5 m-0">Kurzy si zapisujeme teprve chvíli. Jakmile se nějaký pohne, uvidíš to tady.</p>}
   </section>
 

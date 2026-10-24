@@ -10,7 +10,7 @@ checked: 2026-10-23
 
 <div class="strucne">
 
-**Stručně:** když kurz klesne, kancelář za ten výsledek vyplácí méně, protože mu víc věří. Není to tip a neznamená to, že to vyjde.
+**Stručně:** když kurz klesne, kancelář za ten výsledek vyplácí méně. Proč ho změnila, kancelář neuvádí a my to nevíme. Není to tip a neznamená to, že to vyjde.
 
 </div>
 
@@ -30,14 +30,14 @@ Konkrétní důvod kancelář neuvádí a my ho také neznáme. Ukazujeme jen to
 
 ## Pokles a růst
 
-- **Pokles kurzu** (např. z 2,10 na 1,90) znamená, že kancelář za tento výsledek nově vyplácí méně. Obvykle ho považuje za pravděpodobnější než dřív.
-- **Růst kurzu** znamená vyšší výplatu. Výsledek podle kanceláře zřejmě vychází méně pravděpodobně.
+- **Pokles kurzu** (např. z 2,10 na 1,90) znamená, že kancelář za tento výsledek nově vyplácí méně. Při výhře sázky dostaneš méně. Důvod změny neznáme.
+- **Růst kurzu** znamená vyšší výplatu při výhře. Šanci, že sázka vyhraje, to nemění. Důvod změny neznáme.
 
 Změnu počítáme jako **(nový kurz ÷ původní kurz − 1) × 100**. Pokles z 2,10 na 1,90 je tedy −9,5 %.
 
 ## Co pohyb nedokazuje
 
-Samotný pokles kurzu **neznamená, že sázka je výhodná** ani že výsledek nastane. Kancelář může kurz snížit preventivně a výsledek přesto nevyjde. Kurz, který klesl, také nabízí nižší výplatu než předtím. Radar proto nepřiděluje žádné „skóre jistoty“ ani nedoporučuje sázky.
+Samotný pokles kurzu **neznamená, že sázka je výhodná** ani že výsledek nastane. Důvod změny kancelář neuvádí a výsledek přesto nemusí vyjít. Kurz, který klesl, také nabízí nižší výplatu než předtím. Radar proto nepřiděluje žádné „skóre jistoty“ ani nedoporučuje sázky.
 
 ## První zaznamenaný kurz není otevírací kurz
 

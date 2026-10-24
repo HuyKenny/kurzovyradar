@@ -1,14 +1,16 @@
 ---
 import Base from '../../layouts/Base.astro';
-import MoveItem from '../../components/MoveItem.astro';
-import BookLogo from '../../components/BookLogo.astro';
+import FindingCard from '../../components/FindingCard.astro';
 import FreshNote from '../../components/FreshNote.astro';
+import Icon from '../../components/Icon.astro';
 import Art from '../../components/Art.astro';
+import { COMPETITIONS, SPORTS, competitionBySlug, type Sport } from '../../config/competitions';
 import { upcoming, radar, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
-import { odds as fmt, pct, kickoff, dateTime } from '../../lib/format';
+import { dateTime } from '../../lib/format';
+import { DAY_FILTERS, DAY_LABEL, inDays, isDayFilter, type DayFilter } from '../../lib/days';
+import { currentOdds, fromDiff, fromMove, KIND_LABEL, type Finding } from '../../lib/findings';
 import { WINDOWS, type WindowKey } from '../../server/view';
-import { betUrl } from '../../lib/links';
-import { betTarget } from '../../lib/market';
+import type { FeedBook } from '../../config/bookmakers';
 
 const [up, rd] = await Promise.all([upcoming(), radar()]);
 const t = getNow();
@@ -18,36 +20,69 @@ const available = WINDOWS.filter((w) => rd?.windows[w.key].available);
 const req = WINDOWS.find((w) => w.key === q.get('obdobi'));
 const win = req && rd?.windows[req.key].available ? req : available[available.length - 1];
 const VIEWS = [
-  { key: 'poklesy', label: 'Kurz klesl' },
-  { key: 'rusty', label: 'Kurz stoupl' },
-  { key: 'rozdily', label: 'Tipsport vs. Chance' },
-  { key: 'maxima', label: 'Na maximu' },
+  { key: 'poklesy', kind: 'pokles' },
+  { key: 'rusty', kind: 'rust' },
+  { key: 'rozdily', kind: 'rozdil' },
+  { key: 'maxima', kind: 'max' },
 ] as const;
-const view = VIEWS.find((v) => v.key === q.get('pohled'))?.key ?? 'poklesy';
+const view = VIEWS.find((v) => v.key === q.get('pohled')) ?? VIEWS[0];
+
+// Filters (all in the URL, so they can be shared and survive a reload). Unknown values are ignored.
+const den: DayFilter | '' = isDayFilter(q.get('den')) ? (q.get('den') as DayFilter) : '';
+const sport = (q.get('sport') === 'fotbal' || q.get('sport') === 'hokej' ? q.get('sport') : '') as Sport | '';
+const soutez = competitionBySlug(q.get('soutez') ?? '') ? q.get('soutez')! : '';
+const num = (k: string) => { const raw = q.get(k); if (!raw) return null; const n = Number(raw.replace(',', '.')); return Number.isFinite(n) && n > 1 && n <= 1000 ? n : null; };
+const od = num('od'), doo = num('do');
+const zmena = [1, 2, 5, 10].includes(Number(q.get('zmena'))) ? Number(q.get('zmena')) : 0;
+const onlyFollowed = q.get('sledovane') === '1'; // applied in the browser (followed competitions are stored there)
+
 const w = win && rd ? rd.windows[win.key as WindowKey] : null;
-const notStarted = <T extends { startAt: number }>(l: T[]) => l.filter((m) => m.startAt > t);
-const items = mergeMoves(!w ? [] : view === 'poklesy' ? notStarted(w.drops) : view === 'rusty' ? notStarted(w.rises) : view === 'maxima' ? notStarted(w.highs) : []);
-const diffs = rd ? notStarted(rd.diffs) : [];
-const href = (k: string, v: string) => { const p = new URLSearchParams(q); p.set(k, v); return `/radar/?${p}`; };
-const filtered = q.size > 0;
-const here = `/radar/${q.size ? `?${q}` : ''}`;
+const live = <T extends { startAt: number }>(l: T[]) => l.filter((m) => m.startAt > t);
+const pool: Finding[] = !rd ? [] : view.key === 'rozdily' ? live(rd.diffs).map(fromDiff)
+  : !w || !win ? [] : mergeMoves(live(view.key === 'poklesy' ? w.drops : view.key === 'rusty' ? w.rises : w.highs)).map((m) => fromMove(m, win.key));
+const compSlug = (f: Finding) => f.comp || COMPETITIONS.find((c) => c.name === f.compName)?.slug || '';
+const shown = pool.filter((f) => (!den || inDays(f.startAt, den, t)) && (!sport || f.sport === sport) && (!soutez || compSlug(f) === soutez)
+  && (!od || currentOdds(f) >= od * 1000) && (!doo || currentOdds(f) <= doo * 1000) && (!zmena || Math.abs(f.pct) >= zmena));
+const groups = new Map<number, Finding[]>(); // one card per match first, the other outcomes of that match unfold
+for (const f of shown) (groups.get(f.eventId) ?? groups.set(f.eventId, []).get(f.eventId)!).push(f);
+const checkedOf = (f: Finding) => { const v = f.books.map((b: FeedBook) => up.books[b]?.lastSuccessAt ?? 0).filter(Boolean); return v.length ? Math.min(...v) : null; };
+
+const params = (over: Record<string, string | null>) => {
+  const p = new URLSearchParams(q);
+  for (const [k, v] of Object.entries(over)) { if (v) p.set(k, v); else p.delete(k); }
+  return p;
+};
+const href = (over: Record<string, string | null>) => { const p = params(over); return `/radar/${p.size ? `?${p}` : ''}`; };
+const here = href({});
+const filtersActive = !!(den || sport || soutez || od || doo || zmena || onlyFollowed);
+const comps = COMPETITIONS.filter((c) => !sport || c.sport === sport);
+const chips: { label: string; off: string }[] = [
+  ...(den ? [{ label: DAY_LABEL[den], off: 'den' }] : []),
+  ...(sport ? [{ label: SPORTS[sport].name, off: 'sport' }] : []),
+  ...(soutez ? [{ label: competitionBySlug(soutez)!.name, off: 'soutez' }] : []),
+  ...(od ? [{ label: `kurz od ${od.toString().replace('.', ',')}`, off: 'od' }] : []),
+  ...(doo ? [{ label: `kurz do ${doo.toString().replace('.', ',')}`, off: 'do' }] : []),
+  ...(zmena ? [{ label: `změna aspoň ${zmena} %`, off: 'zmena' }] : []),
+];
 const since = up.stats.firstRecordAt;
 const EXPLAIN: Record<string, string> = {
-  poklesy: 'Kancelář teď za tenhle výsledek vyplácí méně než při dřívější kontrole. Důvod kanceláře neuvádějí a my ho neznáme. Je to zjištění, ne tip.',
-  rusty: 'Kancelář teď za tenhle výsledek vyplácí víc než při dřívější kontrole. Důvod neuvádí a my ho neznáme. Vyšší kurz znamená vyšší výplatu, pokud sázka vyhraje, ne vyšší šanci.',
-  rozdily: 'Tady se Tipsport a Chance liší. Kde je kurz vyšší, tam za stejnou sázku dostaneš víc. Většinou mají obě kanceláře kurzy stejné, takže rozdílů bývá málo.',
-  maxima: 'Kurz za zvolené období stoupl a teď je nejvýš, kolik jsme ho viděli.',
+  poklesy: 'Kurz jedné kanceláře je teď nižší než na začátku zvoleného období, takže při výhře sázky dostaneš méně. Důvod kanceláře neuvádějí a my ho neznáme. Je to zjištění, ne tip.',
+  rusty: 'Kurz jedné kanceláře je teď vyšší než na začátku zvoleného období, takže při výhře sázky dostaneš víc. Šanci na výhru to nemění. Důvod neznáme.',
+  rozdily: 'Porovnáváme dvě současné ceny téže sázky u Tipsportu a Chance. Zvolené období tu nehraje roli. Většinou mají obě kanceláře cenu shodnou, takže rozdílů bývá málo.',
+  maxima: 'Kurz je teď nejvyšší, jaký jsme za zvolené období zapsali. Je to maximum zachycené našimi kontrolami (à 15 minut), ne nutně nejvyšší kurz, který kancelář nabízela.',
 };
+const plural = (n: number, a: string, b: string, c: string) => (n === 1 ? a : n < 5 && n > 0 ? b : c);
+const noun = view.key === 'rozdily' ? ['rozdíl', 'rozdíly', 'rozdílů'] as const : ['zjištění', 'zjištění', 'zjištění'] as const;
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title={filtered ? 'Pohyby kurzů – výběr | KurzovýRadar' : 'Pohyby kurzů – kde kurz klesl a kde stoupl | KurzovýRadar'}
-  description="Kde kurzy Tipsportu a Chance na fotbal a hokej za poslední hodinu, 6 nebo 24 hodin klesly nebo stouply. Srozumitelně, s časy zápisů a malým grafem."
-  canonical="/radar/" noindex={filtered} crumbs={[{ name: 'Pohyby kurzů', url: '/radar/' }]}>
+<Base title={filtersActive || q.size > 0 ? 'Pohyby kurzů – výběr | KurzovýRadar' : 'Pohyby kurzů – kde kurz klesl a kde stoupl | KurzovýRadar'}
+  description="Kde kurzy Tipsportu a Chance na fotbal a hokej za poslední hodinu, 6 nebo 24 hodin klesly nebo stouply, a kde se obě kanceláře liší. Srozumitelně, s časy zápisů a dopadem na výplatu."
+  canonical="/radar/" noindex={q.size > 0} crumbs={[{ name: 'Pohyby kurzů', url: '/radar/' }]}>
   <div class="wrap pt-6">
     <div class="flex items-start gap-4">
       <div class="flex-1">
         <h1 class="m-0">Pohyby kurzů</h1>
-        <p class="text-[1.1rem] max-w-[60ch] mt-3 mb-3">Kancelář mění kurzy i několikrát denně. Při každé kontrole (à 15 min) si zapíšeme, co se od minulé změnilo. Tady jsou největší změny u zápasů, které ještě nezačaly.</p>
+        <p class="text-[1.1rem] max-w-[60ch] mt-3 mb-3">Kancelář mění kurzy i několikrát denně. Při každé kontrole (à 15 min) si zapíšeme, co se od minulé změnilo. Tady jsou největší změny u zápasů, které ještě nezačaly, a rozdíly mezi Tipsportem a Chance.</p>
         <FreshNote books={up.books} now={t} cfg={cfg} />
       </div>
       <Art name="radar" size={110} class="hidden md:block" />
@@ -55,51 +90,97 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
 
     <div class="mt-6 grid gap-3">
       <nav class="seg" aria-label="Co chceš vidět">
-        {VIEWS.map((v) => <a href={href('pohled', v.key)} aria-current={view === v.key ? 'page' : undefined}>{v.label}</a>)}
+        {VIEWS.map((v) => <a href={href({ pohled: v.key })} aria-current={view.key === v.key ? 'page' : undefined}>{KIND_LABEL[v.kind]}</a>)}
       </nav>
-      {view !== 'rozdily' && available.length > 0 && (
+      {view.key !== 'rozdily' && available.length > 0 && (
         <nav class="seg" aria-label="Za jak dlouho">
-          {available.map((x) => <a href={href('obdobi', x.key)} aria-current={win?.key === x.key ? 'page' : undefined}>za {x.label}</a>)}
+          {available.map((x) => <a href={href({ obdobi: x.key })} aria-current={win?.key === x.key ? 'page' : undefined}>za {x.label}</a>)}
         </nav>
       )}
+      <form action="/radar/" method="get" data-autosubmit class="flex flex-wrap items-end gap-3" aria-label="Filtry">
+        <input type="hidden" name="pohled" value={view.key} />
+        {view.key !== 'rozdily' && win && <input type="hidden" name="obdobi" value={win.key} />}
+        <label class="grid gap-1 font-bold text-[0.95rem]">Den
+          <select name="den" class="field"><option value="">Všechny dny</option>{DAY_FILTERS.map((d) => <option value={d} selected={den === d}>{DAY_LABEL[d]}</option>)}</select></label>
+        <label class="grid gap-1 font-bold text-[0.95rem]">Sport
+          <select name="sport" class="field"><option value="">Fotbal i hokej</option>{(['fotbal', 'hokej'] as const).map((s) => <option value={s} selected={sport === s}>{SPORTS[s].name}</option>)}</select></label>
+        <label class="grid gap-1 font-bold text-[0.95rem] min-w-[200px]">Soutěž
+          <select name="soutez" class="field"><option value="">Všechny soutěže</option>{comps.map((c) => <option value={c.slug} selected={soutez === c.slug}>{c.name}</option>)}</select></label>
+        <details class="self-center" open={!!(od || doo || zmena)}>
+          <summary class="font-bold min-h-[44px] inline-flex items-center gap-1"><Icon name="sliders-horizontal" size={17} />Další filtry</summary>
+          <div class="flex flex-wrap gap-3 mt-2">
+            <label class="grid gap-1 font-bold text-[0.95rem]">Aktuální kurz od<input class="field num w-[7.5rem]" name="od" inputmode="decimal" placeholder="např. 1,50" value={od ? String(od).replace('.', ',') : ''} /></label>
+            <label class="grid gap-1 font-bold text-[0.95rem]">Aktuální kurz do<input class="field num w-[7.5rem]" name="do" inputmode="decimal" placeholder="např. 3,00" value={doo ? String(doo).replace('.', ',') : ''} /></label>
+            <label class="grid gap-1 font-bold text-[0.95rem]">{view.key === 'rozdily' ? 'Minimální rozdíl cen' : 'Minimální změna'}
+              <select name="zmena" class="field"><option value="">Jakákoli</option>{[1, 2, 5, 10].map((n) => <option value={n} selected={zmena === n}>aspoň {n} %</option>)}</select></label>
+          </div>
+        </details>
+        <label class="inline-flex items-center gap-2 min-h-[44px] font-bold" data-followed-only hidden><input type="checkbox" name="sledovane" value="1" checked={onlyFollowed} class="w-5 h-5" />Jen moje sledované soutěže</label>
+        <button class="btn btn--sm" type="submit" data-nojs>Použít</button>
+      </form>
     </div>
 
+    {(chips.length > 0 || onlyFollowed) && (
+      <div class="flex flex-wrap items-center gap-2 mt-4" aria-label="Aktivní filtry">
+        {chips.map((c) => <a class="chip chip--on" href={href({ [c.off]: null })} aria-label={`Zrušit filtr ${c.label}`}>{c.label}<Icon name="x" size={15} /></a>)}
+        <a class="btn btn--quiet btn--sm" href={href({ den: null, sport: null, soutez: null, od: null, do: null, zmena: null, sledovane: null })}>Zrušit filtry</a>
+      </div>
+    )}
+
     <aside class="note-box mt-5 max-w-[760px]">
-      <p class="m-0"><strong>Co to znamená?</strong> {EXPLAIN[view]}</p>
+      <p class="m-0"><strong>Co to znamená?</strong> {EXPLAIN[view.key]}</p>
     </aside>
 
-    <div class="mt-6">
-      {view === 'rozdily' ? (
-        diffs.length ? (
-          <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0">
-            {diffs.map((d) => (
-              <li class="ticket p-4 grid gap-2">
-                <p class="m-0 text-[0.95rem] text-ink-2"><span class="num font-bold text-ink">{kickoff(d.startAt, t)}</span> · {d.compName}</p>
-                <h2 class="text-[1.15rem] m-0"><a href={betUrl(d.url, d.outcome, here)} class="text-ink no-underline hover:underline">{d.home} vs {d.away}</a></h2>
-                <p class="m-0">Na <strong>{betTarget(d.sport, d.outcome, d.home, d.away)}</strong> vyplatí víc {d.high.book === 'tipsport' ? 'Tipsport' : 'Chance'}: o {pct(d.pct, false)} víc za stejnou sázku.</p>
-                <div class="flex items-center gap-3 flex-wrap">
-                  <span class="flex items-center gap-2"><BookLogo id={d.high.book} h={22} /><span class="odd odd--best !min-h-0 !py-1"><span class="odd__val">{fmt(d.high.odds)}</span></span></span>
-                  <span class="flex items-center gap-2"><BookLogo id={d.low.book} h={22} /><span class="odd !min-h-0 !py-1"><span class="odd__val text-ink-2">{fmt(d.low.odds)}</span></span></span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Teď mají obě kanceláře všude stejné kurzy.</p><p class="mt-2 mb-0">Tipsport a Chance patří do stejné skupiny a kurzy mají většinou shodné. Jakmile se někde rozejdou, uvidíš to tady.</p></div>
-      ) : !win ? (
+    <p class="mt-6 mb-4 hand text-[1.3rem]" role="status" data-count data-total={pool.length} data-shown={shown.length} data-events={groups.size}>
+      {shown.length > 0
+        ? <>{shown.length} {plural(shown.length, noun[0], noun[1], noun[2])} u {groups.size} {plural(groups.size, 'zápasu', 'zápasů', 'zápasů')}{filtersActive && pool.length !== shown.length ? ` (z ${pool.length} bez filtrů)` : ''}</>
+        : ''}
+    </p>
+
+    <div>
+      {view.key !== 'rozdily' && !win ? (
         <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Pro tohle zatím nemáme dost zápisů.</p><p class="mt-2 mb-0">{since ? `Kurzy si zapisujeme od ${dateTime(since)}. První pohyby uvidíš zhruba hodinu po začátku.` : 'Zapisování ještě nezačalo.'}</p></div>
-      ) : items.length ? (
-        <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0">{items.map((m) => <MoveItem m={m} now={t} windowLabel={win.since} back={here} />)}</ul>
-      ) : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">{win.since.charAt(0).toUpperCase() + win.since.slice(1)} se nic takového nestalo.</p><p class="mt-2 mb-0">Zkus delší období nebo druhou záložku.</p></div>}
+      ) : groups.size ? (
+        <ul class="grid gap-5 lg:grid-cols-2 list-none p-0 m-0" data-groups>
+          {[...groups.values()].map((g) => (
+            <li class="grid gap-3 content-start" data-group data-comp={compSlug(g[0]!)} data-n={g.length}>
+              <FindingCard f={g[0]!} now={t} checkedAt={checkedOf(g[0]!)} back={here} />
+              {g.length > 1 && (
+                <details class="card card--flat">
+                  <summary class="px-4 min-h-[48px] flex items-center font-bold">Další výsledky tohoto zápasu ({g.length - 1})</summary>
+                  <div class="grid gap-3 p-3">{g.slice(1).map((f) => <FindingCard f={f} now={t} checkedAt={checkedOf(f)} back={here} compact />)}</div>
+                </details>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div class="card p-6 max-w-[640px]">
+          {pool.length > 0
+            ? <><p class="m-0 text-lg font-bold">Filtrům teď nic neodpovídá.</p><p class="mt-2 mb-0">Bez filtrů je tu {pool.length} {plural(pool.length, noun[0], noun[1], noun[2])}. <a href={href({ den: null, sport: null, soutez: null, od: null, do: null, zmena: null, sledovane: null })}>Zrušit filtry</a></p></>
+            : view.key === 'rozdily'
+              ? <><p class="m-0 text-lg font-bold">Teď mají obě kanceláře všude stejné kurzy.</p><p class="mt-2 mb-0">Tipsport a Chance patří do stejné skupiny a kurzy mají většinou shodné. Jakmile se někde rozejdou, uvidíš to tady.</p></>
+              : <><p class="m-0 text-lg font-bold">{win!.since.charAt(0).toUpperCase() + win!.since.slice(1)} se nic takového nestalo.</p><p class="mt-2 mb-0">Zkus delší období nebo jinou záložku.</p></>}
+        </div>
+      )}
+      <div class="card p-6 max-w-[640px]" data-empty-followed hidden><p class="m-0 text-lg font-bold">U tvých sledovaných soutěží tu teď nic není.</p><p class="mt-2 mb-0">Zruš volbu „Jen moje sledované soutěže“ nebo si sleduj další soutěž.</p></div>
     </div>
 
     <section class="mt-14 card p-5 md:p-7 prose max-w-none" aria-labelledby="h-how-radar">
       <h2 id="h-how-radar" class="!mt-0">Jak to počítáme</h2>
+      <h3>Pohyb kurzu v čase</h3>
       <ul>
-        <li>Porovnáme dnešní kurz s posledním kurzem, který jsme zapsali před začátkem období. Změna = (nový kurz ÷ starý kurz − 1) × 100 %.</li>
-        <li>Když kurz sledujeme kratší dobu, změnu nepočítáme. Chybějící zápis není nulová změna.</li>
-        <li>Bereme jen zápasy, které ještě nezačaly, a jen kurzy, které kancelář právě nabízí.</li>
+        <li>Porovnáme dnešní kurz s kurzem, který platil na začátku zvoleného období. Je to poslední cena, kterou jsme zapsali před začátkem období. Změna = (nový kurz ÷ starý kurz − 1) × 100 %.</li>
+        <li>Když kurz sledujeme kratší dobu, než je období, změnu nepočítáme. Chybějící zápis není nulová změna.</li>
+        <li>Maximum je nejvyšší cena, kterou jsme za období při kontrolách zapsali.</li>
       </ul>
-      <p>Víc v článku <a href="/pruvodce/pohyb-kurzu/">Co znamená pohyb kurzu</a> a v <a href="/metodika/">metodice</a>.</p>
+      <h3>Rozdíl dvou kanceláří</h3>
+      <ul>
+        <li>Porovnáváme dvě současné ceny téže sázky se stejnými pravidly vyhodnocení. Staré a pozastavené ceny se neporovnávají.</li>
+        <li>Shodné kurzy nejsou rozdíl, a proto je tu neuvidíš.</li>
+      </ul>
+      <p>Bereme jen zápasy, které ještě nezačaly, a jen kurzy, které kancelář právě nabízí. Zobrazujeme až {100} nejvýraznějších zjištění z každého seznamu. Víc v článku <a href="/pruvodce/pohyb-kurzu/">Co znamená pohyb kurzu</a> a v <a href="/metodika/">metodice</a>.</p>
     </section>
   </div>
 </Base>
+<script src="../../scripts/radar.ts"></script>

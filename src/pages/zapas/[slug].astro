@@ -213,6 +213,12 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
           </output>
           <button class="btn btn--sm justify-self-start" type="submit" data-nojs>Spočítat</button>
           <button type="button" hidden class="btn btn--ghost btn--sm justify-self-start follow-bet" data-follow-bet={followBet} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat změny</span></button>
+          <div data-target-box hidden class="grid gap-2 border-t-2 border-ink pt-3">
+            <label class="grid gap-1 font-bold text-[0.95rem]">Cílový kurz (volitelné)<input class="field num" type="text" inputmode="decimal" placeholder="např. 2,10" data-target-input aria-describedby="cil-pozn" /></label>
+            <div class="flex flex-wrap gap-2"><button type="button" class="btn btn--sm" data-target-save>Nastavit cíl</button><button type="button" class="btn btn--ghost btn--sm" data-target-clear hidden>Zrušit cíl</button></div>
+            <p class="m-0 text-[0.92rem]" data-target-status role="status"></p>
+            <p id="cil-pozn" class="m-0 text-[0.82rem] text-ink-2">Cíl se vyhodnotí, když otevřeš web. Neposíláme e-mail ani upozornění.</p>
+          </div>
           <p class="m-0 text-[0.85rem] text-ink-2">Počítáme s nejvyšším aktuálním kurzem. Daně a podmínky kanceláře nezahrnujeme.</p>
         </form>
       </div>

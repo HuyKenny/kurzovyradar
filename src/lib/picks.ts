@@ -15,7 +15,8 @@ import { BOOK, FEED_BOOKS, type FeedBook } from '../config/bookmakers';
 import { atBooks } from './ticket';
 import { isCurrent } from '../server/store/derive';
 import type { Outcome, Settings } from '../server/types';
-import { WINDOWS, type EventView, type RadarSnapshot, type UpcomingSnapshot } from '../server/view';
+import { WINDOWS, type EventView, type RadarSnapshot, type UpcomingSnapshot, type WindowKey } from '../server/view';
+import type { FindingKey } from './bet-state';
 import { atTime, dayKey, odds as fmt, pct } from './format';
 import { betTarget } from './market';
 
@@ -26,13 +27,15 @@ export const MIN_HIGH_PCT = 2;
 export const MAX_PICKS = 6;
 
 export type ReasonType = 'one-moved' | 'higher-elsewhere' | 'big-move' | 'new-high';
-export const REASON_LABEL: Record<ReasonType, 'Vyšší kurz jinde' | 'Zajímavý pohyb'> = {
-  'one-moved': 'Vyšší kurz jinde', 'higher-elsewhere': 'Vyšší kurz jinde', 'big-move': 'Zajímavý pohyb', 'new-high': 'Zajímavý pohyb',
-};
+/** What the card says in one phrase. Direction matters: a fall and a rise are different findings, not one "interesting move". */
+export const FINDING_LABEL: Record<FindingKey, string> = { rozdil: 'Vyšší kurz u druhé kanceláře', rust: 'Kurz vzrostl', pokles: 'Kurz klesl', max: 'Nejvyšší zachycený kurz' };
 const PRIORITY: ReasonType[] = ['one-moved', 'higher-elsewhere', 'big-move', 'new-high'];
 
 export interface Reason {
   type: ReasonType;
+  /** Kind of finding for links into the detail (?zjisteni=) and the period it was measured in (?obdobi=), when it has one. */
+  finding: FindingKey;
+  window?: WindowKey;
   label: string;
   /** A factual sentence with the real numbers and record times. */
   text: string;
@@ -63,7 +66,7 @@ export function reasons(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: 
         if (b.x.odds === a.x.prev.odds && b.x.changedAt < a.x.changedAt && checkedB > a.x.changedAt && a.x.odds !== b.x.odds) {
           moved = true;
           add(ev.id, o, {
-            type: 'one-moved', label: REASON_LABEL['one-moved'], size: Math.abs(a.x.odds / a.x.prev.odds - 1) * 100,
+            type: 'one-moved', finding: 'rozdil', label: FINDING_LABEL.rozdil, size: Math.abs(a.x.odds / a.x.prev.odds - 1) * 100,
             text: `${BOOK[a.b].name} ${atTime(a.x.changedAt, now)} změnil kurz na ${target} z ${fmt(a.x.prev.odds)} na ${fmt(a.x.odds)}. ${BOOK[b.b].name} měl při kontrole ${atTime(checkedB, now)} pořád ${fmt(b.x.odds)}.`,
           });
         }
@@ -75,7 +78,7 @@ export function reasons(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: 
       if (!moved && diff >= MIN_DIFF_PCT) {
         const checked = Math.min(...cur.map((c) => up.books[c.b]?.lastSuccessAt ?? 0));
         add(ev.id, o, {
-          type: 'higher-elsewhere', label: REASON_LABEL['higher-elsewhere'], size: diff,
+          type: 'higher-elsewhere', finding: 'rozdil', label: FINDING_LABEL.rozdil, size: diff,
           text: `Na ${target} nabízí ${BOOK[hi.b].name} ${fmt(hi.x.odds)}, ${BOOK[lo.b].name} ${fmt(lo.x.odds)} (ověřeno ${atTime(checked, now)}). Na stejnou sázku je kurz u ${BOOK[hi.b].locative.replace(/^u /, '')} o ${pct(diff, false)} vyšší.`,
         });
       }
@@ -101,10 +104,11 @@ export function reasons(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: 
         const same = (type === 'new-high' ? win.highs : [...win.drops, ...win.rises]).filter((x) => x.eventId === m.eventId && x.outcome === m.outcome
           && x.from.odds === m.from.odds && x.to.odds === m.to.odds && isCurrent(ev, x.book, x.outcome, up.books, now, cfg));
         const where = atBooks(FEED_BOOKS.filter((b) => same.some((x) => x.book === b)));
+        const finding: FindingKey = type === 'new-high' ? 'max' : m.to.odds < m.from.odds ? 'pokles' : 'rust';
         add(m.eventId, m.outcome, type === 'new-high'
-          ? { type, label: REASON_LABEL[type], size: Math.abs(m.pct),
+          ? { type, finding, window: w.key, label: FINDING_LABEL[finding], size: Math.abs(m.pct),
               text: `Kurz na ${target} ${where} je ${fmt(m.to.odds)}, nejvýš ${w.since}. Před tím obdobím jsme zapsali ${fmt(m.from.odds)}.` }
-          : { type, label: REASON_LABEL[type], size: Math.abs(m.pct),
+          : { type, finding, window: w.key, label: FINDING_LABEL[finding], size: Math.abs(m.pct),
               text: `Kurz na ${target} ${where} ${m.to.odds < m.from.odds ? 'klesl' : 'stoupl'} ${w.since} z ${fmt(m.from.odds)} na ${fmt(m.to.odds)} (${pct(m.pct)}), zapsáno ${atTime(m.to.at, now)}.` });
       }
     }
@@ -118,12 +122,19 @@ function order(a: Reason, b: Reason): number {
 }
 
 /** Up to MAX_PICKS picks, one per match, kick-off today or tomorrow (Prague). */
-export function picks(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: number, cfg: Settings, limit = MAX_PICKS): Pick[] {
+export interface PickOptions {
+  /** Narrow to a page's context (a sport, a competition). */
+  filter?: (ev: EventView) => boolean;
+  /** Only today's matches (the "Zápasy dnes" page); default is today and tomorrow. */
+  todayOnly?: boolean;
+}
+
+export function picks(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: number, cfg: Settings, limit = MAX_PICKS, opts: PickOptions = {}): Pick[] {
   const all = reasons(up, radar, now, cfg);
-  const days = new Set([dayKey(now), dayKey(now + 86400)]);
+  const days = new Set(opts.todayOnly ? [dayKey(now)] : [dayKey(now), dayKey(now + 86400)]);
   const best = new Map<number, Pick>();
   for (const ev of up.events) {
-    if (ev.startAt <= now || !days.has(dayKey(ev.startAt))) continue;
+    if (ev.startAt <= now || !days.has(dayKey(ev.startAt)) || (opts.filter && !opts.filter(ev))) continue;
     for (const o of ['1', 'x', '2'] as Outcome[]) {
       const list = all.get(key(ev.id, o));
       if (!list?.length) continue;

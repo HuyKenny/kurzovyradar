@@ -82,6 +82,7 @@ export interface DiffItem {
   url: string;
   home: string;
   away: string;
+  comp?: string;
   compName: string;
   sport: Sport;
   startAt: number;

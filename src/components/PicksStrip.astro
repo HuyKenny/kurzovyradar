@@ -1,0 +1,30 @@
+---
+// A short, context-matched selection of radar findings for pages people reach from search (sport, competition, today).
+// Same data and rules as the homepage picks (lib/picks.ts), narrowed by the page. Each row says why it is shown and links to the
+// exact outcome with the period it was measured in.
+import { outcomeLabel, selectionName } from '../lib/market';
+import { betUrl } from '../lib/links';
+import { kickoff } from '../lib/format';
+import type { Pick } from '../lib/picks';
+interface Props { picks: Pick[]; now: number; back: string; scope: string; when?: string }
+const { picks, now, back, scope, when = 'dnešních a zítřejších' } = Astro.props;
+---
+<section class="mt-8" aria-labelledby="h-strip">
+  <h2 id="h-strip" class="m-0 text-[1.3rem]">Co jsme {scope} zjistili</h2>
+  {picks.length ? (
+    <>
+      <p class="mt-1 mb-3 text-ink-2 max-w-[70ch]">Výběr z dat u {when} zápasů, nejvýš tři. Je to rozdíl mezi kancelářemi nebo zapsaná změna kurzu, ne tip.</p>
+      <ul class="grid gap-3 list-none p-0 m-0 md:grid-cols-3">
+        {picks.map((p) => (
+          <li class="card p-4 grid gap-1.5 content-start">
+            <p class="m-0 text-[0.9rem] text-ink-2"><span class="font-bold text-ink num">{kickoff(p.ev.startAt, now)}</span> · {p.ev.compName}</p>
+            <p class="m-0 font-display font-bold">{p.ev.home} vs {p.ev.away}</p>
+            <p class="m-0"><span class:list={['badge mr-1', p.reason.finding === 'rozdil' ? 'badge--green' : 'badge--orange']}>{p.reason.label}</span><strong>{selectionName(p.ev.sport, p.outcome)}</strong> <span class="text-ink-2">({outcomeLabel(p.ev.sport, p.outcome, p.ev.home, p.ev.away)})</span></p>
+            <p class="m-0 text-[0.95rem]">{p.reason.text}</p>
+            <a class="font-bold inline-flex items-center gap-1 min-h-[40px]" href={betUrl(p.ev.url, p.outcome, back, { period: p.reason.window ?? null, finding: p.reason.finding })}>Prohlédnout sázku <span aria-hidden="true">→</span></a>
+          </li>
+        ))}
+      </ul>
+    </>
+  ) : <p class="mt-1 mb-0 text-ink-2">Nenašli jsme tu rozdíl mezi kancelářemi ani výraznou změnu kurzu. Tipsport a Chance mají teď stejné kurzy a nic se výrazně nepohnulo.</p>}
+</section>

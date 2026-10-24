@@ -21,7 +21,7 @@ const prices = pricesFor(ev, outcome, up, now, cfg);
 const best = prices[0];
 const second = prices[1];
 const label = outcomeLabel(ev.sport, outcome, ev.home, ev.away);
-const href = betUrl(ev.url, outcome, back);
+const href = betUrl(ev.url, outcome, back, { period: reason.window === '1h' ? '1h' : reason.window === '6h' ? '6h' : reason.window === '24h' ? '24h' : null, finding: reason.finding });
 const extra = best && second && best.odds > second.odds ? Math.round((100 * (best.odds - second.odds)) / 1000) : 0;
 const follow = JSON.stringify({ id: ev.id, outcome, url: ev.url, home: ev.home, away: ev.away, startAt: ev.startAt, comp: ev.compName, sport: ev.sport, label, odds: best?.odds ?? null });
 ---
@@ -34,7 +34,7 @@ const follow = JSON.stringify({ id: ev.id, outcome, url: ev.url, home: ev.home, 
   <div class="p-4 flex flex-col gap-3 flex-1">
     <div class="flex flex-wrap items-center gap-2">
       <span class="badge badge--grey">Vybráno radarem</span>
-      <span class:list={['badge', reason.label === 'Vyšší kurz jinde' ? 'badge--green' : 'badge--orange']}>{reason.label}</span>
+      <span class:list={['badge', reason.finding === 'rozdil' ? 'badge--green' : 'badge--orange']}>{reason.label}</span>
     </div>
     <div>
       <p class="m-0 text-ink-2 text-[0.95rem]">{ev.home} vs {ev.away}</p>

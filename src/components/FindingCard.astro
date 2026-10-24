@@ -1,0 +1,46 @@
+---
+// One radar finding as a card that answers five questions: which match and outcome, what we found, what it is compared
+// with, what it means for the payout, and what to do next. The wording is built in lib/findings.ts (and unit-tested).
+import { BOOK } from '../config/bookmakers';
+import { kickoff, odds as fmt, pct } from '../lib/format';
+import { currentOdds, findingText, KIND_LABEL, selection, type Finding } from '../lib/findings';
+import { outcomeLabel } from '../lib/market';
+import { betUrl } from '../lib/links';
+import BookLogo from './BookLogo.astro';
+import Icon from './Icon.astro';
+import Sparkline from './Sparkline.astro';
+interface Props { f: Finding; now: number; checkedAt: number | null; back?: string; compact?: boolean }
+const { f, now, checkedAt, back, compact = false } = Astro.props;
+const href = betUrl(f.url, f.outcome, back, { period: f.window ?? null, finding: f.kind });
+const txt = findingText(f, now, checkedAt);
+const follow = JSON.stringify({ id: f.eventId, outcome: f.outcome, url: f.url, home: f.home, away: f.away, startAt: f.startAt, comp: f.compName, sport: f.sport,
+  label: outcomeLabel(f.sport, f.outcome, f.home, f.away), odds: currentOdds(f) });
+const up = f.kind === 'rust' || f.kind === 'max';
+---
+<article class="ticket p-4 flex flex-col gap-2" data-comp={f.comp} data-event={f.eventId}>
+  <p class="m-0 text-[0.95rem] text-ink-2 flex flex-wrap gap-x-2"><span class="font-bold text-ink num">{kickoff(f.startAt, now)}</span><span>{f.compName}</span></p>
+  <h3 class="m-0 text-[1.15rem]"><a href={href} class="text-ink no-underline hover:underline">{f.home} vs {f.away}</a></h3>
+  <p class="m-0 flex flex-wrap items-center gap-2">
+    <span class:list={['badge', f.kind === 'rozdil' ? 'badge--green' : up ? 'badge--green' : 'badge--orange']}>
+      <Icon name={f.kind === 'rozdil' ? 'activity' : up ? 'trending-up' : 'trending-down'} size={15} />{KIND_LABEL[f.kind]}{f.kind !== 'rozdil' && <span class="num">&nbsp;{pct(f.pct)}</span>}{f.kind === 'rozdil' && <span class="num">&nbsp;o {pct(f.pct, false)}</span>}
+    </span>
+    <strong>{selection(f)}</strong>
+  </p>
+  <p class="m-0 text-[1.05rem]">{txt.what}</p>
+  {f.kind === 'rozdil' && f.high && f.low && (
+    <div class="flex items-center gap-3 flex-wrap">
+      <span class="flex items-center gap-2"><BookLogo id={f.high.book} h={22} /><span class="odd odd--best !min-h-0 !py-1"><span class="odd__val">{fmt(f.high.odds)}</span></span></span>
+      <span class="flex items-center gap-2"><BookLogo id={f.low.book} h={22} /><span class="odd !min-h-0 !py-1"><span class="odd__val text-ink-2">{fmt(f.low.odds)}</span></span></span>
+    </div>
+  )}
+  {f.kind !== 'rozdil' && f.points && f.points.length > 1 && !compact && (
+    <div><Sparkline points={f.points} to={now} label={`Zapsaný vývoj kurzu od ${fmt(f.from!.odds)} do ${fmt(f.to!.odds)}`} /></div>
+  )}
+  {!compact && <p class="m-0 text-[0.92rem] text-ink-2"><span class="font-bold">Proti čemu porovnáváme:</span> {txt.against}</p>}
+  <p class="m-0 text-[0.95rem]"><span class="font-bold">Dopad na výplatu:</span> {txt.impact}</p>
+  <div class="mt-auto flex flex-wrap gap-2 pt-1">
+    <a href={href} class="btn btn--sm">Prohlédnout sázku<Icon name="arrow-right" size={16} /></a>
+    <button type="button" hidden class="btn btn--ghost btn--sm follow-bet" data-follow-bet={follow} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat změny</span></button>
+  </div>
+  <span class="sr">{f.books.map((b) => BOOK[b].name).join(', ')}</span>
+</article>

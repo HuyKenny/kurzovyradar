@@ -1,0 +1,32 @@
+---
+// "Vyzkoušej si to": pick an outcome, see what has to happen for the bet to win, type an amount, see payout, profit and loss,
+// then open the same selection in the detail or follow it. The guide page is prerendered, so the real match comes from
+// /api/priklad.json in the browser (src/scripts/priklad.ts); without data or JS the labelled teaching example stays.
+---
+<section id="priklad" class="not-prose mt-10 max-w-[760px]" aria-labelledby="h-priklad" data-example>
+  <p class="hand m-0 text-[1.3rem]">vyzkoušej si to</p>
+  <h2 id="h-priklad" class="m-0 mt-1 text-[1.5rem]">Jak se z kurzu stane výplata</h2>
+  <div class="ticket p-5 mt-4 grid gap-4">
+    <p class="m-0 text-ink-2" data-ex-source>Načítám zápas…</p>
+    <fieldset class="m-0 p-0 border-0">
+      <legend class="font-bold mb-1">1. Vyber výsledek</legend>
+      <div class="seg" data-ex-outcomes></div>
+    </fieldset>
+    <div>
+      <p class="m-0 font-bold">2. Co musí nastat, aby sázka vyhrála</p>
+      <p class="m-0 mt-1" data-ex-name></p>
+      <ul class="m-0 mt-1 pl-5 list-disc grid gap-1" data-ex-cond></ul>
+    </div>
+    <label class="grid gap-1 font-bold max-w-[16rem]">3. Zadej částku (Kč)<input class="field num" type="text" inputmode="decimal" value="100" data-ex-stake autocomplete="off" /></label>
+    <div aria-live="polite">
+      <p class="m-0 font-bold">4. Co to znamená</p>
+      <ul class="m-0 mt-1 pl-5 list-disc grid gap-1" data-ex-out></ul>
+    </div>
+    <div class="flex flex-wrap gap-2" data-ex-actions hidden>
+      <a class="btn btn--sm" data-ex-open href="/kurzy/">Otevřít detail stejného výběru</a>
+      <button type="button" hidden class="btn btn--ghost btn--sm follow-bet" data-follow-bet="" aria-pressed="false" data-ex-follow><span data-follow-label>Sledovat změny</span></button>
+    </div>
+    <p class="m-0 text-[0.85rem] text-ink-2">Kurz je cena sázky, ne předpověď. Počítáme jen výplatu a zisk, daně a podmínky kanceláře ne.</p>
+  </div>
+</section>
+<script src="../scripts/priklad.ts"></script>

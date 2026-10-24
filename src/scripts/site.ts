@@ -1,6 +1,7 @@
 // Site-wide progressive enhancement: following matches/bets/competitions (localStorage), header search suggestions, auto-submitting filters,
 // chart tooltips. Everything works without it; this only makes it quicker.
 import { load, save, nowS, type FollowBet } from './follow';
+import { evaluateTarget, parseTarget } from '../lib/target';
 
 /* ---------- following (stored only in this browser, see follow.ts) ---------- */
 
@@ -34,9 +35,48 @@ function paintFollow() {
     const label = b.querySelector<HTMLElement>('[data-follow-label]');
     if (label) label.textContent = on ? `Sleduješ ${b.dataset.name}` : `Sledovat ${b.dataset.name}`;
   }
+  paintTarget(s.bets);
   const n = s.events.filter((f) => f.startAt * 1000 > Date.now() - 3 * 3600_000).length + s.bets.filter((f) => f.startAt * 1000 > Date.now() - 3 * 3600_000).length;
   for (const c of document.querySelectorAll<HTMLElement>('[data-fav-count]')) { c.hidden = n === 0; c.textContent = String(n); }
 }
+
+/** Target price box on the match page: shown for a followed bet; status against the current valid price. */
+function paintTarget(bets: FollowBet[]) {
+  const fmt = (m: number) => (m / 1000).toFixed(2).replace('.', ',');
+  for (const box of document.querySelectorAll<HTMLElement>('[data-target-box]')) {
+    const btn = box.closest('form')?.querySelector<HTMLElement>('[data-follow-bet]');
+    const d = btn ? betData(btn) : null;
+    const bet = d ? bets.find((b) => b.id === d.id && b.outcome === d.outcome) : undefined;
+    box.hidden = !bet;
+    if (!bet || !d) continue;
+    const input = box.querySelector<HTMLInputElement>('[data-target-input]');
+    const status = box.querySelector<HTMLElement>('[data-target-status]');
+    const clear = box.querySelector<HTMLElement>('[data-target-clear]');
+    if (input && document.activeElement !== input) input.value = bet.target ? fmt(bet.target) : '';
+    if (clear) clear.hidden = !bet.target;
+    if (status) status.textContent = bet.target
+      ? evaluateTarget({ target: bet.target, current: d.odds, started: bet.startAt * 1000 <= Date.now(), setAt: bet.targetAt, fmt, when: (t) => new Date(t * 1000).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) }).text
+      : '';
+  }
+}
+document.addEventListener('click', (e) => {
+  const t = e.target as Element | null;
+  const save_ = t?.closest?.<HTMLButtonElement>('[data-target-save]');
+  const clear = t?.closest?.<HTMLButtonElement>('[data-target-clear]');
+  if (!save_ && !clear) return;
+  const box = (save_ ?? clear)!.closest<HTMLElement>('[data-target-box]');
+  const btn = box?.closest('form')?.querySelector<HTMLElement>('[data-follow-bet]');
+  const d = btn ? betData(btn) : null;
+  if (!box || !d) return;
+  const s = load();
+  const bet = s.bets.find((b) => b.id === d.id && b.outcome === d.outcome);
+  if (!bet) return;
+  const status = box.querySelector<HTMLElement>('[data-target-status]');
+  if (clear) { bet.target = null; bet.targetAt = null; save(s); return; }
+  const v = parseTarget(box.querySelector<HTMLInputElement>('[data-target-input]')?.value);
+  if (v === null) { if (status) status.textContent = 'Zadej kurz větší než 1, například 2,10.'; return; }
+  bet.target = v; bet.targetAt = nowS(); save(s);
+});
 
 /** A bet button carries its data as JSON; on the match page the outcome comes from the calculator's choice. */
 function betData(b: HTMLElement): Omit<FollowBet, 'seen'> & { odds: number | null } | null {

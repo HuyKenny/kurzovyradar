@@ -1,7 +1,8 @@
 // /oblibene/ ("Moje sledované"): everything comes from localStorage (follow.ts) + current prices from the site's API.
 // "Co se změnilo" compares today's highest price with what the visitor saw last (or when they saved it), then
 // moves that point to now. DOM is built with createElement only (no innerHTML of stored or fetched data).
-import { load, save, nowS, type FollowState, type Odds3 } from './follow';
+import { load, save, nowS, type FollowBet, type FollowState, type Odds3 } from './follow';
+import { evaluateTarget, parseTarget } from '../lib/target';
 
 interface Outc { who: string; odds: number | null; books: string[]; same: boolean }
 interface Ev { id: number; url: string; home: string; away: string; comp: string; compName: string; sport: string; startAt: number; started: boolean; checkedAt: number | null; outcomes: Record<string, Outc> }
@@ -24,6 +25,48 @@ function card(...kids: Node[]) { const c = el('article', 'ticket p-4 grid gap-2'
 function link(text: string, href: string, cls = 'font-bold') { const a = el('a', cls, text); a.href = href; return a; }
 function empty(text: string) { return el('p', 'card p-5 m-0', text); }
 
+/** The target price of a followed bet: status against the valid current price, and a small form to set, change or cancel it. */
+function targetBlock(b: FollowBet, e: Ev | undefined, reach: { atStart: boolean; firstAt: number | null } | undefined): HTMLElement {
+  const wrap = el('div', 'grid gap-2 mt-1');
+  const started = !e || e.started || b.startAt * 1000 <= Date.now();
+  const o = e?.outcomes[b.outcome];
+  if (b.target) {
+    const check = evaluateTarget({ target: b.target, current: started ? null : o?.odds ?? null, started, setAt: b.targetAt, reach, fmt: (m) => (m / 1000).toFixed(2).replace('.', ','), when });
+    const line = el('p', 'm-0 flex flex-wrap items-center gap-2');
+    const badge = el('span', `badge ${check.state === 'reached' ? 'badge--green' : check.state === 'reached-earlier' ? 'badge--orange' : 'badge--grey'}`,
+      { reached: 'Splněno', 'reached-earlier': 'Dosaženo dříve', waiting: 'Zatím ne', unavailable: 'Nelze vyhodnotit', started: 'Zápas začal' }[check.state]);
+    add(line, badge, el('span', 'font-bold', `Cíl ${fmt(b.target)}`), el('span', 'text-ink-2', started || !o?.odds ? '' : `· aktuální kurz ${fmt(o.odds)}`));
+    add(wrap, line, el('p', 'm-0 text-[0.92rem] text-ink-2', check.text));
+  }
+  if (!started) {
+    const f = el('form', 'flex flex-wrap items-end gap-2');
+    const label = el('label', 'grid gap-1 font-bold text-[0.9rem]', b.target ? 'Změnit cílový kurz' : 'Cílový kurz (volitelné)');
+    const input = el('input', 'field num !min-h-[44px] w-[8rem]');
+    input.type = 'text'; input.inputMode = 'decimal'; input.placeholder = 'např. 2,10'; input.value = b.target ? fmt(b.target) : '';
+    input.setAttribute('aria-label', 'Cílový kurz');
+    label.appendChild(input);
+    const save_ = el('button', 'btn btn--sm', b.target ? 'Uložit cíl' : 'Nastavit cíl'); save_.type = 'submit';
+    const msg = el('p', 'm-0 text-[0.9rem] text-orange-ink w-full'); msg.setAttribute('role', 'status');
+    add(f, label, save_);
+    if (b.target) {
+      const clear = el('button', 'btn btn--ghost btn--sm', 'Zrušit cíl'); clear.type = 'button';
+      clear.addEventListener('click', () => { const st = load(); const x = st.bets.find((y) => y.id === b.id && y.outcome === b.outcome); if (x) { x.target = null; x.targetAt = null; save(st); } });
+      f.appendChild(clear);
+    }
+    f.appendChild(msg);
+    f.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const t = parseTarget(input.value);
+      if (t === null) { msg.textContent = 'Zadej kurz větší než 1, například 2,10.'; return; }
+      const st = load(); const x = st.bets.find((y) => y.id === b.id && y.outcome === b.outcome);
+      if (x) { x.target = t; x.targetAt = nowS(); save(st); }
+    });
+    wrap.appendChild(f);
+    if (!b.target) wrap.appendChild(el('p', 'm-0 text-[0.85rem] text-ink-2', 'Cíl se vyhodnotí, když otevřeš web. Neposíláme e-mail ani upozornění.'));
+  }
+  return wrap;
+}
+
 function followBtn(kind: 'bet' | 'event' | 'comp' | 'sport', data: Record<string, string>, label: string) {
   const b = el('button', 'btn btn--ghost btn--sm', label);
   b.type = 'button';
@@ -40,6 +83,15 @@ async function render(markSeen: boolean) {
     s.comps.length || s.sports.length ? getJson(`/api/sledovane.json?souteze=${s.comps.map((c) => c.slug).join(',')}&sporty=${s.sports.join(',')}`) : Promise.resolve({ events: [] as Ev[] }),
   ]);
   const byId = new Map(cur.events.map((e) => [e.id, e]));
+  // What the recorded history proves about targets (positive evidence only, see lib/target.ts).
+  const reach = new Map<string, { atStart: boolean; firstAt: number | null }>();
+  const withTarget = s.bets.filter((b) => b.target && b.targetAt && b.startAt * 1000 > Date.now());
+  if (withTarget.length) {
+    try {
+      const r = (await (await fetch(`/api/cile.json?b=${withTarget.map((b) => `${b.id}:${b.outcome}:${b.targetAt}:${b.target}`).join(',')}`)).json()) as { items: { id: number; outcome: string; atStart: boolean; firstAt: number | null }[] };
+      for (const i of r.items) reach.set(`${i.id}-${i.outcome}`, i);
+    } catch { /* without history the check still works on the current price */ }
+  }
 
   // --- what changed ---
   const changes: HTMLElement[] = [];
@@ -93,6 +145,7 @@ async function render(markSeen: boolean) {
       el('p', 'm-0 text-ink-2 text-[0.95rem]', `${kick(b.startAt)} · ${b.comp}`),
       el('h3', 'm-0 text-[1.15rem]', `${b.label} (${b.home} vs ${b.away})`),
       el('p', 'm-0', !e ? 'Zápas už v nabídce není.' : e.started ? 'Zápas začal, předzápasové kurzy už nesledujeme.' : o?.odds ? `Teď ${fmt(o.odds)}${o.books.length ? ` (${o.same && o.books.length > 1 ? 'stejně u ' + o.books.join(' i ') : 'nejvýš u ' + o.books[0]})` : ''}.` : 'Kurz teď není v nabídce.'),
+      targetBlock(b, e, reach.get(`${b.id}-${b.outcome}`)),
       add(el('div', 'flex flex-wrap gap-2'), link('Prohlédnout sázku', betHref(b.url, b.outcome), 'btn btn--sm'),
         followBtn('bet', { followBet: JSON.stringify({ id: b.id, outcome: b.outcome, url: b.url, home: b.home, away: b.away, startAt: b.startAt, comp: b.comp, sport: b.sport, label: b.label, odds: null }) }, 'Přestat sledovat')) as HTMLElement,
     );

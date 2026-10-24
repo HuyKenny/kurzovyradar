@@ -35,7 +35,8 @@ describe('picks: reasons', () => {
     const p = picks(up([e]), null, NOW, cfg);
     expect(p).toHaveLength(1);
     expect(p[0]!.reason.type).toBe('higher-elsewhere');
-    expect(p[0]!.reason.label).toBe('Vyšší kurz jinde');
+    expect(p[0]!.reason.label).toBe('Vyšší kurz u druhé kanceláře');
+    expect(p[0]!.reason.finding).toBe('rozdil');
     expect(p[0]!.reason.text).toContain('Na výhru týmu Arsenal nabízí Chance 2,10, Tipsport 2,00');
   });
   it('a tiny difference (< 1 %) is not a reason', () => {
@@ -59,7 +60,7 @@ describe('picks: reasons', () => {
   it('big recorded move, only from the threshold up', () => {
     const e = ev([1900, 3400, 3600], [1900, 3400, 3600]);
     const r = radar({ drops: [move(e, { book: 'tipsport' })] });
-    expect(picks(up([e]), r, NOW, cfg)[0]!.reason).toMatchObject({ type: 'big-move', label: 'Zajímavý pohyb' });
+    expect(picks(up([e]), r, NOW, cfg)[0]!.reason).toMatchObject({ type: 'big-move', finding: 'pokles', label: 'Kurz klesl', window: '24h' });
     const small = radar({ drops: [move(e, { pct: -(BIG_MOVE_PCT - 1), from: { odds: 2040, at: NOW - 30 * 3600 } })] });
     expect(picks(up([e]), small, NOW, cfg)).toHaveLength(0);
   });

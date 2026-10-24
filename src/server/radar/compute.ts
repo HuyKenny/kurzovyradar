@@ -18,7 +18,8 @@ export interface TrackedOffer {
   history: { at: number; odds: number; enabled: boolean }[]; // ascending by at
 }
 
-const LIMIT = 40;
+/** Per list and period. The radar filters on the page (day, competition, price range) work inside this many strongest findings. */
+const LIMIT = 100;
 
 export function computeRadar(offers: TrackedOffer[], trackingSince: Partial<Record<FeedBook, number | null>>, now: number): RadarSnapshot {
   const windows = {} as RadarSnapshot['windows'];
@@ -76,7 +77,7 @@ export function computeDiffs(offers: TrackedOffer[]): DiffItem[] {
     const lo = g.reduce((a, b) => (b.odds < a.odds ? b : a));
     if (hi.odds === lo.odds) continue;
     out.push({
-      eventId: hi.event.id, url: hi.event.url, home: hi.event.home, away: hi.event.away, compName: hi.event.compName, sport: hi.event.sport,
+      eventId: hi.event.id, url: hi.event.url, home: hi.event.home, away: hi.event.away, comp: hi.event.comp, compName: hi.event.compName, sport: hi.event.sport,
       startAt: hi.event.startAt, outcome: hi.outcome, high: { book: hi.book, odds: hi.odds }, low: { book: lo.book, odds: lo.odds },
       pct: round2(changePct(lo.odds, hi.odds)),
     });

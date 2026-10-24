@@ -6,11 +6,13 @@ import Photo from './Photo.astro';
 import Art from './Art.astro';
 import Icon from './Icon.astro';
 import { COMPETITIONS, SPORTS, type Sport } from '../config/competitions';
-import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
+import PicksStrip from './PicksStrip.astro';
+import { picks as pickList } from '../lib/picks';
+import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
 
 interface Props { sport: Sport }
 const { sport } = Astro.props;
-const up = await upcoming();
+const [up, rd] = await Promise.all([upcoming(), radar()]);
 const t = getNow();
 const cfg = getCfg();
 const events = listable(up, t, cfg).filter((e) => e.sport === sport);
@@ -18,6 +20,7 @@ const counts = new Map<string, number>();
 for (const e of events) counts.set(e.comp, (counts.get(e.comp) ?? 0) + 1);
 const comps = COMPETITIONS.filter((c) => c.sport === sport);
 const S = SPORTS[sport];
+const chosen = pickList(up, rd, t, cfg, 3, { filter: (e) => e.sport === sport });
 const TEXT = {
   fotbal: {
     title: 'Kurzy na fotbal – srovnání Tipsport a Chance | KurzovýRadar',
@@ -50,6 +53,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         {comps.filter((c) => counts.get(c.slug)).map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{counts.get(c.slug)}</span></a></li>)}
       </ul>
     </nav>
+    <PicksStrip picks={chosen} now={t} back={S.path} scope={`u ${sport === 'hokej' ? 'hokeje' : 'fotbalu'}`} />
     <div class="mt-8">
       {events.length ? <EventList events={events} books={up.books} now={t} cfg={cfg} place={sport} />
         : <p class="card p-5 m-0">Kurzy teď nemáme. Zkontrolujeme je znovu za pár minut.</p>}

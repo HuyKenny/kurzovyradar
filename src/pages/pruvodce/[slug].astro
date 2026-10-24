@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Article from '../../components/Article.astro';
+import BeginnerExample from '../../components/BeginnerExample.astro';
 import artManifest from '../../data/art.json';
 export const prerender = true;
 export async function getStaticPaths() {
@@ -14,6 +15,7 @@ const { Content } = await render(g);
   crumbs={[{ name: 'Jak na kurzy', url: '/pruvodce/' }, { name: g.data.title, url: `/pruvodce/${g.id}/` }]}
   published={g.data.published} updated={g.data.updated} checked={g.data.checked}>
   <Content />
+  {g.id === 'kurzy-pro-zacatecniky' && <BeginnerExample />}
   <aside slot="after" class="mt-12 max-w-[72ch]" aria-labelledby="h-more">
     <h2 id="h-more" class="text-xl">Další články</h2>
     <ul class="mt-3 grid gap-2 list-none p-0">{others.map((o) => <li><a href={`/pruvodce/${o.id}/`} class="font-bold">{o.data.title}</a></li>)}</ul>

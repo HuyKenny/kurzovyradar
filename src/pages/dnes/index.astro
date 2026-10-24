@@ -3,15 +3,18 @@
 import Base from '../../layouts/Base.astro';
 import EventList from '../../components/EventList.astro';
 import FreshNote from '../../components/FreshNote.astro';
-import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
-import { dayKey } from '../../lib/format';
+import PicksStrip from '../../components/PicksStrip.astro';
+import { picks as pickList } from '../../lib/picks';
+import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+import { inDays } from '../../lib/days';
 
-const up = await upcoming();
+const [up, rd] = await Promise.all([upcoming(), radar()]);
 const t = getNow();
 const cfg = getCfg();
 const all = listable(up, t, cfg);
-const events = all.filter((e) => dayKey(e.startAt) === dayKey(t));
-const tomorrow = all.filter((e) => dayKey(e.startAt) === dayKey(t + 86400)).length;
+const events = all.filter((e) => inDays(e.startAt, 'dnes', t));
+const chosen = pickList(up, rd, t, cfg, 3, { todayOnly: true });
+const tomorrow = all.filter((e) => inDays(e.startAt, 'zitra', t)).length;
 const day = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', weekday: 'long', day: 'numeric', month: 'numeric' }).format(new Date(t * 1000));
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
@@ -22,7 +25,8 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     <h1 class="m-0">Zápasy dnes: kurzy na fotbal a hokej</h1>
     <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Dnešní zápasy ({day}) s kurzy Tipsportu a Chance na výsledek po základní hrací době. Zápasy, které už začaly, tu nejsou, protože předzápasové kurzy po výkopu nesledujeme.</p>
     <FreshNote books={up.books} now={t} cfg={cfg} />
-    <p class="mt-6 mb-5 hand text-[1.35rem]" role="status">{events.length ? `${events.length} ${events.length === 1 ? 'zápas' : events.length < 5 ? 'zápasy' : 'zápasů'} dnes` : ''}</p>
+    <PicksStrip picks={chosen} now={t} back="/dnes/" scope="dnes" when="dnešních" />
+    <p class="mt-8 mb-5 hand text-[1.35rem]" role="status">{events.length ? `${events.length} ${events.length === 1 ? 'zápas' : events.length < 5 ? 'zápasy' : 'zápasů'} dnes` : ''}</p>
     {events.length
       ? <EventList events={events} books={up.books} now={t} cfg={cfg} place="dnes" />
       : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Dnes už nemáme žádný zápas, který nezačal.</p><p class="mt-2 mb-0">{tomorrow ? `Na zítřek máme ${tomorrow} zápasů.` : 'Další zápasy najdeš v přehledu.'} <a href="/kurzy/?den=zitra">Zápasy zítra</a> · <a href="/kurzy/">Všechny kurzy</a></p></div>}

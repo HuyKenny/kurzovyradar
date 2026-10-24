@@ -39,19 +39,19 @@ Na KurzovémRadaru místo 1, X a 2 rovnou píšeme jména týmů a „Remíza“
 
 **Pozor u hokeje:** tahle sázka platí na výsledek po 60 minutách. Když je po třetí třetině remíza a pak někdo vyhraje v prodloužení, vyhrává sázka na **remízu**. Víc v článku [Základní hrací doba, nebo vítěz včetně prodloužení](/pruvodce/zakladni-hraci-doba-vs-prodlouzeni/).
 
-## Vyšší kurz = vyšší výhra, ale menší šance
+## Různé výsledky mají různé kurzy
 
-Nízký kurz (třeba 1,30) dává kancelář tomu, kdo je **favorit**. Vysoký kurz (třeba 6,00) tomu, komu moc nevěří. Vysoký kurz tedy znamená větší výhru, ale také menší šanci, že tip vyjde. Žádný kurz není jistota.
+V jednom zápase mají 1, X a 2 každý svůj kurz. Nízký kurz (třeba 1,30) bývá u výsledku, který kancelář považuje za pravděpodobnější, vysoký kurz (třeba 6,00) u výsledku, který považuje za méně pravděpodobný. Vyšší kurz tedy znamená vyšší výplatu při výhře, ale u téhož zápasu zpravidla i menší šanci, že ten výsledek nastane. Žádný kurz není jistota.
 
 ## Proč porovnávat kurzy
 
-Na stejný zápas může mít každá kancelář trochu jiný kurz. Když jedna nabízí 1,90 a druhá 1,85, za stejnou stovku dostaneš u první o 5 Kč víc. Proto na KurzovémRadaru kurzy dáváme vedle sebe a **zeleně označíme, kde se vyplatí víc**.
+Na stejný výsledek stejného zápasu může mít každá kancelář trochu jinou cenu. Když jedna nabízí 1,90 a druhá 1,85, za stejnou stovku dostaneš při výhře u první o 5 Kč víc. Je to jen jiná cena téže sázky: **šanci, že výsledek nastane, to nemění.** Proto na KurzovémRadaru ceny dáváme vedle sebe a **zeleně označíme, kde se vyplatí víc**.
 
-Tipsport a Chance mají kurzy většinou stejné. V tom případě u zápasu napíšeme „Stejné kurzy u Tipsportu i Chance“ a je jedno, kde vsadíš.
+Tipsport a Chance mají kurzy většinou stejné. V tom případě u zápasu napíšeme „Stejné kurzy u Tipsportu i Chance“. Cena této sázky je tedy shodná, ostatní vlastnosti kanceláří (aplikace, nabídka, podmínky) se mohou lišit.
 
 ## Co znamená, když se kurz pohne
 
-Kancelář kurzy mění i několikrát denně. Když kurz **klesne**, kancelář za ten výsledek vyplácí méně, většinou proto, že mu teď víc věří. Když **stoupne**, vyplácí víc. Změny ukazujeme v sekci [Pohyby kurzů](/radar/) a vysvětlujeme v článku [Co znamená pohyb kurzu](/pruvodce/pohyb-kurzu/).
+Kancelář kurzy mění i několikrát denně. Když kurz **klesne**, kancelář za ten výsledek vyplácí méně. Když **stoupne**, vyplácí víc. Proč se kurz změnil, kancelář neuvádí a my to nevíme. Změny ukazujeme v sekci [Pohyby kurzů](/radar/) a vysvětlujeme v článku [Co znamená pohyb kurzu](/pruvodce/pohyb-kurzu/).
 
 ## Než vsadíš
 
