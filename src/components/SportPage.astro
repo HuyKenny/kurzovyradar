@@ -42,7 +42,7 @@ const TEXT = {
 const line = countLine({ shown: shown.length, total: events.length, dayTotal: null, day: '', filtered: false });
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title={TEXT.title} description={TEXT.desc} crumbs={[{ name: 'Sporty', url: '/sporty/' }, { name: S.name, url: S.path }]} noindex={page > 1}>
+<Base title={TEXT.title} description={TEXT.desc} crumbs={[{ name: 'Sporty', url: '/sporty/' }, { name: S.name, url: S.path }]} noindex={page > 1 || events.length === 0}>
   <div class="wrap pt-6">
     <div class:list={['grid gap-6 md:items-center', (sport === 'fotbal' || sport === 'hokej') && 'md:grid-cols-[minmax(0,1fr)_340px]']}>
       <div>
