@@ -35,3 +35,19 @@ export const ON_ZIVEPRENOSY: Record<string, string> = {
   'nike-liga': '/futbal/nike-liga/',
   'tipos-extraliga': '/hokej/tipsport-liga/',
 };
+
+export const KRATKERECENZE = 'https://kratkerecenze.cz';
+
+/**
+ * Independent review of the same bookmaker on our sister site KrátkéRecenze.cz, linked from the bookmaker's page here (one link per page,
+ * a different anchor each). The reviews link back to /bonusy/<kancelář>/ only for Tipsport, Chance and Allwyn, never to the page that links
+ * to them (see seo/linkbuilding/graf.md).
+ */
+export const REVIEW_ON_KRATKERECENZE: Record<string, { url: string; anchor: string }> = {
+  tipsport: { url: `${KRATKERECENZE}/recenze-tipsport-cz-nejvetsi-sazkova-kancelar-v-ceske-republice/`, anchor: 'nezávislá recenze Tipsportu na KrátkýchRecenzích' },
+  chance: { url: `${KRATKERECENZE}/recenze-chance-cz-moderni-sazkova-kancelar-s-bohatou-nabidkou-a-komunitou-sazkaru/`, anchor: 'recenze Chance z jiného pohledu' },
+  allwyn: { url: `${KRATKERECENZE}/recenze-sazka-cz-nejvetsi-ceska-loterijni-a-sazkova-platforma-ktera-prinasi-zabavu-i-sanci-na-milionove-vyhry/`, anchor: 'recenze Sazky a Allwynu na KrátkýchRecenzích' },
+  merkurxtip: { url: `${KRATKERECENZE}/merkurxtip-recenze-online-kasina-od-spolecnosti-merkur/`, anchor: 'recenze MerkurXtipu z pohledu casina' },
+  fortuna: { url: `${KRATKERECENZE}/recenze-fortuna/`, anchor: 'recenze Fortuny na KrátkýchRecenzích' },
+  betano: { url: `${KRATKERECENZE}/betano-recenze-komplexni-predstaveni-online-kasina-a-sazkove-kancelare-v-cr/`, anchor: 'recenze Betana a jeho casina' },
+};

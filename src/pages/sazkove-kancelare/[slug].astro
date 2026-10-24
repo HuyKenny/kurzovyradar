@@ -7,6 +7,7 @@ import { REVIEWS, SECTION_TITLES, type SectionKey } from '../../config/reviews';
 import BonusCard from '../../components/BonusCard.astro';
 import { bonusOf } from '../../config/bonuses';
 import { cacheHeader } from '../../lib/data';
+import { REVIEW_ON_KRATKERECENZE } from '../../config/sister';
 // Server-rendered (not prerendered): the bonus box shows figures only while the check is recent, which depends on today's date.
 const r = REVIEWS.find((x) => x.id === Astro.params.slug && BOOK[x.id].review !== 'none' && BOOK[x.id].review !== 'draft');
 if (!r) return Astro.rewrite('/404/');
@@ -82,6 +83,7 @@ const faq = [
     {(r.id === 'tipsport' || r.id === 'chance') && <li><a href="/sazkove-kancelare/tipsport-vs-chance/">Tipsport vs Chance</a></li>}
     <li><a href="/pruvodce/jak-poznat-legalni-sazkovou-kancelar/">Jak poznat legální sázkovou kancelář</a></li>
     <li><a href="/pojem/cashout/">Co je cashout</a></li>
+    {REVIEW_ON_KRATKERECENZE[b.id] && <li>Na našem sesterském webu: <a href={REVIEW_ON_KRATKERECENZE[b.id]!.url}>{REVIEW_ON_KRATKERECENZE[b.id]!.anchor}</a></li>}
   </ul>
   <h2>Zdroje</h2>
   <ul>{r.sources.map((s) => <li><a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></li>)}</ul>
