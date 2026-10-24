@@ -44,8 +44,9 @@ function betData(b: HTMLElement): Omit<FollowBet, 'seen'> & { odds: number | nul
     const d = JSON.parse(b.dataset.followBet ?? 'null');
     if (!d) return null;
     if (d.pickFrom) {
-      const form = document.querySelector<HTMLFormElement>(d.pickFrom);
-      const o = (form?.querySelector<HTMLInputElement>('input[name=tip]:checked')?.value ?? d.outcome) as '1' | 'x' | '2';
+      // On the match page the chosen outcome is the shared bet state (scripts/bet.ts): the checked radio of either control.
+      const root = document.querySelector<HTMLElement>(d.pickFrom);
+      const o = (root?.querySelector<HTMLInputElement>('input[data-bet-outcome]:checked')?.value ?? d.outcome) as '1' | 'x' | '2';
       return { ...d, outcome: o, label: d.labels?.[o] ?? '', odds: d.oddsBy?.[o] ?? null };
     }
     return d;
@@ -87,7 +88,7 @@ document.addEventListener('click', (e) => {
   save(s);
 });
 document.addEventListener('kr:follow', paintFollow);
-document.addEventListener('change', (e) => { if ((e.target as Element | null)?.matches?.('input[name=tip]')) paintFollow(); });
+document.addEventListener('kr:bet', paintFollow);
 window.addEventListener('storage', (e) => { if (e.key === 'kr-sledovane') paintFollow(); });
 for (const b of document.querySelectorAll<HTMLButtonElement>('[data-fav], [data-follow-bet], [data-follow-comp], [data-follow-sport]')) b.hidden = false; // shown only when JS can store them
 paintFollow();
@@ -193,32 +194,6 @@ for (const box of document.querySelectorAll<HTMLElement>('[data-mini-calc]')) {
   };
   box.addEventListener('input', upd);
   for (const b of box.querySelectorAll<HTMLElement>('[data-nojs]')) b.hidden = true;
-}
-
-/* ---------- "Kolik vyhraju?" on the match page ---------- */
-for (const f of document.querySelectorAll<HTMLFormElement>('form[data-win]')) {
-  const odds = JSON.parse(f.dataset.odds ?? '{}') as Record<string, number>;
-  const out = f.querySelector<HTMLElement>('[data-out]');
-  const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2 }).format(Math.round(n * 100) / 100)} Kč`;
-  const upd = () => {
-    if (!out) return;
-    const data = new FormData(f);
-    const st = Number(String(data.get('vklad') ?? '').replace(',', '.'));
-    const o = (odds[String(data.get('tip') ?? '')] ?? 0) / 1000;
-    out.textContent = '';
-    if (!(st >= 0)) { out.textContent = 'Zadej sázku v Kč.'; return; }
-    if (!(o > 1)) { out.textContent = 'Na tenhle výsledek teď kurz nemáme.'; return; }
-    const strong = (t: string) => { const b = document.createElement('strong'); b.className = 'num'; b.textContent = t; return b; };
-    out.appendChild(document.createTextNode('Pokud sázka vyhraje, dostaneš '));
-    out.appendChild(strong(kc(st * o)));
-    out.appendChild(document.createTextNode(' včetně vkladu. Čistý zisk je '));
-    out.appendChild(strong(kc(st * o - st)));
-    out.appendChild(document.createTextNode('.'));
-  };
-  f.addEventListener('input', upd);
-  f.addEventListener('change', upd);
-  f.addEventListener('submit', (e) => { e.preventDefault(); upd(); });
-  for (const b of f.querySelectorAll<HTMLElement>('[data-nojs]')) b.hidden = true;
 }
 
 /* ---------- homepage strip: changes at followed bets/matches since the visitor last looked ---------- */

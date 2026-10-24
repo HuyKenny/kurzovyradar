@@ -9,11 +9,13 @@ import { BOOK, FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
 import { SPORTS, competitionBySlug } from '../../config/competitions';
 import { E, upcoming, radar as getRadar, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { reasons, pricesFor } from '../../lib/picks';
-import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget } from '../../lib/market';
+import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget, selectionName } from '../../lib/market';
+import { parseBetState, winnings, payoutDelta, type FindingKey } from '../../lib/bet-state';
+import { availablePeriods, periodInfo, windowChange, type Change } from '../../lib/context';
 import { backLink, isOutcome } from '../../lib/links';
 import Icon from '../../components/Icon.astro';
 import { ticketView, atBooks, STATE_TEXT, OUTCOMES, whoOf } from '../../lib/ticket';
-import { odds as fmt, pct, dateTime, date, time, kickoff, ago, kc } from '../../lib/format';
+import { odds as fmt, pct, dateTime, date, time, kickoff, ago, kc, atTime } from '../../lib/format';
 import { changePct, overround, implied } from '../../server/calc/odds';
 import type { Outcome } from '../../server/types';
 
@@ -35,21 +37,25 @@ const comp = competitionBySlug(ev.comp);
 const comparable = FEED_BOOKS.filter((b) => ev.books[b] && !ev.books[b]!.mismatch);
 const offer = (b: FeedBook, o: Outcome) => ev.books[b]?.outcomes[o];
 
-// "Kolik vyhraju?" — computed on the server from ?vklad & ?tip (works without JS), live in the browser.
+// ONE chosen bet drives the whole page: calculator, name, conditions, reasons, price comparison, chart, follow button and
+// links all read the same state (outcome, stake, period). It lives in the URL (see lib/bet-state.ts); src/scripts/bet.ts
+// switches it in the browser without a reload. Every outcome's parts are rendered here, the others are `hidden`.
 const q = Astro.url.searchParams;
-const stake = Math.min(1e7, Math.max(0, Number((q.get('vklad') ?? '100').replace(',', '.')) || 100));
-// The chosen bet travels in stable ids (?trh=1x2&vysledek=x from radar, cards, followed): graph, calculator and the
-// beginner blocks all start on it. Without it: ?tip from the calculator form, else the favourite.
-const vysledek = q.get('vysledek');
-const pick: Outcome = isOutcome(vysledek) ? vysledek : isOutcome(q.get('tip')) ? (q.get('tip') as Outcome) : (v.favourite?.outcome ?? '1');
+const bs = parseBetState(q, v.favourite?.outcome ?? '1');
+const pick: Outcome = bs.outcome;
+const stake = bs.stake;
 const back = backLink(q.get('zpet'));
 const rd = await getRadar();
-const why = reasons(up, rd, t, cfg).get(`${ev.id}|${pick}`) ?? [];
-const pickPrices = pricesFor(ev, pick, up, t, cfg);
-const pickLabel = whoOf(ev, pick);
+const allReasons = reasons(up, rd, t, cfg);
+const oddsOf = (o: Outcome) => v.outcomes.find((x) => x.outcome === o)?.best?.odds ?? null;
+const sel = (o: Outcome) => selectionName(ev.sport, o);
+const betData = JSON.stringify({
+  outcomes: Object.fromEntries(OUTCOMES.map((o) => [o, { name: sel(o), who: whoOf(ev, o), odds: oddsOf(o) }])),
+  defaultOutcome: v.favourite?.outcome ?? '1',
+});
 const followBet = JSON.stringify({ id: ev.id, outcome: pick, url: ev.url, home: ev.home, away: ev.away, startAt: ev.startAt, comp: ev.compName, sport: ev.sport,
-  pickFrom: '#kalkulacka', labels: Object.fromEntries(OUTCOMES.map((o) => [o, whoOf(ev, o)])), oddsBy: Object.fromEntries(v.outcomes.map((o) => [o.outcome, o.best?.odds ?? null])) });
-const pickOdds = v.outcomes.find((o) => o.outcome === pick)?.best?.odds ?? null;
+  pickFrom: '[data-bet-root]', labels: Object.fromEntries(OUTCOMES.map((o) => [o, whoOf(ev, o)])), oddsBy: Object.fromEntries(OUTCOMES.map((o) => [o, oddsOf(o)])) });
+const FINDING_LABEL: Record<FindingKey, string> = { rust: 'Kurz vzrostl', pokles: 'Kurz klesl', rozdil: 'Vyšší kurz u druhé kanceláře', max: 'Nejvyšší zachycený kurz' };
 
 // Tracking window and data gaps (failed import runs).
 const firstAt = history.length ? Math.min(...history.map((h) => h.at)) : null;
@@ -66,10 +72,38 @@ if (firstAt) {
   }
 }
 const span = firstAt ? endAt - firstAt : 0;
-const periods = [
-  ...[{ key: '24h', label: '24 hodin', s: 86400 }, { key: '3d', label: '3 dny', s: 3 * 86400 }].filter((p) => span > p.s * 1.1),
-  { key: 'vse', label: 'Celé sledování', s: span },
-];
+// Periods are offered only when the whole period is covered by our records; a requested one we cannot cover falls back honestly.
+const periods = availablePeriods(firstAt, endAt);
+const reqPeriod = bs.period;
+const period = reqPeriod && periods.some((p) => p.key === reqPeriod) ? reqPeriod : 'vse';
+const periodNote = reqPeriod && period !== reqPeriod ? `Pro období „${periodInfo(reqPeriod).label}“ zatím nemáme dost zápisů, ukazujeme celé sledování.` : '';
+const secondsOf = (k: string) => (k === 'vse' ? span : periodInfo(k as never).seconds ?? span);
+const checkedAtOf = (bs_: FeedBook[]) => Math.min(...bs_.map((b) => books[b]?.lastSuccessAt ?? 0).filter(Boolean), Infinity);
+
+/** What changed at the requested period for one outcome, told once per distinct result (identical books are joined). */
+function contextLines(o: Outcome): string[] {
+  if (!reqPeriod) return [];
+  const info = periodInfo(reqPeriod);
+  const target = betTarget(ev.sport, o, ev.home, ev.away);
+  const parts = comparable.filter((b) => isCurrentOffer(b, o)).map((b) => ({
+    b, ch: windowChange(history.filter((h) => h.book === b && h.outcome === o), t, info.seconds, books[b]?.trackingSince ?? null, offer(b, o)?.odds ?? null),
+  }));
+  if (!parts.length) return [];
+  const sig = (c: Change) => (c.status === 'moved' ? `m${c.from.odds}>${c.to.odds}@${c.from.at}|${c.to.at}` : c.status === 'unchanged' ? `u${c.odds}` : 'i');
+  const groups = new Map<string, { books: FeedBook[]; ch: Change }>();
+  for (const p of parts) (groups.get(sig(p.ch)) ?? groups.set(sig(p.ch), { books: [], ch: p.ch }).get(sig(p.ch))!).books.push(p.b);
+  return [...groups.values()].map(({ books: bk, ch }) => {
+    const where = atBooks(bk);
+    const verified = checkedAtOf(bk);
+    const ver = Number.isFinite(verified) ? ` Naposledy ověřeno ${atTime(verified, t)}.` : '';
+    if (ch.status === 'insufficient') return `${info.label.charAt(0).toUpperCase()}${info.label.slice(1)}: pro toto období ${where} zatím nemáme dost zápisů, takže změnu nepočítáme.`;
+    if (ch.status === 'unchanged') return `Kurz na ${target} se ${where} ${info.since} nezměnil (${fmt(ch.odds)}).${ver}`;
+    const dlt = payoutDelta(100, ch.from.odds, ch.to.odds);
+    return `Kurz na ${target} ${where} ${ch.to.odds < ch.from.odds ? 'klesl' : 'stoupl'} ${info.since} z ${fmt(ch.from.odds)} na ${fmt(ch.to.odds)} (${pct(ch.pct)}). Při vkladu 100 Kč je to ${Math.abs(dlt)} Kč ${dlt < 0 ? 'nižší' : 'vyšší'} výplata při výhře. Porovnáváme zápis z ${dateTime(ch.from.at)} se zápisem z ${dateTime(ch.to.at)}, ověřeno ${atTime(verified, t)}.`;
+  });
+}
+function isCurrentOffer(b: FeedBook, o: Outcome) { return pickPricesAll[o].some((x) => x.book === b); }
+const pickPricesAll = Object.fromEntries(OUTCOMES.map((o) => [o, pricesFor(ev, o, up, t, cfg)])) as Record<Outcome, ReturnType<typeof pricesFor>>;
 const series = (o: Outcome): Series[] => comparable.map((b) => ({ book: b, points: history.filter((h) => h.book === b && h.outcome === o) })).filter((s) => s.points.length);
 const enough = history.length > 0;
 
@@ -100,14 +134,13 @@ const schema = [{
   homeTeam: { '@type': 'SportsTeam', name: ev.home }, awayTeam: { '@type': 'SportsTeam', name: ev.away },
   superEvent: { '@type': 'SportsEvent', name: ev.compName },
 }];
-const oddsData = JSON.stringify(Object.fromEntries(v.outcomes.map((o) => [o.outcome, o.best?.odds ?? 0])));
 const offState = (o: (typeof v.outcomes)[number]) => STATE_TEXT[o.cells.find((c) => c.state !== 'missing')?.state ?? 'missing'];
 const lastKnown = (o: Outcome) => comparable.map((b) => offer(b, o)).find(Boolean);
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <Base title={title} description={desc} schema={schema} noindex={!enough || q.size > 0} canonical={ev.url}
   crumbs={[{ name: S.name, url: S.path }, { name: ev.compName, url: `/souteze/${ev.comp}/` }, { name: `${ev.home} – ${ev.away}`, url: ev.url }]}>
-  <div class="wrap pt-6">
+  <div class="wrap pt-6" data-bet-root data-bet={betData}>
     {back && <p class="m-0 mb-4"><a href={back.href} class="font-bold inline-flex items-center gap-1 min-h-[44px] no-underline hover:underline"><span aria-hidden="true">←</span>{back.label}</a></p>}
     <article class="ticket" id="sazka">
       <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
@@ -127,7 +160,8 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
           {v.books.length === 0 && !started ? <p class="m-0">Kurzy teď nejsou v nabídce. Zkontrolujeme je znovu za pár minut.</p> : (
             <ul class="grid grid-cols-3 gap-2 sm:gap-3 list-none p-0 m-0">
               {v.outcomes.map((o) => (
-                <li class="min-w-0">
+                <li class="min-w-0 relative" data-odd-for={o.outcome}>
+                  <span class="odd-picked-tag" data-picked-tag hidden={o.outcome !== pick}>vybráno</span>
                   {o.best ? (
                     <a href={`/go/${o.best.books[0]}/?e=${ev.id}&p=detail`} rel="sponsored nofollow" class:list={['odd !min-h-[72px]', !o.same && v.books.length > 1 && 'odd--best']}
                       aria-label={`${o.who}: kurz ${fmt(o.best.odds)} ${atBooks(o.best.books)}`}>
@@ -160,17 +194,22 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
           )}
         </div>
 
-        <form id="kalkulacka" method="get" action={`${ev.url}#kalkulacka`} class="bg-green-soft border-2 border-ink rounded-[14px] p-4 self-start grid gap-3" data-win data-odds={oddsData}>
+        <form id="kalkulacka" method="get" action={`${ev.url}#kalkulacka`} class="bg-green-soft border-2 border-ink rounded-[14px] p-4 self-start grid gap-3" data-bet-form>
           <h2 class="text-[1.25rem] m-0 flex items-center gap-2"><Art name="kalkulacka" size={28} />Kolik vyhraju?</h2>
-          <label class="grid gap-1 font-bold text-[0.95rem]">Vsadím (Kč)<input class="field num" name="vklad" inputmode="decimal" value={String(stake)} /></label>
+          <input type="hidden" name="trh" value="1x2" />
+          {q.get('zpet') && <input type="hidden" name="zpet" value={q.get('zpet')!} />}
+          {bs.period && <input type="hidden" name="obdobi" value={bs.period} />}
+          {bs.finding && <input type="hidden" name="zjisteni" value={bs.finding} />}
+          <label class="grid gap-1 font-bold text-[0.95rem]">Vsadím (Kč)<input class="field num" name="vklad" inputmode="decimal" value={String(stake)} data-bet-stake autocomplete="off" /></label>
           <fieldset class="m-0 p-0 border-0">
             <legend class="font-bold text-[0.95rem] mb-1">Na co</legend>
             <div class="seg">
-              {v.outcomes.map((o) => <label><input type="radio" name="tip" value={o.outcome} checked={o.outcome === pick} disabled={!o.best} /><span class="truncate max-w-[12ch]">{o.who}</span></label>)}
+              {v.outcomes.map((o) => <label><input type="radio" name="vysledek" value={o.outcome} checked={o.outcome === pick} disabled={!o.best} data-bet-outcome /><span class="truncate max-w-[12ch]">{o.who}</span></label>)}
             </div>
           </fieldset>
+          <p class="m-0 text-[0.95rem]"><span class="text-ink-2">Vybraná sázka:</span> <strong data-bind="name">{sel(pick)}</strong>{' '}<span class="text-ink-2" data-bind="who-wrap">({whoOf(ev, pick)})</span>, kurz <strong class="num" data-bind="odds">{oddsOf(pick) ? fmt(oddsOf(pick)!) : '–'}</strong></p>
           <output class="block text-[1.1rem]" aria-live="polite" data-out>
-            {pickOdds ? <>Pokud sázka vyhraje, dostaneš <strong class="num">{kc(stake * pickOdds / 1000)}</strong> včetně vkladu. Čistý zisk je <strong class="num">{kc(stake * pickOdds / 1000 - stake)}</strong>.</> : 'Na tenhle výsledek teď kurz nemáme.'}
+            {oddsOf(pick) ? <>Pokud sázka vyhraje, dostaneš <strong class="num">{kc(winnings(stake, oddsOf(pick)!).payout)}</strong> včetně vkladu. Čistý zisk je <strong class="num">{kc(winnings(stake, oddsOf(pick)!).profit)}</strong>. Pokud prohraje, ztratíš vklad <strong class="num">{kc(stake)}</strong>.</> : 'Na tenhle výsledek teď kurz nemáme.'}
           </output>
           <button class="btn btn--sm justify-self-start" type="submit" data-nojs>Spočítat</button>
           <button type="button" hidden class="btn btn--ghost btn--sm justify-self-start follow-bet" data-follow-bet={followBet} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat změny</span></button>
@@ -181,66 +220,87 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
 
     <section class="mt-12" aria-labelledby="h-bet">
       <p class="hand m-0 text-[1.3rem]">tvoje sázka</p>
-      <h2 id="h-bet" class="m-0 mt-1">{outcomeSentence(ev.sport, pick, ev.home, ev.away)}</h2>
-      <p class="mt-2 mb-5 text-ink-2">{settlement(ev.sport)} Jinou sázku vybereš v kalkulačce nahoře.</p>
-      <div class="grid gap-5 lg:grid-cols-3">
-        <div class="card p-5">
-          <h3 class="m-0 mb-2">Co musí nastat, aby sázka vyhrála?</h3>
-          <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, pick, ev.home, ev.away).map((x) => <li>{x}</li>)}</ul>
-        </div>
-        <div class="card p-5">
-          <h3 class="m-0 mb-2">Proč ji radar vybral?</h3>
-          {why.length ? (
-            <ul class="m-0 pl-0 list-none grid gap-2">{why.map((r) => <li><span class:list={['badge mr-1', r.label === 'Vyšší kurz jinde' ? 'badge--green' : 'badge--orange']}>{r.label}</span> {r.text}</li>)}</ul>
-          ) : <p class="m-0">Mezi dnešními zajímavostmi tahle sázka není: kurzy obou kanceláří jsou stejné a výrazně se nepohnuly. Ukazujeme ji, protože sis ji otevřel.</p>}
-          <p class="mt-3 mb-0 text-[0.88rem] text-ink-2">Je to zjištění z dat, ne tip. Důvod změn kanceláře neuvádějí.</p>
-        </div>
-        <div class="card p-5">
-          <h3 class="m-0 mb-2">Kde je nyní vyšší kurz?</h3>
-          {pickPrices.length === 0 ? <p class="m-0">Na „{pickLabel}“ teď nemáme aktuální kurz žádné kanceláře.</p>
-            : pickPrices.length === 1 ? <p class="m-0">Aktuální kurz máme jen {BOOK[pickPrices[0]!.book].locative}: {fmt(pickPrices[0]!.odds)} (ověřeno {time(pickPrices[0]!.checkedAt)}). Druhou kancelář teď porovnat nejde.</p>
-            : pickPrices[0]!.odds === pickPrices[pickPrices.length - 1]!.odds
-              ? <p class="m-0">Cena této sázky je teď {atBooks(pickPrices.map((x) => x.book))} stejná: {fmt(pickPrices[0]!.odds)} (ověřeno {time(Math.min(...pickPrices.map((x) => x.checkedAt)))}).</p>
-              : <p class="m-0">Vyšší je {BOOK[pickPrices[0]!.book].locative}: {fmt(pickPrices[0]!.odds)} proti {fmt(pickPrices[1]!.odds)} {BOOK[pickPrices[1]!.book].locative} (ověřeno {time(Math.min(...pickPrices.map((x) => x.checkedAt)))}).</p>}
-          {pickPrices[0] && <p class="mt-3 mb-0">{payoutSentence(100, pickPrices[0].odds)}</p>}
-          {!started && pickPrices[0] && <a class="btn btn--sm mt-4" href={`/go/${pickPrices[0].book}/?e=${ev.id}&p=sazka-${pick}`} rel="sponsored nofollow">Zobrazit {BOOK[pickPrices[0].book].locative}<Icon name="external-link" size={15} /></a>}
-        </div>
-      </div>
+      {OUTCOMES.map((o) => {
+        const prices = pickPricesAll[o];
+        const why = allReasons.get(`${ev.id}|${o}`) ?? [];
+        const ctx = contextLines(o);
+        return (
+          <div data-bet-panel={o} hidden={o !== pick}>
+            <h2 id={o === pick ? 'h-bet' : undefined} class="m-0 mt-1">{outcomeSentence(ev.sport, o, ev.home, ev.away)}</h2>
+            <p class="mt-2 mb-5 text-ink-2"><strong class="text-ink">{sel(o)}.</strong> {settlement(ev.sport)} Jinou sázku vybereš v kalkulačce nahoře nebo u grafu.</p>
+            <div class="grid gap-5 lg:grid-cols-3">
+              <div class="card p-5">
+                <h3 class="m-0 mb-2">Co musí nastat, aby sázka vyhrála?</h3>
+                <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, o, ev.home, ev.away).map((x) => <li>{x}</li>)}</ul>
+              </div>
+              <div class="card p-5">
+                <h3 class="m-0 mb-2">Proč ji radar vybral?</h3>
+                {bs.finding && reqPeriod && o === bs.outcome && <p class="m-0 mb-2"><span class="badge badge--grey mr-1">Z radaru</span> Přišel jsi od zjištění „{FINDING_LABEL[bs.finding]}“ {periodInfo(reqPeriod).since}.</p>}
+                {ctx.length > 0 && <ul class="m-0 pl-0 list-none grid gap-2 mb-2">{ctx.map((c) => <li>{c}</li>)}</ul>}
+                {why.length ? (
+                  <ul class="m-0 pl-0 list-none grid gap-2">{why.map((r) => <li><span class:list={['badge mr-1', r.type === 'one-moved' || r.type === 'higher-elsewhere' ? 'badge--green' : 'badge--orange']}>{r.label}</span> {r.text}</li>)}</ul>
+                ) : !ctx.length ? <p class="m-0">Mezi dnešními zajímavostmi tahle sázka není: kurzy obou kanceláří jsou stejné a výrazně se nepohnuly. Ukazujeme ji, protože sis ji otevřel.</p> : null}
+                <p class="mt-3 mb-0 text-[0.88rem] text-ink-2">Je to zjištění z dat, ne tip. Důvod změn kanceláře neuvádějí.</p>
+              </div>
+              <div class="card p-5">
+                <h3 class="m-0 mb-2">Kde je nyní vyšší kurz?</h3>
+                {prices.length === 0 ? <p class="m-0">Na „{whoOf(ev, o)}“ teď nemáme aktuální kurz žádné kanceláře.</p>
+                  : prices.length === 1 ? <p class="m-0">Aktuální kurz máme jen {BOOK[prices[0]!.book].locative}: {fmt(prices[0]!.odds)} (ověřeno {time(prices[0]!.checkedAt)}). Druhou kancelář teď porovnat nejde.</p>
+                  : prices[0]!.odds === prices[prices.length - 1]!.odds
+                    ? <p class="m-0">Cena této sázky je teď {atBooks(prices.map((x) => x.book))} stejná: {fmt(prices[0]!.odds)} (ověřeno {time(Math.min(...prices.map((x) => x.checkedAt)))}).</p>
+                    : <p class="m-0">Vyšší je {BOOK[prices[0]!.book].locative}: {fmt(prices[0]!.odds)} proti {fmt(prices[1]!.odds)} {BOOK[prices[1]!.book].locative} (ověřeno {time(Math.min(...prices.map((x) => x.checkedAt)))}).</p>}
+                {prices[0] && <p class="mt-3 mb-0">{payoutSentence(100, prices[0].odds)}</p>}
+                {!started && prices[0] && <>
+                  <a class="btn btn--sm mt-4" href={`/go/${prices[0].book}/?e=${ev.id}&p=sazka-${o}`} rel="sponsored nofollow">Zobrazit zápas {BOOK[prices[0].book].locative}<Icon name="external-link" size={15} /></a>
+                  <p class="mt-2 mb-0 text-[0.85rem] text-ink-2">Otevře se zápas na webu kanceláře. Sázku „{sel(o)}“ si tam vybereš sám, kancelář konkrétní výsledek v odkazu nepřebírá.</p>
+                </>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </section>
 
     {enough && (
       <section class="mt-12" aria-labelledby="h-story">
-        <h2 id="h-story" class="flex items-center gap-2"><Art name="radar" size={34} />Co se s kurzy dělo</h2>
+        <h2 id="h-story" class="flex items-center gap-2"><Art name="radar" size={34} />Co se s kurzy dělo od začátku našeho sledování</h2>
         <ul class="mt-3 grid gap-2 text-[1.08rem] max-w-[75ch] list-none p-0">
           {story.map((s) => <li class="flex gap-2"><span class="hand text-[1.3rem] leading-none" aria-hidden="true">→</span><span>{s}</span></li>)}
         </ul>
       </section>
     )}
 
-    <section class="mt-12" aria-labelledby="h-hist">
+    <section class="mt-12" aria-labelledby="h-hist" id="graf">
       <h2 id="h-hist" class="m-0">Vývoj kurzu v grafu</h2>
       {!enough ? <p class="card p-5 mt-4">Pro tenhle zápas zatím nemáme dost zápisů.</p> : (
-        <div class="charts mt-4 card p-4 md:p-6">
+        <form class="charts mt-4 card p-4 md:p-6" method="get" action={`${ev.url}#graf`} data-bet-form>
+          <input type="hidden" name="trh" value="1x2" />
+          <input type="hidden" name="vklad" value={String(stake)} />
+          {q.get('zpet') && <input type="hidden" name="zpet" value={q.get('zpet')!} />}
+          {bs.finding && <input type="hidden" name="zjisteni" value={bs.finding} />}
           <div class="flex flex-wrap gap-3 justify-between">
             <div class="seg" role="radiogroup" aria-label="Výsledek">
-              {OUTCOMES.map((o) => <label><input type="radio" name="vo" value={o} checked={o === pick} /><span>{whoOf(ev, o)}</span></label>)}
+              {OUTCOMES.map((o) => <label><input type="radio" name="vysledek" value={o} checked={o === pick} data-bet-outcome /><span>{whoOf(ev, o)}</span></label>)}
             </div>
             <div class="seg" role="radiogroup" aria-label="Období">
-              {periods.map((p, i) => <label><input type="radio" name="vp" value={p.key} checked={i === periods.length - 1} /><span>{p.label}</span></label>)}
+              {periods.map((p) => <label><input type="radio" name="obdobi" value={p.key} checked={p.key === period} data-bet-period /><span>{p.label}</span></label>)}
             </div>
           </div>
+          <button class="btn btn--sm mt-3" type="submit" data-nojs>Zobrazit</button>
+          <p class="mt-3 mb-0 font-bold" data-bind="chart-title">{sel(pick)} ({whoOf(ev, pick)}), období: {periodInfo(period).label}</p>
+          {periodNote && <p class="mt-1 mb-0 note-box">{periodNote}</p>}
           {OUTCOMES.flatMap((o) => periods.map((p) => (
-            <div class="chart-panel mt-4" data-k={`${o}-${p.key}`}>
+            <div class="chart-panel mt-4" data-k={`${o}-${p.key}`} hidden={!(o === pick && p.key === period)}>
               {series(o).length ? <>
-                <div class="sm:hidden"><OddsChart id={`chm-${o}-${p.key}`} w={340} h={230} series={series(o)} from={Math.max(firstAt!, endAt - p.s)} to={endAt} gaps={gaps}
+                <div class="sm:hidden"><OddsChart id={`chm-${o}-${p.key}`} w={340} h={230} series={series(o)} from={Math.max(firstAt!, endAt - secondsOf(p.key))} to={endAt} gaps={gaps}
                   label={`Vývoj kurzu na ${o === 'x' ? 'remízu' : whoOf(ev, o)} (${p.label})`} /></div>
-                <div class="hidden sm:block max-w-[820px]"><OddsChart id={`ch-${o}-${p.key}`} w={780} h={300} series={series(o)} from={Math.max(firstAt!, endAt - p.s)} to={endAt} gaps={gaps}
+                <div class="hidden sm:block max-w-[820px]"><OddsChart id={`ch-${o}-${p.key}`} w={780} h={300} series={series(o)} from={Math.max(firstAt!, endAt - secondsOf(p.key))} to={endAt} gaps={gaps}
                   label={`Vývoj kurzu na ${o === 'x' ? 'remízu' : whoOf(ev, o)} (${p.label})`} /></div>
               </> : <p>Na tenhle výsledek nemáme zápisy.</p>}
             </div>
           )))}
           <p class="mt-3 mb-0 text-ink-2">Čára ukazuje jen kurzy, které jsme při kontrolách opravdu zapsali; mezi kontrolami se kurz mohl změnit i víckrát. {gaps.length ? `Šedé pásy jsou chvíle, kdy se nám data nepodařilo načíst (${gaps.length}×).` : ''}</p>
-        </div>
+        </form>
       )}
     </section>
 
@@ -300,15 +360,4 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     </aside>
   </div>
 </Base>
-<style is:global>
-  .chart-panel { display: none; }
-  .charts:has(input[name='vo'][value='1']:checked):has(input[name='vp'][value='24h']:checked) .chart-panel[data-k='1-24h'],
-  .charts:has(input[name='vo'][value='1']:checked):has(input[name='vp'][value='3d']:checked) .chart-panel[data-k='1-3d'],
-  .charts:has(input[name='vo'][value='1']:checked):has(input[name='vp'][value='vse']:checked) .chart-panel[data-k='1-vse'],
-  .charts:has(input[name='vo'][value='x']:checked):has(input[name='vp'][value='24h']:checked) .chart-panel[data-k='x-24h'],
-  .charts:has(input[name='vo'][value='x']:checked):has(input[name='vp'][value='3d']:checked) .chart-panel[data-k='x-3d'],
-  .charts:has(input[name='vo'][value='x']:checked):has(input[name='vp'][value='vse']:checked) .chart-panel[data-k='x-vse'],
-  .charts:has(input[name='vo'][value='2']:checked):has(input[name='vp'][value='24h']:checked) .chart-panel[data-k='2-24h'],
-  .charts:has(input[name='vo'][value='2']:checked):has(input[name='vp'][value='3d']:checked) .chart-panel[data-k='2-3d'],
-  .charts:has(input[name='vo'][value='2']:checked):has(input[name='vp'][value='vse']:checked) .chart-panel[data-k='2-vse'] { display: block; }
-</style>
+<script src="../../scripts/bet.ts"></script>

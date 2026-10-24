@@ -119,6 +119,7 @@
   .badge--warn { color: var(--color-warn); background: var(--color-warn-soft); }
 
   /* Odds button: who + price. The highest price gets a thicker frame, a tag and text — never colour alone. */
+  [hidden] { display: none !important; }
   .odd { display: flex; flex-direction: column; justify-content: center; gap: 0.05rem; min-height: 58px; min-width: 0; padding: 0.35rem 0.6rem; border-radius: 11px;
     border: 2px solid var(--color-ink); background: #fff; color: var(--color-ink); text-decoration: none; text-align: left; position: relative; transition: background-color 0.12s ease; }
   a.odd:hover { background: var(--color-green-soft); color: var(--color-ink); }
@@ -165,4 +166,11 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .ticket:hover, .btn:hover { transform: none; }
+}
+
+@layer components {
+  /* The bet picked on the match page: a thicker frame plus the word "vybráno", never colour alone. */
+  .odd--picked { outline: 3px solid var(--color-orange); outline-offset: 2px; }
+  .odd-picked-tag { position: absolute; top: -0.65rem; left: 0.5rem; z-index: 1; padding: 0 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+    background: var(--color-orange); color: var(--color-ink); border: 2px solid var(--color-ink); line-height: 1.3; }
 }

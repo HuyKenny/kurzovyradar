@@ -17,6 +17,12 @@ export function outcomeLabel(sport: Sport, o: Outcome, home: string, away: strin
   return sport === 'hokej' ? 'Remíza po 60 minutách' : 'Remíza';
 }
 
+/** The bet named as a description of the selection, not a prediction: "Výhra domácích v základní době". */
+export function selectionName(sport: Sport, o: Outcome): string {
+  if (o === 'x') return sport === 'hokej' ? 'Remíza po 60 minutách' : 'Remíza v základní době';
+  return `${o === '1' ? 'Výhra domácích' : 'Výhra hostů'} v základní době`;
+}
+
 /** The bet as the object of "kurz na …": "výhru týmu X" (works for singular and plural club names), or the draw. */
 export function betTarget(sport: Sport, o: Outcome, home: string, away: string): string {
   if (o === 'x') return sport === 'hokej' ? 'remízu po 60 minutách' : 'remízu';
