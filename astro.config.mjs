@@ -15,7 +15,7 @@ export default defineConfig({
   adapter: cloudflare({ imageService: 'passthrough', ...(demo ? { configPath: 'wrangler.demo.jsonc' } : {}) }),
   session: false,
   trailingSlash: 'always',
-  build: { format: 'directory', inlineStylesheets: 'never' },
+  build: { format: 'directory', inlineStylesheets: 'always' },
   compressHTML: true,
   // GET forms only; nothing posts to the site.
   security: { checkOrigin: false },
