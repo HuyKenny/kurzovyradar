@@ -5,7 +5,7 @@
  */
 import { BOOK, type FeedBook } from '../config/bookmakers';
 import type { Sport } from '../config/competitions';
-import type { Outcome } from '../server/types';
+import type { Market, Outcome } from '../server/types';
 import type { DiffItem, MoveItem, WindowKey } from '../server/view';
 import { WINDOWS } from '../server/view';
 import type { FindingKey } from './bet-state';
@@ -35,6 +35,7 @@ export interface Finding {
   pct: number;
   points?: [number, number][];
   window?: WindowKey;
+  market?: Market;
 }
 
 export const KIND_LABEL: Record<FindingKey, string> = { rozdil: 'Vyšší kurz u druhé kanceláře', rust: 'Kurz vzrostl', pokles: 'Kurz klesl', max: 'Nejvyšší zachycený kurz' };
@@ -43,14 +44,14 @@ export function fromMove(m: MoveItem & { books?: FeedBook[] }, window: WindowKey
   return {
     kind: m.reason === 'high' ? 'max' : m.reason === 'drop' ? 'pokles' : 'rust',
     eventId: m.eventId, url: m.url, home: m.home, away: m.away, comp: m.comp, compName: m.compName, sport: m.sport, startAt: m.startAt, outcome: m.outcome,
-    books: m.books ?? [m.book], from: m.from, to: m.to, pct: m.pct, points: m.points, window,
+    books: m.books ?? [m.book], from: m.from, to: m.to, pct: m.pct, points: m.points, window, market: m.market,
   };
 }
 
 export function fromDiff(d: DiffItem & { comp?: string }): Finding {
   return {
     kind: 'rozdil', eventId: d.eventId, url: d.url, home: d.home, away: d.away, comp: d.comp ?? '', compName: d.compName, sport: d.sport, startAt: d.startAt, outcome: d.outcome,
-    books: [d.high.book, d.low.book], high: d.high, low: d.low, pct: d.pct,
+    books: [d.high.book, d.low.book], high: d.high, low: d.low, pct: d.pct, market: d.market,
   };
 }
 
@@ -87,4 +88,4 @@ export function findingText(f: Finding, now: number, checkedAt: number | null, s
 }
 
 /** Name of the selection for headings: "Výhra domácích v základní době". */
-export const selection = (f: Finding) => selectionName(f.sport, f.outcome);
+export const selection = (f: Finding) => selectionName(f.sport, f.outcome, f.home, f.away, f.market);

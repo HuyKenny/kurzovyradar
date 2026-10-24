@@ -6,7 +6,7 @@
 import { parseBetState, parseStake, winnings, withBetState, type BetState, type PeriodKey } from '../lib/bet-state';
 
 type O = '1' | 'x' | '2';
-interface Cfg { outcomes: Record<O, { name: string; who: string; odds: number | null }>; defaultOutcome: O; sync?: boolean }
+interface Cfg { outcomes: Partial<Record<O, { name: string; who: string; odds: number | null }>>; defaultOutcome: O; sync?: boolean; market?: string }
 
 const kc = (n: number) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2 }).format(Math.round(n * 100) / 100)} Kč`;
 const odd = (m: number) => (m / 1000).toFixed(2).replace('.', ',');
@@ -27,7 +27,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-bet-root]')) {
   };
 
   function paint() {
-    const c = cfg.outcomes[st.outcome];
+    const c = cfg.outcomes[st.outcome] ?? cfg.outcomes[cfg.defaultOutcome]!;
     for (const r of $$<HTMLInputElement>('input[data-bet-outcome]')) r.checked = r.value === st.outcome;
     for (const r of $$<HTMLInputElement>('input[data-bet-period]')) r.checked = r.value === st.period;
     for (const el of $$<HTMLElement>('[data-bet-panel]')) el.hidden = el.dataset.betPanel !== st.outcome;
@@ -60,7 +60,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-bet-root]')) {
 
   function url(): string {
     const base = new URLSearchParams(location.search);
-    return `${location.pathname}?${withBetState(base, { outcome: st.outcome, stake: st.stake, period: st.period, finding: st.finding })}${location.hash}`;
+    return `${location.pathname}?${withBetState(base, { outcome: st.outcome, stake: st.stake, period: st.period, finding: st.finding, market: cfg.market })}${location.hash}`;
   }
 
   function set(next: Partial<BetState>, mode: 'push' | 'replace' | 'none') {

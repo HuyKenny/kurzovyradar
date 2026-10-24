@@ -39,7 +39,7 @@ export const REVIEWS: Review[] = [
     operator: 'Tipsport.net a.s.', ico: '28178653', seat: 'Politických vězňů 156/21, Beroun',
     licence: 'Kurzové sázky na pobočkách i na internetu (tipsport.cz), povolení Ministerstva financí ČR',
     web: 'tipsport.cz',
-    inShort: ['Velká česká kancelář s českou licencí, pobočkami i webem.', 'Její kurzy na fotbal a hokej u nás vidíš u každého zápasu.', 'Kurzy má většinou stejné jako Chance (patří do stejné skupiny).'],
+    inShort: ['Velká česká kancelář s českou licencí, pobočkami i webem.', 'Její kurzy u nás vidíš u každého zápasu.', 'Kurzy má většinou stejné jako Chance (patří do stejné skupiny).'],
     summary: 'Jedna z největších českých sázkových kanceláří zaměřených na kurzové sázky. Vznikla v roce 1991 v Berouně a online sázky nabízí od ledna 2009.',
     facts: [
       { label: 'Ověření totožnosti', value: 'Při registraci. Online sázka: identifikace přes orgány veřejné správy, smluvní partnery nebo osobně se zaměstnancem, věk 18 let se ověřuje proti Registru obyvatel (herní plán § 4)' },

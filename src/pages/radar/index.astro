@@ -4,7 +4,9 @@ import FindingCard from '../../components/FindingCard.astro';
 import FreshNote from '../../components/FreshNote.astro';
 import Icon from '../../components/Icon.astro';
 import Art from '../../components/Art.astro';
-import { COMPETITIONS, SPORTS, competitionBySlug, type Sport } from '../../config/competitions';
+import { SPORTS, isSport, type Sport } from '../../config/competitions';
+import { competitionsIn, sportsIn } from '../../lib/catalog';
+import { listable } from '../../lib/data';
 import { upcoming, radar, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { dateTime } from '../../lib/format';
 import { DAY_FILTERS, DAY_LABEL, inDays, isDayFilter, type DayFilter } from '../../lib/days';
@@ -29,8 +31,10 @@ const view = VIEWS.find((v) => v.key === q.get('pohled')) ?? VIEWS[0];
 
 // Filters (all in the URL, so they can be shared and survive a reload). Unknown values are ignored.
 const den: DayFilter | '' = isDayFilter(q.get('den')) ? (q.get('den') as DayFilter) : '';
-const sport = (q.get('sport') === 'fotbal' || q.get('sport') === 'hokej' ? q.get('sport') : '') as Sport | '';
-const soutez = competitionBySlug(q.get('soutez') ?? '') ? q.get('soutez')! : '';
+const offerNow = listable(up, t, cfg);
+const sport: Sport | '' = isSport(q.get('sport')) ? (q.get('sport') as Sport) : '';
+const compsAll = competitionsIn(offerNow);
+const soutez = compsAll.some((c) => c.slug === q.get('soutez') && (!sport || c.sport === sport)) ? q.get('soutez')! : '';
 const num = (k: string) => { const raw = q.get(k); if (!raw) return null; const n = Number(raw.replace(',', '.')); return Number.isFinite(n) && n > 1 && n <= 1000 ? n : null; };
 const od = num('od'), doo = num('do');
 const zmena = [1, 2, 5, 10].includes(Number(q.get('zmena'))) ? Number(q.get('zmena')) : 0;
@@ -40,7 +44,7 @@ const w = win && rd ? rd.windows[win.key as WindowKey] : null;
 const live = <T extends { startAt: number }>(l: T[]) => l.filter((m) => m.startAt > t);
 const pool: Finding[] = !rd ? [] : view.key === 'rozdily' ? live(rd.diffs).map(fromDiff)
   : !w || !win ? [] : mergeMoves(live(view.key === 'poklesy' ? w.drops : view.key === 'rusty' ? w.rises : w.highs)).map((m) => fromMove(m, win.key));
-const compSlug = (f: Finding) => f.comp || COMPETITIONS.find((c) => c.name === f.compName)?.slug || '';
+const compSlug = (f: Finding) => f.comp || compsAll.find((c) => c.name === f.compName && c.sport === f.sport)?.slug || '';
 const shown = pool.filter((f) => (!den || inDays(f.startAt, den, t)) && (!sport || f.sport === sport) && (!soutez || compSlug(f) === soutez)
   && (!od || currentOdds(f) >= od * 1000) && (!doo || currentOdds(f) <= doo * 1000) && (!zmena || Math.abs(f.pct) >= zmena));
 const groups = new Map<number, Finding[]>(); // one card per match first, the other outcomes of that match unfold
@@ -55,11 +59,12 @@ const params = (over: Record<string, string | null>) => {
 const href = (over: Record<string, string | null>) => { const p = params(over); return `/radar/${p.size ? `?${p}` : ''}`; };
 const here = href({});
 const filtersActive = !!(den || sport || soutez || od || doo || zmena || onlyFollowed);
-const comps = COMPETITIONS.filter((c) => !sport || c.sport === sport);
+const comps = compsAll.filter((c) => !sport || c.sport === sport);
+const sportsHere = sportsIn(offerNow);
 const chips: { label: string; off: string }[] = [
   ...(den ? [{ label: DAY_LABEL[den], off: 'den' }] : []),
   ...(sport ? [{ label: SPORTS[sport].name, off: 'sport' }] : []),
-  ...(soutez ? [{ label: competitionBySlug(soutez)!.name, off: 'soutez' }] : []),
+  ...(soutez ? [{ label: compsAll.find((c) => c.slug === soutez)!.name, off: 'soutez' }] : []),
   ...(od ? [{ label: `kurz od ${od.toString().replace('.', ',')}`, off: 'od' }] : []),
   ...(doo ? [{ label: `kurz do ${doo.toString().replace('.', ',')}`, off: 'do' }] : []),
   ...(zmena ? [{ label: `změna aspoň ${zmena} %`, off: 'zmena' }] : []),
@@ -76,7 +81,7 @@ const noun = view.key === 'rozdily' ? ['rozdíl', 'rozdíly', 'rozdílů'] as co
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <Base title={filtersActive || q.size > 0 ? 'Pohyby kurzů – výběr | KurzovýRadar' : 'Pohyby kurzů – kde kurz klesl a kde stoupl | KurzovýRadar'}
-  description="Kde kurzy Tipsportu a Chance na fotbal a hokej za poslední hodinu, 6 nebo 24 hodin klesly nebo stouply, a kde se obě kanceláře liší. Srozumitelně, s časy zápisů a dopadem na výplatu."
+  description="Kde kurzy Tipsportu a Chance na fotbal, hokej, tenis a další sporty za poslední hodinu, 6 nebo 24 hodin klesly nebo stouply, a kde se obě kanceláře liší. Srozumitelně, s časy zápisů a dopadem na výplatu."
   canonical="/radar/" noindex={q.size > 0} crumbs={[{ name: 'Pohyby kurzů', url: '/radar/' }]}>
   <div class="wrap pt-6">
     <div class="flex items-start gap-4">
@@ -103,9 +108,9 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         <label class="grid gap-1 font-bold text-[0.95rem]">Den
           <select name="den" class="field"><option value="">Všechny dny</option>{DAY_FILTERS.map((d) => <option value={d} selected={den === d}>{DAY_LABEL[d]}</option>)}</select></label>
         <label class="grid gap-1 font-bold text-[0.95rem]">Sport
-          <select name="sport" class="field"><option value="">Fotbal i hokej</option>{(['fotbal', 'hokej'] as const).map((s) => <option value={s} selected={sport === s}>{SPORTS[s].name}</option>)}</select></label>
+          <select name="sport" class="field"><option value="">Všechny sporty</option>{sportsHere.map((s) => <option value={s.sport} selected={sport === s.sport}>{s.name}</option>)}</select></label>
         <label class="grid gap-1 font-bold text-[0.95rem] min-w-[200px]">Soutěž
-          <select name="soutez" class="field"><option value="">Všechny soutěže</option>{comps.map((c) => <option value={c.slug} selected={soutez === c.slug}>{c.name}</option>)}</select></label>
+          <select name="soutez" class="field"><option value="">Všechny soutěže</option>{comps.map((c) => <option value={c.slug} selected={soutez === c.slug}>{sport ? c.name : `${SPORTS[c.sport].name}: ${c.name}`}</option>)}</select></label>
         <details class="self-center" open={!!(od || doo || zmena)}>
           <summary class="font-bold min-h-[44px] inline-flex items-center gap-1"><Icon name="sliders-horizontal" size={17} />Další filtry</summary>
           <div class="flex flex-wrap gap-3 mt-2">

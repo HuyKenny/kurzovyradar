@@ -19,9 +19,9 @@ const { picks, now, back, scope, when = 'dnešních a zítřejších' } = Astro.
           <li class="card p-4 grid gap-1.5 content-start">
             <p class="m-0 text-[0.9rem] text-ink-2"><span class="font-bold text-ink num">{kickoff(p.ev.startAt, now)}</span> · {p.ev.compName}</p>
             <p class="m-0 font-display font-bold">{p.ev.home} vs {p.ev.away}</p>
-            <p class="m-0"><span class:list={['badge mr-1', p.reason.finding === 'rozdil' ? 'badge--green' : 'badge--orange']}>{p.reason.label}</span><strong>{selectionName(p.ev.sport, p.outcome)}</strong> <span class="text-ink-2">({outcomeLabel(p.ev.sport, p.outcome, p.ev.home, p.ev.away)})</span></p>
+            <p class="m-0"><span class:list={['badge mr-1', p.reason.finding === 'rozdil' ? 'badge--green' : 'badge--orange']}>{p.reason.label}</span><strong>{selectionName(p.ev.sport, p.outcome, p.ev.home, p.ev.away, p.ev.market)}</strong> <span class="text-ink-2">({outcomeLabel(p.ev.sport, p.outcome, p.ev.home, p.ev.away)})</span></p>
             <p class="m-0 text-[0.95rem]">{p.reason.text}</p>
-            <a class="font-bold inline-flex items-center gap-1 min-h-[40px]" href={betUrl(p.ev.url, p.outcome, back, { period: p.reason.window ?? null, finding: p.reason.finding })}>Prohlédnout sázku <span aria-hidden="true">→</span></a>
+            <a class="font-bold inline-flex items-center gap-1 min-h-[40px]" href={betUrl(p.ev.url, p.outcome, back, { period: p.reason.window ?? null, finding: p.reason.finding, market: p.ev.market })}>Prohlédnout sázku <span aria-hidden="true">→</span></a>
           </li>
         ))}
       </ul>

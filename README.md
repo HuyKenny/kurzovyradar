@@ -124,3 +124,11 @@ Podrobnosti: `docs/ASSETS.md` (vizuály a jejich původ), `docs/CAPACITY.md` (m�
 - **Cílový kurz** (`src/lib/target.ts`, `/api/cile.json`): uložen v `kr-sledovane` jako `target` (tisíciny) a `targetAt`; starší uložení se načtou beze změny (`parseState` v `follow.ts`).
 - **Ukázka pro začátečníky**: `BeginnerExample.astro` + `src/scripts/priklad.ts` + `/api/priklad.json` (skutečný zápas, jinak označený výukový příklad).
 - Testy: `bet-state`, `findings`, `days`, `counts`, `target`, `follow`, `import` (čas zachycení změny se nepřepisuje).
+
+## Všechny sporty a dva typy trhu (24. 10. 2026)
+
+- **Sporty:** 21 sportů z feedu Tipsport/Chance (`SPORTS` v `src/config/competitions.ts`; fotbal, hokej, basketbal, tenis, volejbal, americký fotbal, stolní tenis, házená, esporty, bojové sporty, box, florbal, rugby, šipky, futsal, badminton, baseball, vodní pólo, kriket, snooker, squash). Stránky `/sporty/` a `/<sport>/` (`src/pages/[sport]/index.astro`, fotbal a hokej mají vlastní soubory). Nesledujeme sázky na vítěze z mnoha účastníků (dostihy, motorsport, lyžování, společenské sázky) ani dlouhodobé sázky.
+- **Trhy:** `1x2` = „Výsledek zápasu“ (tři možnosti, remíza možná) a `12` = „Vítěz zápasu“ (dvě možnosti, bez remízy; i „Vítěz zápasu do rozhodnutí“). Trh je vlastnost události (`events.market`); různé trhy se nepárují. Věty o vyhodnocení jsou v `src/lib/market.ts` a u neznámých sportů neuvádějí nic, co neověříme (pravidla určuje kancelář).
+- **Soutěže:** vybrané fotbalové a hokejové ligy jsou ručně popsané; ostatní se zakládají podle názvu u kanceláře (`src/server/normalize/competition.ts`: slug `sport-název[-varianta]`, varianta = ženy, čtyřhra, junioři…; esporty: hra + turnaj). Seznamy sportů a soutěží na webu se berou z aktuální nabídky (`src/lib/catalog.ts`).
+- **Kapacita:** `derived.upcoming` smí mít < 2 MB (D1) → snapshot bez polí jen pro detail a s ořezem nejvzdálenějších zápasů (`snapshotJson`). První import se rozloží do více běhů (`MAX_NEW_EVENTS`, výchozí 250 nových událostí na kancelář a běh; limit D1 je 1 000 dotazů na invokaci).
+- **Migrace 0003** přestavuje `competitions` a `events` (bez CHECK na sport, nový sloupec `market`); otestováno na node:sqlite i na lokálním D1 s daty a zapnutými cizími klíči.

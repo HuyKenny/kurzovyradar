@@ -1,14 +1,17 @@
 ---
+// One sport: matches with prices, competitions of that sport (from the current offer), a short selection of radar findings.
 import Base from '../layouts/Base.astro';
 import EventList from './EventList.astro';
 import FreshNote from './FreshNote.astro';
 import Photo from './Photo.astro';
 import Art from './Art.astro';
 import Icon from './Icon.astro';
-import { COMPETITIONS, SPORTS, type Sport } from '../config/competitions';
 import PicksStrip from './PicksStrip.astro';
+import { SPORTS, type Sport } from '../config/competitions';
+import { competitionsIn } from '../lib/catalog';
 import { picks as pickList } from '../lib/picks';
 import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
+import { countLine } from '../lib/counts';
 
 interface Props { sport: Sport }
 const { sport } = Astro.props;
@@ -16,47 +19,58 @@ const [up, rd] = await Promise.all([upcoming(), radar()]);
 const t = getNow();
 const cfg = getCfg();
 const events = listable(up, t, cfg).filter((e) => e.sport === sport);
-const counts = new Map<string, number>();
-for (const e of events) counts.set(e.comp, (counts.get(e.comp) ?? 0) + 1);
-const comps = COMPETITIONS.filter((c) => c.sport === sport);
 const S = SPORTS[sport];
+const comps = competitionsIn(events);
+const TOP_N = 24;
 const chosen = pickList(up, rd, t, cfg, 3, { filter: (e) => e.sport === sport });
+const PER = 30;
+const page = Math.max(1, Math.min(30, Number(Astro.url.searchParams.get('strana')) || 1));
+const shown = events.slice(0, page * PER);
+const markets = new Set(events.map((e) => e.market));
+const rule = markets.has('1x2') && markets.has('12') ? 'U většiny zápasů sázíš na výsledek (remíza je možná), u některých jen na vítěze.'
+  : markets.has('12') ? 'Sázíš na vítěze zápasu. Remíza tu není a o skreči či nedohraném zápase rozhodují pravidla kanceláře.'
+  : sport === 'fotbal' ? 'Počítá se výsledek po 90 minutách a nastavení, prodloužení ani penalty ne.'
+  : sport === 'hokej' ? 'Počítá se výsledek po 60 minutách. Když je po třetí třetině remíza, vyhrává sázka na remízu, i když pak někdo vyhraje v prodloužení.'
+  : 'Sázíš na výsledek v základní hrací době, remíza je možný výsledek. Přesná pravidla určuje kancelář.';
 const TEXT = {
-  fotbal: {
-    title: 'Kurzy na fotbal – srovnání Tipsport a Chance | KurzovýRadar',
-    desc: 'Kurzy na fotbalové zápasy Chance Ligy, Premier League, Ligy mistrů a dalších soutěží. Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný, historie změn.',
-    h1: 'Kurzy na fotbal',
-    lead: 'Kolik vyplatí Tipsport a Chance za výhru domácích, remízu nebo výhru hostů. Počítá se výsledek po 90 minutách a nastavení, prodloužení ani penalty ne.',
-  },
-  hokej: {
-    title: 'Kurzy na hokej – srovnání Tipsport a Chance | KurzovýRadar',
-    desc: 'Kurzy na hokejové zápasy Tipsport extraligy, NHL a evropských lig. Výsledek po 60 minutách, Tipsport a Chance vedle sebe a historie změn kurzů.',
-    h1: 'Kurzy na hokej',
-    lead: 'Kolik vyplatí Tipsport a Chance za výhru domácích, remízu nebo výhru hostů. Počítá se výsledek po 60 minutách. Když je po třetí třetině remíza, vyhrává sázka na remízu, i když pak někdo vyhraje v prodloužení.',
-  },
-}[sport];
+  title: `Kurzy na ${S.accusative} – srovnání Tipsport a Chance | KurzovýRadar`,
+  desc: sport === 'fotbal' ? 'Kurzy na fotbalové zápasy Chance Ligy, Premier League, Ligy mistrů a dalších soutěží. Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný, historie změn.'
+    : sport === 'hokej' ? 'Kurzy na hokejové zápasy Tipsport extraligy, NHL a evropských lig. Výsledek po 60 minutách, Tipsport a Chance vedle sebe a historie změn kurzů.'
+    : `Kurzy na ${S.accusative}: zápasy a turnaje s kurzy Tipsportu a Chance vedle sebe, nejvyšší kurz zvýrazněný a zaznamenané změny kurzů.`,
+  h1: `Kurzy na ${S.accusative}`,
+};
+const line = countLine({ shown: shown.length, total: events.length, dayTotal: null, day: '', filtered: false });
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title={TEXT.title} description={TEXT.desc} crumbs={[{ name: S.name, url: S.path }]}>
+<Base title={TEXT.title} description={TEXT.desc} crumbs={[{ name: 'Sporty', url: '/sporty/' }, { name: S.name, url: S.path }]} noindex={page > 1}>
   <div class="wrap pt-6">
-    <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_340px] md:items-center">
+    <div class:list={['grid gap-6 md:items-center', (sport === 'fotbal' || sport === 'hokej') && 'md:grid-cols-[minmax(0,1fr)_340px]']}>
       <div>
         <h1 class="m-0 flex items-center gap-3"><Art name={sport} size={52} eager />{TEXT.h1}</h1>
-        <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">{TEXT.lead}</p>
-        <button type="button" hidden class="btn btn--ghost btn--sm mb-3" data-follow-sport={sport} data-name={sport} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat {sport}</span></button>
+        <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Kolik vyplatí Tipsport a Chance za {S.accusative}. {rule}</p>
+        <button type="button" hidden class="btn btn--ghost btn--sm mb-3" data-follow-sport={sport} data-name={S.name.toLowerCase()} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat {S.name.toLowerCase()}</span></button>
         <FreshNote books={up.books} now={t} cfg={cfg} />
       </div>
-      <div class="hidden md:block card p-2 rotate-[1.5deg]"><div class="rounded-[8px] overflow-hidden border-2 border-ink aspect-[16/9]"><Photo slot={sport} sizes="340px" priority class="h-full" /></div></div>
+      {(sport === 'fotbal' || sport === 'hokej') && <div class="hidden md:block card p-2 rotate-[1.5deg]"><div class="rounded-[8px] overflow-hidden border-2 border-ink aspect-[16/9]"><Photo slot={sport} sizes="340px" priority class="h-full" /></div></div>}
     </div>
-    <nav class="mt-6" aria-label={`${S.name} – soutěže`}>
-      <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
-        {comps.filter((c) => counts.get(c.slug)).map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{counts.get(c.slug)}</span></a></li>)}
-      </ul>
-    </nav>
-    <PicksStrip picks={chosen} now={t} back={S.path} scope={`u ${sport === 'hokej' ? 'hokeje' : 'fotbalu'}`} />
-    <div class="mt-8">
-      {events.length ? <EventList events={events} books={up.books} now={t} cfg={cfg} place={sport} />
+    {comps.length > 0 && (
+      <nav class="mt-6" aria-label={`${S.name} – soutěže`}>
+        <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
+          {comps.slice(0, TOP_N).map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{c.count}</span></a></li>)}
+        </ul>
+        {comps.length > TOP_N && (
+          <details class="mt-3"><summary class="font-bold min-h-[44px] inline-flex items-center">Další soutěže ({comps.length - TOP_N})</summary>
+            <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-2">{comps.slice(TOP_N).map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{c.count}</span></a></li>)}</ul>
+          </details>
+        )}
+      </nav>
+    )}
+    <PicksStrip picks={chosen} now={t} back={S.path} scope={`u sportu ${S.name.toLowerCase()}`} />
+    <p class="mt-8 mb-4 hand text-[1.3rem]" role="status">{line}</p>
+    <div>
+      {events.length ? <EventList events={shown} books={up.books} now={t} cfg={cfg} place={sport} />
         : <p class="card p-5 m-0">Kurzy teď nemáme. Zkontrolujeme je znovu za pár minut.</p>}
+      {shown.length < events.length && <p class="mt-8"><a class="btn btn--ghost" href={`${S.path}?strana=${page + 1}`}>Ukázat další zápasy</a></p>}
     </div>
   </div>
 </Base>

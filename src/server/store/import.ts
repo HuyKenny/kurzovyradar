@@ -9,16 +9,16 @@
 import { FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
 import { canPair, type PairFacts } from '../normalize/pair';
 import { eventSlug } from '../normalize/participants';
-import { COMPETITIONS, competitionBySlug } from '../../config/competitions';
-import type { ProviderResult, Settings, SourceMatch } from '../types';
+import { COMPETITIONS } from '../../config/competitions';
+import type { Market, ProviderResult, Settings, SourceMatch } from '../types';
 import { Meter, multiInsert, type Db, type Stmt } from './db';
 
 interface SourceRow {
   book: FeedBook; src_id: string; event_id: number; src_competition: string; home: string; away: string;
   start_at: number; path: string; mismatch: number; removed_at: number | null; competition: string; sport: PairFacts['sport'];
-  src_sport_id: string; src_comp_id: string;
+  src_sport_id: string; src_comp_id: string; market: Market;
 }
-interface EventRow { id: number; slug: string; sport: PairFacts['sport']; competition_id: number; home: string; away: string; start_at: number }
+interface EventRow { id: number; slug: string; sport: PairFacts['sport']; competition_id: number; home: string; away: string; start_at: number; market: Market }
 interface OfferRow {
   event_id: number; book: string; market: string; outcome: string; odds: number; enabled: number; first_odds: number; first_at: number;
   min_odds: number; min_at: number; max_odds: number; max_at: number; changed_at: number; src_ts: number; removed_at: number | null;
@@ -28,17 +28,21 @@ export interface BookOutcome { book: FeedBook; status: 'ok' | 'skipped' | 'error
 
 const offerKey = (o: { event_id: number; book: string; market: string; outcome: string }) => `${o.event_id}|${o.book}|${o.market}|${o.outcome}`;
 
-/** Facts of a source row for pairing (market is part of the offer, all pilot sources carry '1x2'). */
-const facts = (s: { sport: PairFacts['sport']; competition: string; home: string; away: string; start_at?: number; startAt?: number }): PairFacts => ({
-  sport: s.sport, competition: s.competition, home: s.home, away: s.away, startAt: s.startAt ?? s.start_at ?? 0, market: '1x2',
+/** Facts of a source row for pairing: the market is one of them (a three-way result is not a two-way winner). */
+const facts = (s: { sport: PairFacts['sport']; competition: string; home: string; away: string; start_at?: number; startAt?: number; market: Market }): PairFacts => ({
+  sport: s.sport, competition: s.competition, home: s.home, away: s.away, startAt: s.startAt ?? s.start_at ?? 0, market: s.market,
 });
 
-async function ensureCompetitions(db: Db, m: Meter, now: number): Promise<Map<string, number>> {
+/** Curated competitions plus every competition this response needs (created from the platform's own name). */
+async function ensureCompetitions(db: Db, m: Meter, now: number, wanted: SourceMatch[]): Promise<Map<string, number>> {
   const rows = await m.all<{ id: number; slug: string }>(db.prepare('SELECT id, slug FROM competitions'));
   const ids = new Map(rows.map((r) => [r.slug, r.id]));
-  const missing = COMPETITIONS.filter((c) => !ids.has(c.slug));
+  const need = new Map<string, [string, string, string, number]>();
+  for (const c of COMPETITIONS) if (!ids.has(c.slug)) need.set(c.slug, [c.slug, c.name, c.sport, now]);
+  for (const w of wanted) if (!ids.has(w.competition) && !need.has(w.competition)) need.set(w.competition, [w.competition, w.competitionName ?? w.competition, w.sport, now]);
+  const missing = [...need.values()];
   if (missing.length) {
-    await m.batch(db, multiInsert(db, 'INSERT OR IGNORE INTO competitions (slug, name, sport, created_at)', 4, missing.map((c) => [c.slug, c.name, c.sport, now])));
+    await m.batch(db, multiInsert(db, 'INSERT OR IGNORE INTO competitions (slug, name, sport, created_at)', 4, missing));
     for (const r of await m.all<{ id: number; slug: string }>(db.prepare('SELECT id, slug FROM competitions'))) ids.set(r.slug, r.id);
   }
   return ids;
@@ -55,19 +59,19 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
     return { book, status: 'skipped', seen: 0, changed: 0, error: 'older than stored data', meter: m };
   }
   const runId = (await db.prepare("INSERT INTO import_runs (book, started_at, status) VALUES (?, ?, 'running') RETURNING id").bind(book, now).first<{ id: number }>())!.id;
-  const comps = await ensureCompetitions(db, m, now);
+  const comps = await ensureCompetitions(db, m, now, res.matches);
   const compSlug = new Map([...comps].map(([slug, id]) => [id, slug]));
 
   // Window: everything that can still be in a prematch feed (started up to 3 h ago … feed horizon).
   const from = now - 6 * 3600;
   const horizon = now + (cfg.windowDays + 1) * 86400;
-  const events = await m.all<EventRow>(db.prepare('SELECT id, slug, sport, competition_id, home, away, start_at FROM events WHERE start_at >= ?').bind(from));
+  const events = await m.all<EventRow>(db.prepare('SELECT id, slug, sport, competition_id, home, away, start_at, market FROM events WHERE start_at >= ?').bind(from));
   const evById = new Map(events.map((e) => [e.id, e]));
   const sources = (await m.all<Omit<SourceRow, 'competition' | 'sport'>>(db.prepare(
     'SELECT es.book, es.src_id, es.event_id, es.src_competition, es.home, es.away, es.start_at, es.path, es.mismatch, es.removed_at, es.src_sport_id, es.src_comp_id FROM event_sources es JOIN events e ON e.id = es.event_id WHERE e.start_at >= ?',
   ).bind(from))).map((s) => {
     const e = evById.get(s.event_id)!;
-    return { ...s, competition: compSlug.get(e.competition_id) ?? '', sport: e.sport } as SourceRow;
+    return { ...s, competition: compSlug.get(e.competition_id) ?? '', sport: e.sport, market: e.market } as SourceRow;
   });
   const bySource = new Map(sources.map((s) => [`${s.book}|${s.src_id}`, s]));
   const sourcesOfEvent = new Map<number, SourceRow[]>();
@@ -91,7 +95,8 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
   const unique = new Map<string, SourceMatch>();
   for (const s of res.matches) if (!unique.has(s.srcId)) unique.set(s.srcId, s);
 
-  for (const s of unique.values()) {
+  // Soonest matches first: when a run has to stop creating events (maxNewEvents), the far-away ones wait for the next run.
+  for (const s of [...unique.values()].sort((a, b) => a.startAt - b.startAt)) {
     const key = `${book}|${s.srcId}`;
     seenSources.add(key);
     let src = bySource.get(key);
@@ -109,8 +114,8 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
       }
       if (eventId === undefined) {
         const compId = comps.get(s.competition);
-        if (!compId) continue;
-        const e: EventRow = { id: nextId++, slug: eventSlug(s.home, s.away), sport: s.sport, competition_id: compId, home: s.home, away: s.away, start_at: s.startAt };
+        if (!compId || newEvents.length >= cfg.maxNewEvents) continue;
+        const e: EventRow = { id: nextId++, slug: eventSlug(s.home, s.away), sport: s.sport, competition_id: compId, home: s.home, away: s.away, start_at: s.startAt, market: s.market };
         newEvents.push(e);
         evById.set(e.id, e);
         eventId = e.id;
@@ -119,7 +124,7 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
     const row: SourceRow = {
       book, src_id: s.srcId, event_id: eventId!, src_competition: s.srcCompetition, home: s.home, away: s.away, start_at: s.startAt,
       path: s.path, mismatch: 0, removed_at: null, competition: s.competition, sport: s.sport,
-      src_sport_id: s.srcSportId ?? '', src_comp_id: s.srcCompId ?? '',
+      src_sport_id: s.srcSportId ?? '', src_comp_id: s.srcCompId ?? '', market: s.market,
     };
     const changed = !src || src.removed_at !== null || src.home !== row.home || src.away !== row.away || src.start_at !== row.start_at
       || src.path !== row.path || src.src_competition !== row.src_competition || src.competition !== row.competition
@@ -201,8 +206,8 @@ export async function storeBook(db: Db, res: ProviderResult, cfg: Settings, now:
   }
 
   const writes: Stmt[] = [
-    ...multiInsert(db, 'INSERT INTO events (id, slug, sport, competition_id, home, away, start_at, created_at, updated_at)', 9,
-      newEvents.map((e) => [e.id, e.slug, e.sport, e.competition_id, e.home, e.away, e.start_at, now, now])),
+    ...multiInsert(db, 'INSERT INTO events (id, slug, sport, competition_id, home, away, start_at, created_at, updated_at, market)', 10,
+      newEvents.map((e) => [e.id, e.slug, e.sport, e.competition_id, e.home, e.away, e.start_at, now, now, e.market])),
     ...multiInsert(db, 'INSERT INTO event_sources (book, src_id, event_id, src_competition, home, away, start_at, path, mismatch, removed_at, updated_at, src_sport_id, src_comp_id)', 13, sourceUpserts,
       `ON CONFLICT (book, src_id) DO UPDATE SET event_id = excluded.event_id, src_competition = excluded.src_competition, home = excluded.home,
        away = excluded.away, start_at = excluded.start_at, path = excluded.path, mismatch = excluded.mismatch, removed_at = excluded.removed_at,
@@ -239,4 +244,3 @@ export async function recordFailure(db: Db, book: FeedBook, now: number, error: 
   ]);
 }
 
-export const competitionName = (slug: string) => competitionBySlug(slug)?.name ?? slug;

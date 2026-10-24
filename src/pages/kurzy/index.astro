@@ -4,10 +4,12 @@ import EventList from '../../components/EventList.astro';
 import FreshNote from '../../components/FreshNote.astro';
 import Icon from '../../components/Icon.astro';
 import { BOOK, FEED_BOOKS, isFeedBook } from '../../config/bookmakers';
-import { COMPETITIONS, SPORTS, competitionBySlug, type Sport } from '../../config/competitions';
+import { SPORTS, isSport, type Sport } from '../../config/competitions';
+import { competitionsIn, sportsIn } from '../../lib/catalog';
 import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { DAY_FILTERS, DAY_LABEL, inDays, isDayFilter, type DayFilter } from '../../lib/days';
 import { countLine } from '../../lib/counts';
+import { outcomesFor } from '../../lib/ticket';
 import { isCurrent } from '../../server/store/derive';
 
 const up = await upcoming();
@@ -15,64 +17,65 @@ const t = getNow();
 const cfg = getCfg();
 const q = Astro.url.searchParams;
 // Only known values are honoured; anything else is ignored (no endless filter combinations).
-const sport = (q.get('sport') === 'fotbal' || q.get('sport') === 'hokej' ? q.get('sport') : '') as Sport | '';
-const comp = competitionBySlug(q.get('soutez') ?? '') ? q.get('soutez')! : '';
+const allListable = listable(up, t, cfg);
+const sport: Sport | '' = isSport(q.get('sport')) ? (q.get('sport') as Sport) : '';
+const compsAll = competitionsIn(allListable);
+const comp = compsAll.some((c) => c.slug === q.get('soutez') && (!sport || c.sport === sport)) ? q.get('soutez')! : '';
 const den: DayFilter | '' = isDayFilter(q.get('den')) ? (q.get('den') as DayFilter) : '';
 const kancelar = isFeedBook(q.get('kancelar') ?? '') ? q.get('kancelar')! : '';
-const trh = q.get('trh') === '1x2' ? '1x2' : '';
+const trh: '1x2' | '12' | '' = q.get('trh') === '1x2' || q.get('trh') === '12' ? (q.get('trh') as '1x2' | '12') : '';
 const page = Math.max(1, Math.min(20, Number(q.get('strana')) || 1));
 const PER = 30;
 
-const allListable = listable(up, t, cfg);
 let events = allListable;
+if (trh) events = events.filter((e) => e.market === trh);
 if (sport) events = events.filter((e) => e.sport === sport);
 if (comp) events = events.filter((e) => e.comp === comp);
 const dayTotal = den ? allListable.filter((e) => inDays(e.startAt, den, t)).length : null; // the whole day, before sport/competition/book filters
 if (den) events = events.filter((e) => inDays(e.startAt, den, t));
-if (kancelar) events = events.filter((e) => (['1', 'x', '2'] as const).some((o) => isCurrent(e, kancelar as never, o, up.books, t, cfg)));
+if (kancelar) events = events.filter((e) => outcomesFor(e).some((o) => isCurrent(e, kancelar as never, o, up.books, t, cfg)));
 const total = events.length;
 const shown = events.slice(0, page * PER);
 const filtered = !!(sport || comp || den || kancelar || trh || page > 1);
-const comps = COMPETITIONS.filter((c) => !sport || c.sport === sport);
+const comps = compsAll.filter((c) => !sport || c.sport === sport);
+const sports = sportsIn(allListable);
 const link = (k: string, v: string) => { const p = new URLSearchParams(q); p.delete('strana'); if (v) p.set(k, v); else p.delete(k); if (k === 'sport') p.delete('soutez'); return `/kurzy/${p.size ? `?${p}` : ''}`; };
 const active: { label: string; key: string }[] = [
-  ...(comp ? [{ label: competitionBySlug(comp)!.name, key: 'soutez' }] : []),
+  ...(sport ? [{ label: SPORTS[sport].name, key: 'sport' }] : []),
+  ...(comp ? [{ label: compsAll.find((c) => c.slug === comp)!.name, key: 'soutez' }] : []),
   ...(kancelar ? [{ label: `Jen ${BOOK[kancelar as 'tipsport'].name}`, key: 'kancelar' }] : []),
-  ...(trh ? [{ label: 'Výsledek zápasu', key: 'trh' }] : []),
+  ...(trh ? [{ label: trh === '12' ? 'Vítěz zápasu (bez remízy)' : 'Výsledek zápasu (s remízou)', key: 'trh' }] : []),
 ];
 const more = new URLSearchParams(q); more.set('strana', String(page + 1));
 const DAYS = [['', 'Všechny dny'], ...DAY_FILTERS.map((d) => [d, DAY_LABEL[d]] as const)] as const;
-const line = countLine({ shown: shown.length, total, dayTotal, day: den, filtered: !!(sport || comp || kancelar) });
+const line = countLine({ shown: shown.length, total, dayTotal, day: den, filtered: !!(sport || comp || kancelar || trh) });
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title={filtered ? 'Kurzy – vybrané zápasy | KurzovýRadar' : 'Kurzy na fotbal a hokej – Tipsport a Chance vedle sebe | KurzovýRadar'}
-  description="Kurzy Tipsportu a Chance na fotbalové a hokejové zápasy vedle sebe. Uvidíš, kde vsazená stovka vyplatí víc a jak se kurz mění."
+<Base title={filtered ? 'Kurzy – vybrané zápasy | KurzovýRadar' : 'Kurzy na sport – Tipsport a Chance vedle sebe | KurzovýRadar'}
+  description="Kurzy Tipsportu a Chance na zápasy všech sportů vedle sebe: fotbal, hokej, tenis, basketbal, esporty a další. Uvidíš, kde vsazená stovka vyplatí víc a jak se kurz mění."
   canonical="/kurzy/" noindex={filtered} crumbs={[{ name: 'Kurzy', url: '/kurzy/' }]}>
   <div class="wrap pt-6">
-    <h1 class="m-0">Kurzy na fotbal a hokej</h1>
+    <h1 class="m-0">Kurzy na sport</h1>
     <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">U každého zápasu vidíš, kolik kancelář vyplatí za výhru domácích, remízu a výhru hostů. Platí to pro výsledek po skončení řádné hrací doby, prodloužení se nepočítá.</p>
     <FreshNote books={up.books} now={t} cfg={cfg} />
 
     <div class="mt-6 grid gap-3">
-      <nav class="seg" aria-label="Sport">
-        <a href={link('sport', '')} aria-current={!sport ? 'page' : undefined}>Vše</a>
-        {(['fotbal', 'hokej'] as const).map((s) => <a href={link('sport', s)} aria-current={sport === s ? 'page' : undefined}>{SPORTS[s].name}</a>)}
-      </nav>
       <nav class="seg" aria-label="Den">
         {DAYS.map(([v, l]) => <a href={link('den', v)} aria-current={den === v ? 'page' : undefined}>{l}</a>)}
       </nav>
       <form action="/kurzy/" method="get" data-autosubmit class="flex flex-wrap items-end gap-3">
-        {sport && <input type="hidden" name="sport" value={sport} />}
         {den && <input type="hidden" name="den" value={den} />}
+        <label class="grid gap-1 font-bold text-[0.95rem]">Sport
+          <select name="sport" class="field"><option value="">Všechny sporty</option>{sports.map((x) => <option value={x.sport} selected={sport === x.sport}>{x.name} ({x.count})</option>)}</select></label>
         <label class="grid gap-1 font-bold text-[0.95rem] min-w-[220px]">Soutěž
-          <select name="soutez" class="field"><option value="">Všechny soutěže</option>{comps.map((c) => <option value={c.slug} selected={comp === c.slug}>{c.name}</option>)}</select></label>
+          <select name="soutez" class="field"><option value="">Všechny soutěže</option>{comps.map((c) => <option value={c.slug} selected={comp === c.slug}>{sport ? c.name : `${SPORTS[c.sport].name}: ${c.name}`}</option>)}</select></label>
         <details class="self-center">
           <summary class="font-bold min-h-[44px] inline-flex items-center gap-1"><Icon name="sliders-horizontal" size={17} />Další filtry</summary>
           <div class="flex flex-wrap gap-3 mt-2">
             <label class="grid gap-1 font-bold text-[0.95rem]">Kancelář
               <select name="kancelar" class="field"><option value="">Kterákoli</option>{FEED_BOOKS.map((b) => <option value={b} selected={kancelar === b}>{BOOK[b].name}</option>)}</select></label>
             <label class="grid gap-1 font-bold text-[0.95rem]">Typ sázky
-              <select name="trh" class="field"><option value="">Všechny, které porovnáváme</option><option value="1x2" selected={trh === '1x2'}>Výsledek zápasu (1X2)</option></select></label>
+              <select name="trh" class="field"><option value="">Všechny, které porovnáváme</option><option value="1x2" selected={trh === '1x2'}>Výsledek zápasu (s remízou)</option><option value="12" selected={trh === '12'}>Vítěz zápasu (bez remízy)</option></select></label>
           </div>
         </details>
         <button class="btn btn--sm" type="submit" data-nojs>Použít</button>

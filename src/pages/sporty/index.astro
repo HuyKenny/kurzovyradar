@@ -1,0 +1,35 @@
+---
+import Base from '../../layouts/Base.astro';
+import Art from '../../components/Art.astro';
+import FreshNote from '../../components/FreshNote.astro';
+import { SPORTS, SPORT_LIST } from '../../config/competitions';
+import { sportsIn } from '../../lib/catalog';
+import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
+
+const up = await upcoming();
+const t = getNow();
+const cfg = getCfg();
+const events = listable(up, t, cfg);
+const have = sportsIn(events);
+const without = SPORT_LIST.filter((s) => !have.some((h) => h.sport === s));
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title="Sporty s kurzy – fotbal, hokej, tenis, esporty, šipky a další | KurzovýRadar"
+  description="Všechny sporty, na které Tipsport a Chance teď nabízejí kurzy: fotbal, hokej, basketbal, tenis, volejbal, esporty, šipky a další. U každého zápasu obě kanceláře vedle sebe."
+  crumbs={[{ name: 'Sporty', url: '/sporty/' }]}>
+  <div class="wrap pt-6">
+    <h1 class="m-0">Sporty s kurzy</h1>
+    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Co teď Tipsport a Chance nabízejí. U každého zápasu vidíš kurzy obou kanceláří vedle sebe. Sázíš buď na výsledek (remíza je možná), nebo na vítěze zápasu (remíza tu není).</p>
+    <FreshNote books={up.books} now={t} cfg={cfg} />
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 list-none p-0 m-0 mt-8">
+      {have.map((s) => (
+        <li><a href={s.path} class="ticket no-underline text-ink p-5 flex items-center gap-4 h-full">
+          <Art name={s.sport} size={44} />
+          <span class="grid"><span class="font-display font-bold text-[1.25rem]">{s.name}</span><span class="text-ink-2">{s.count} {s.count === 1 ? 'zápas' : s.count < 5 ? 'zápasy' : 'zápasů'} s kurzy</span></span>
+        </a></li>
+      ))}
+    </ul>
+    {without.length > 0 && <p class="mt-8 text-ink-2">Teď bez zápasů: {without.map((s) => SPORTS[s].name).join(', ')}. Jakmile je kanceláře vypíšou, objeví se tady.</p>}
+    <p class="mt-4 text-ink-2">Nesledujeme dostihy, motorsport, lyžování ani společenské sázky: jsou to sázky na vítěze z mnoha účastníků nebo dlouhodobé sázky a s kurzy na dva soupeře se nedají srovnat.</p>
+  </div>
+</Base>

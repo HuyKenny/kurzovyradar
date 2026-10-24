@@ -10,7 +10,7 @@ checked: 2026-10-23
 
 <div class="strucne">
 
-**Stručně:** každých 15 minut načteme kurzy Tipsportu a Chance na fotbal a hokej a zapíšeme, co se od minulé kontroly změnilo. Změny mezi kontrolami nevidíme a nic si nevymýšlíme.
+**Stručně:** každých 15 minut načteme kurzy Tipsportu a Chance na zápasy všech sportů, které nabízejí jako souboj dvou soupeřů, a zapíšeme, co se od minulé kontroly změnilo. Změny mezi kontrolami nevidíme a nic si nevymýšlíme.
 
 </div>
 
@@ -24,7 +24,7 @@ Kurzy dnes načítáme od **Tipsportu** a **Chance**. U dalších kanceláří, 
 ## Co přesně sledujeme
 
 - **Předzápasové kurzy**, ne kurzy během zápasu.
-- **Vybrané fotbalové a hokejové soutěže.** Jejich seznam je v [metodice](/metodika/).
+- **Všechny sporty a soutěže, které kanceláře nabízejí jako souboj dvou soupeřů.** Soutěže se zakládají podle názvu u kanceláře. Co sledujeme a co ne, popisuje [metodika](/metodika/).
 - **Trh výsledek zápasu v základní hrací době (1X2).**
 
 ## Jak často

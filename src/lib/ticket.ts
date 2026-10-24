@@ -9,6 +9,8 @@ import type { Outcome, Settings } from '../server/types';
 import type { EventView, UpcomingSnapshot } from '../server/view';
 
 export const OUTCOMES: Outcome[] = ['1', 'x', '2'];
+/** The outcomes of an event's market: 1, X, 2 for the three-way result, only 1 and 2 for a two-way winner. */
+export const outcomesFor = (ev: { market?: string }): Outcome[] => (ev.market === '12' ? ['1', '2'] : OUTCOMES);
 
 export type CellState = 'current' | 'stale' | 'suspended' | 'removed' | 'mismatch' | 'missing' | 'started';
 export interface BookCell { book: FeedBook; odds: number | null; state: CellState; current: boolean }
@@ -50,7 +52,7 @@ export function cellState(ev: EventView, book: FeedBook, o: Outcome, books: Upco
 }
 
 export function ticketView(ev: EventView, books: UpcomingSnapshot['books'], now: number, cfg: Settings): TicketView {
-  const outcomes: OutcomeView[] = OUTCOMES.map((o) => {
+  const outcomes: OutcomeView[] = outcomesFor(ev).map((o) => {
     const cells: BookCell[] = FEED_BOOKS.map((book) => {
       const state = cellState(ev, book, o, books, now, cfg);
       return { book, odds: ev.books[book]?.outcomes[o]?.odds ?? null, state, current: isCurrent(ev, book, o, books, now, cfg) };
@@ -82,7 +84,7 @@ export function ticketView(ev: EventView, books: UpcomingSnapshot['books'], now:
   return {
     outcomes,
     books: current,
-    allSame: current.length > 1 && withBest.length === OUTCOMES.length && outcomes.every((x) => x.same && x.best!.books.length === current.length),
+    allSame: current.length > 1 && withBest.length === outcomes.length && outcomes.every((x) => x.same && x.best!.books.length === current.length),
     favourite,
     move,
     checkedAt: checked.length ? Math.min(...checked) : null,

@@ -6,15 +6,15 @@ import BookLogo from '../../components/BookLogo.astro';
 import FavButton from '../../components/FavButton.astro';
 import Art from '../../components/Art.astro';
 import { BOOK, FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
-import { SPORTS, competitionBySlug } from '../../config/competitions';
+import { SPORTS, stubColor } from '../../config/competitions';
 import { E, upcoming, radar as getRadar, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { reasons, pricesFor } from '../../lib/picks';
 import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget, selectionName } from '../../lib/market';
-import { parseBetState, winnings, payoutDelta, type FindingKey } from '../../lib/bet-state';
+import { parseBetState, trhOf, winnings, payoutDelta, type FindingKey } from '../../lib/bet-state';
 import { availablePeriods, changeAsOf, periodInfo, type Change } from '../../lib/context';
 import { backLink, isOutcome } from '../../lib/links';
 import Icon from '../../components/Icon.astro';
-import { ticketView, atBooks, STATE_TEXT, OUTCOMES, whoOf } from '../../lib/ticket';
+import { ticketView, atBooks, STATE_TEXT, outcomesFor, whoOf } from '../../lib/ticket';
 import { odds as fmt, pct, dateTime, date, time, kickoff, ago, kc, atTime, dayKey } from '../../lib/format';
 import { changePct, overround, implied } from '../../server/calc/odds';
 import type { Outcome } from '../../server/types';
@@ -33,7 +33,7 @@ const up = await upcoming();
 const books = up.books;
 const started = ev.startAt <= t;
 const v = ticketView(ev, books, t, cfg);
-const comp = competitionBySlug(ev.comp);
+const OUTS = outcomesFor(ev);
 const comparable = FEED_BOOKS.filter((b) => ev.books[b] && !ev.books[b]!.mismatch);
 const offer = (b: FeedBook, o: Outcome) => ev.books[b]?.outcomes[o];
 
@@ -42,19 +42,20 @@ const offer = (b: FeedBook, o: Outcome) => ev.books[b]?.outcomes[o];
 // switches it in the browser without a reload. Every outcome's parts are rendered here, the others are `hidden`.
 const q = Astro.url.searchParams;
 const bs = parseBetState(q, v.favourite?.outcome ?? '1');
-const pick: Outcome = bs.outcome;
+const pick: Outcome = OUTS.includes(bs.outcome) ? bs.outcome : OUTS[0]!;
 const stake = bs.stake;
 const back = backLink(q.get('zpet'));
 const rd = await getRadar();
 const allReasons = reasons(up, rd, t, cfg);
 const oddsOf = (o: Outcome) => v.outcomes.find((x) => x.outcome === o)?.best?.odds ?? null;
-const sel = (o: Outcome) => selectionName(ev.sport, o);
+const sel = (o: Outcome) => selectionName(ev.sport, o, ev.home, ev.away, ev.market);
 const betData = JSON.stringify({
-  outcomes: Object.fromEntries(OUTCOMES.map((o) => [o, { name: sel(o), who: whoOf(ev, o), odds: oddsOf(o) }])),
+  outcomes: Object.fromEntries(OUTS.map((o) => [o, { name: sel(o), who: whoOf(ev, o), odds: oddsOf(o) }])),
   defaultOutcome: v.favourite?.outcome ?? '1',
+  market: ev.market,
 });
 const followBet = JSON.stringify({ id: ev.id, outcome: pick, url: ev.url, home: ev.home, away: ev.away, startAt: ev.startAt, comp: ev.compName, sport: ev.sport,
-  pickFrom: '[data-bet-root]', labels: Object.fromEntries(OUTCOMES.map((o) => [o, whoOf(ev, o)])), oddsBy: Object.fromEntries(OUTCOMES.map((o) => [o, oddsOf(o)])) });
+  pickFrom: '[data-bet-root]', labels: Object.fromEntries(OUTS.map((o) => [o, whoOf(ev, o)])), oddsBy: Object.fromEntries(OUTS.map((o) => [o, oddsOf(o)])) });
 const FINDING_LABEL: Record<FindingKey, string> = { rust: 'Kurz vzrostl', pokles: 'Kurz klesl', rozdil: 'Vyšší kurz u druhé kanceláře', max: 'Nejvyšší zachycený kurz' };
 
 // Tracking window and data gaps (failed import runs).
@@ -123,13 +124,13 @@ function contextLines(o: Outcome): string[] {
   });
 }
 function isCurrentOffer(b: FeedBook, o: Outcome) { return pickPricesAll[o].some((x) => x.book === b); }
-const pickPricesAll = Object.fromEntries(OUTCOMES.map((o) => [o, pricesFor(ev, o, up, t, cfg)])) as Record<Outcome, ReturnType<typeof pricesFor>>;
+const pickPricesAll = Object.fromEntries(OUTS.map((o) => [o, pricesFor(ev, o, up, t, cfg)])) as Record<Outcome, ReturnType<typeof pricesFor>>;
 const series = (o: Outcome): Series[] => comparable.map((b) => ({ book: b, points: history.filter((h) => h.book === b && h.outcome === o) })).filter((s) => s.points.length);
 const enough = history.length > 0;
 
 // What happened, in sentences. Identical books are told once.
 const story: string[] = [];
-for (const o of OUTCOMES) {
+for (const o of OUTS) {
   const who = betTarget(ev.sport, o, ev.home, ev.away);
   const parts = comparable.map((b) => ({ b, x: offer(b, o) })).filter((p) => p.x);
   if (!parts.length) continue;
@@ -141,11 +142,10 @@ for (const o of OUTCOMES) {
     else story.push(`Kurz na ${who} ${where} ${g.x.odds < g.x.firstOdds ? 'klesl' : 'stoupl'} z ${fmt(g.x.firstOdds)} na ${fmt(g.x.odds)} (${pct(changePct(g.x.firstOdds, g.x.odds))}).`);
   }
 }
-const margins = comparable.map((b) => ({ b, v: overround(Object.fromEntries(OUTCOMES.map((o) => [o, offer(b, o)?.odds ? offer(b, o)!.odds / 1000 : undefined])), OUTCOMES) }))
+const margins = comparable.map((b) => ({ b, v: overround(Object.fromEntries(OUTS.map((o) => [o, offer(b, o)?.odds ? offer(b, o)!.odds / 1000 : undefined])), OUTS) }))
   .filter((x) => x.v !== null);
 const related = listable(up, t, cfg).filter((e) => e.comp === ev.comp && e.id !== ev.id).slice(0, 4);
 const S = SPORTS[ev.sport];
-const minutes = ev.sport === 'hokej' ? '60 minutách' : '90 minutách a nastavení';
 const title = `${ev.home} – ${ev.away}: kurzy a jejich vývoj (${date(ev.startAt)}) | KurzovýRadar`;
 const desc = `Kurzy na zápas ${ev.home} – ${ev.away} (${ev.compName}, ${date(ev.startAt)} ${time(ev.startAt)}): kolik vyplatí Tipsport a Chance a jak se kurz měnil.`;
 const schema = [{
@@ -164,7 +164,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
   <div class="wrap pt-6" data-bet-root data-bet={betData}>
     {back && <p class="m-0 mb-4"><a href={back.href} class="font-bold inline-flex items-center gap-1 min-h-[44px] no-underline hover:underline"><span aria-hidden="true">←</span>{back.label}</a></p>}
     <article class="ticket" id="sazka">
-      <div class="ticket__stub" style={`background:${comp?.color ?? '#e9e6dc'}`}>
+      <div class="ticket__stub" style={`background:${stubColor(ev.comp, ev.sport)}`}>
         <Art name={ev.sport} size={22} />
         <a href={`/souteze/${ev.comp}/`} class="text-ink no-underline hover:underline">{ev.compName}</a>
         <time class="ml-auto num normal-case tracking-normal text-base" datetime={new Date(ev.startAt * 1000).toISOString()}>{kickoff(ev.startAt, t)}</time>
@@ -179,7 +179,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
           {started && <p class="note-box mt-4 mb-0">Zápas už začal. Ukazujeme poslední kurzy před výkopem. Kurzy během zápasu nesledujeme.</p>}
           <h2 class="text-[1.25rem] mt-6 mb-3">Kolik kdo vyplácí</h2>
           {v.books.length === 0 && !started ? <p class="m-0">Kurzy teď nejsou v nabídce. Zkontrolujeme je znovu za pár minut.</p> : (
-            <ul class="grid grid-cols-3 gap-2 sm:gap-3 list-none p-0 m-0">
+            <ul class:list={['grid gap-2 sm:gap-3 list-none p-0 m-0', OUTS.length === 2 ? 'grid-cols-2' : 'grid-cols-3']}>
               {v.outcomes.map((o) => (
                 <li class="min-w-0 relative" data-odd-for={o.outcome}>
                   <span class="odd-picked-tag" data-picked-tag hidden={o.outcome !== pick}>vybráno</span>
@@ -196,7 +196,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
               ))}
             </ul>
           )}
-          {v.allSame && <p class="mt-3 mb-0 flex flex-wrap items-center gap-2 text-ink-2"><span class="inline-flex gap-1">{v.books.map((b) => <BookLogo id={b} h={20} />)}</span>Ceny všech tří sázek jsou teď {atBooks(v.books)} stejné.</p>}
+          {v.allSame && <p class="mt-3 mb-0 flex flex-wrap items-center gap-2 text-ink-2"><span class="inline-flex gap-1">{v.books.map((b) => <BookLogo id={b} h={20} />)}</span>Ceny {OUTS.length === 2 ? 'obou sázek' : 'všech tří sázek'} jsou teď {atBooks(v.books)} stejné.</p>}
           {v.books.length > 1 && !v.allSame && (
             <table class="w-full mt-3 text-[1rem]">
               <caption class="sr">Kurzy podle kanceláří</caption>
@@ -207,7 +207,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
               ))}</tbody>
             </table>
           )}
-          <p class="mt-4 mb-0 text-[0.95rem] text-ink-2">Kurzy platí na výsledek po {minutes}. Prodloužení ani nájezdy se nepočítají. {v.checkedAt && <>Zkontrolováno v {time(v.checkedAt)}.</>}</p>
+          <p class="mt-4 mb-0 text-[0.95rem] text-ink-2">{settlement(ev.sport, ev.market)} {v.checkedAt && <>Zkontrolováno v {time(v.checkedAt)}.</>}</p>
           {!started && comparable.some((b) => BOOK[b].affiliate === 'approved') && (
             <div class="flex flex-wrap gap-2 mt-5">
               {comparable.filter((b) => BOOK[b].affiliate === 'approved').map((b) => <a class="btn btn--ghost" href={`/go/${b}/?e=${ev.id}&p=detail`} rel="sponsored nofollow"><BookLogo id={b} h={20} />Vsadit {BOOK[b].locative}</a>)}
@@ -217,7 +217,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
 
         <form id="kalkulacka" method="get" action={`${ev.url}#kalkulacka`} class="bg-green-soft border-2 border-ink rounded-[14px] p-4 self-start grid gap-3" data-bet-form>
           <h2 class="text-[1.25rem] m-0 flex items-center gap-2"><Art name="kalkulacka" size={28} />Kolik vyhraju?</h2>
-          <input type="hidden" name="trh" value="1x2" />
+          <input type="hidden" name="trh" value={trhOf(ev.market)} />
           {q.get('zpet') && <input type="hidden" name="zpet" value={q.get('zpet')!} />}
           {bs.period && <input type="hidden" name="obdobi" value={bs.period} />}
           {bs.finding && <input type="hidden" name="zjisteni" value={bs.finding} />}
@@ -247,18 +247,18 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
 
     <section class="mt-12" aria-labelledby="h-bet">
       <p class="hand m-0 text-[1.3rem]">tvoje sázka</p>
-      {OUTCOMES.map((o) => {
+      {OUTS.map((o) => {
         const prices = pickPricesAll[o];
         const why = allReasons.get(`${ev.id}|${o}`) ?? [];
         const ctx = contextLines(o);
         return (
           <div data-bet-panel={o} hidden={o !== pick}>
-            <h2 id={o === pick ? 'h-bet' : undefined} class="m-0 mt-1">{outcomeSentence(ev.sport, o, ev.home, ev.away)}</h2>
-            <p class="mt-2 mb-5 text-ink-2"><strong class="text-ink">{sel(o)}.</strong> {settlement(ev.sport)} Jinou sázku vybereš v kalkulačce nahoře nebo u grafu.</p>
+            <h2 id={o === pick ? 'h-bet' : undefined} class="m-0 mt-1">{outcomeSentence(ev.sport, o, ev.home, ev.away, ev.market)}</h2>
+            <p class="mt-2 mb-5 text-ink-2"><strong class="text-ink">{sel(o)}.</strong> {settlement(ev.sport, ev.market)} Jinou sázku vybereš v kalkulačce nahoře nebo u grafu.</p>
             <div class="grid gap-5 lg:grid-cols-3">
               <div class="card p-5">
                 <h3 class="m-0 mb-2">Co musí nastat, aby sázka vyhrála?</h3>
-                <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, o, ev.home, ev.away).map((x) => <li>{x}</li>)}</ul>
+                <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, o, ev.home, ev.away, ev.market).map((x) => <li>{x}</li>)}</ul>
               </div>
               <div class="card p-5">
                 <h3 class="m-0 mb-2">Proč ji radar vybral?</h3>
@@ -301,13 +301,13 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
       <h2 id="h-hist" class="m-0">Vývoj kurzu v grafu</h2>
       {!enough ? <p class="card p-5 mt-4">Pro tenhle zápas zatím nemáme dost zápisů.</p> : (
         <form class="charts mt-4 card p-4 md:p-6" method="get" action={`${ev.url}#graf`} data-bet-form>
-          <input type="hidden" name="trh" value="1x2" />
+          <input type="hidden" name="trh" value={trhOf(ev.market)} />
           <input type="hidden" name="vklad" value={String(stake)} />
           {q.get('zpet') && <input type="hidden" name="zpet" value={q.get('zpet')!} />}
           {bs.finding && <input type="hidden" name="zjisteni" value={bs.finding} />}
           <div class="flex flex-wrap gap-3 justify-between">
             <div class="seg" role="radiogroup" aria-label="Výsledek">
-              {OUTCOMES.map((o) => <label><input type="radio" name="vysledek" value={o} checked={o === pick} data-bet-outcome /><span>{whoOf(ev, o)}</span></label>)}
+              {OUTS.map((o) => <label><input type="radio" name="vysledek" value={o} checked={o === pick} data-bet-outcome /><span>{whoOf(ev, o)}</span></label>)}
             </div>
             <div class="seg" role="radiogroup" aria-label="Období">
               {periods.map((p) => <label><input type="radio" name="obdobi" value={p.key} checked={p.key === period} data-bet-period /><span>{p.label}</span></label>)}
@@ -316,7 +316,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
           <button class="btn btn--sm mt-3" type="submit" data-nojs>Zobrazit</button>
           <p class="mt-3 mb-0 font-bold" data-bind="chart-title">{sel(pick)} ({whoOf(ev, pick)}), období: {periodInfo(period).label}</p>
           {periodNote && <p class="mt-1 mb-0 note-box">{periodNote}</p>}
-          {OUTCOMES.flatMap((o) => periods.map((p) => (
+          {OUTS.flatMap((o) => periods.map((p) => (
             <div class="chart-panel mt-4" data-k={`${o}-${p.key}`} hidden={!(o === pick && p.key === period)}>
               {series(o).length ? <>
                 <div class="sm:hidden"><OddsChart id={`chm-${o}-${p.key}`} w={340} h={230} series={series(o)} from={Math.max(firstAt!, endAt - secondsOf(p.key))} to={endAt} gaps={gaps}
@@ -347,7 +347,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
                 <th scope="col" class="text-right py-2">Nejníž</th><th scope="col" class="text-right py-2">Nejvýš</th>
               </tr></thead>
               <tbody>
-                {OUTCOMES.flatMap((o) => comparable.map((b) => {
+                {OUTS.flatMap((o) => comparable.map((b) => {
                   const x = offer(b, o);
                   if (!x) return null;
                   return (

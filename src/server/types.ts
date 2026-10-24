@@ -2,8 +2,12 @@ import type { FeedBook } from '../config/bookmakers';
 import type { Sport } from '../config/competitions';
 
 export type Outcome = '1' | 'x' | '2';
-/** '1x2' = match result in regular time (football 90 min + stoppage, hockey 60 min). */
-export type Market = '1x2';
+/**
+ * '1x2' = three-way "Výsledek zápasu": result in regular time, a draw is possible (football 90 min + stoppage, hockey 60 min, …).
+ * '12'  = two-way "Vítěz zápasu": no draw, only outcomes 1 and 2 (tennis, volleyball, esports, darts, …); what counts for walkovers,
+ *         retirements and overtime is decided by the bookmaker's rules.
+ */
+export type Market = '1x2' | '12';
 
 /** One provider match after normalization: everything the pairing and the store need, nothing else. */
 export interface SourceMatch {
@@ -11,6 +15,8 @@ export interface SourceMatch {
   srcId: string;
   sport: Sport;
   competition: string; // our competition slug
+  /** Display name of the competition for slugs that are not in the curated list. */
+  competitionName?: string;
   srcCompetition: string; // provider's name, kept for audits
   srcSportId?: string; // provider idSport (sport + gender)
   srcCompId?: string; // provider idCompetition
@@ -39,6 +45,8 @@ export interface Settings {
   historyDays: number;
   startToleranceMin: number;
   windowDays: number;
+  /** New events one run may create per book: a first import of the whole offer is spread over several runs (D1 allows 1 000 queries per invocation). */
+  maxNewEvents: number;
 }
 
 export interface Env {
@@ -59,6 +67,7 @@ export interface Env {
   HISTORY_DAYS?: string;
   START_TOLERANCE_MIN?: string;
   WINDOW_DAYS?: string;
+  MAX_NEW_EVENTS?: string;
   CLICKS?: AnalyticsEngineDataset;
 }
 
@@ -71,5 +80,6 @@ export function settings(env: Partial<Env>): Settings {
     historyDays: n(env.HISTORY_DAYS, 30),
     startToleranceMin: n(env.START_TOLERANCE_MIN, 0),
     windowDays: n(env.WINDOW_DAYS, 7),
+    maxNewEvents: n(env.MAX_NEW_EVENTS, 250),
   };
 }

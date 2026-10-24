@@ -75,6 +75,8 @@ export interface MoveItem {
   points: [number, number][];
   /** Machine reason; the page turns it into a sentence. */
   reason: 'drop' | 'rise' | 'high';
+  /** Market of the event; absent in snapshots written before two-way markets existed (= '1x2'). */
+  market?: Market;
 }
 
 export interface DiffItem {
@@ -90,6 +92,7 @@ export interface DiffItem {
   high: { book: FeedBook; odds: number };
   low: { book: FeedBook; odds: number };
   pct: number;
+  market?: Market;
 }
 
 export interface RadarSnapshot {

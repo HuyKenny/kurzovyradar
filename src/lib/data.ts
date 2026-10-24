@@ -5,11 +5,10 @@
 import { env } from 'cloudflare:workers';
 import type { FeedBook } from '../config/bookmakers';
 import { FEED_BOOKS } from '../config/bookmakers';
-import { competitionBySlug } from '../config/competitions';
 import { isCurrent, isFresh, eventUrl } from '../server/store/derive';
 import { bestOf } from '../server/calc/odds';
 import { isDemo } from '../server/demo';
-import { settings, type Env, type Outcome, type Settings } from '../server/types';
+import { settings, type Env, type Market, type Outcome, type Settings } from '../server/types';
 import type { EventView, RadarSnapshot, UpcomingSnapshot } from '../server/view';
 
 export const E = env as unknown as Env;
@@ -32,7 +31,8 @@ async function derived<T>(key: string): Promise<T | null> {
 export const upcoming = async () => (await derived<UpcomingSnapshot>('upcoming')) ?? EMPTY_UP;
 export const radar = async () => derived<RadarSnapshot>('radar');
 
-export const OUTCOMES: Outcome[] = ['1', 'x', '2'];
+export { OUTCOMES, outcomesFor } from './ticket';
+import { outcomesFor } from './ticket';
 
 export interface Cell {
   book: FeedBook;
@@ -46,7 +46,7 @@ export interface Row { outcome: Outcome; cells: Cell[]; best: ReturnType<typeof 
 
 /** Comparison rows of one event, evaluated at render time (freshness depends on "now"). */
 export function compare(ev: EventView, books: UpcomingSnapshot['books'], t: number, c: Settings): Row[] {
-  return OUTCOMES.map((outcome) => {
+  return outcomesFor(ev).map((outcome) => {
     const cells: Cell[] = FEED_BOOKS.map((book) => {
       const b = ev.books[book];
       const o = b?.outcomes[outcome];
@@ -63,7 +63,7 @@ export function compare(ev: EventView, books: UpcomingSnapshot['books'], t: numb
 
 /** Events with at least one current offer, not started, soonest first. */
 export function listable(up: UpcomingSnapshot, t: number, c: Settings): EventView[] {
-  return up.events.filter((e) => e.startAt > t && FEED_BOOKS.some((b) => OUTCOMES.some((o) => isCurrent(e, b, o, up.books, t, c))));
+  return up.events.filter((e) => e.startAt > t && FEED_BOOKS.some((b) => outcomesFor(e).some((o) => isCurrent(e, b, o, up.books, t, c))));
 }
 
 /** Last successful check across feed books (for "aktualizováno"). */
@@ -80,17 +80,17 @@ export interface EventDetail {
 
 /** Full detail of one event straight from D1 (primary-key lookups only). */
 export async function eventDetail(id: number): Promise<EventDetail | null> {
-  const e = await E.DB.prepare('SELECT e.id, e.slug, e.sport, c.slug AS comp, e.home, e.away, e.start_at FROM events e JOIN competitions c ON c.id = e.competition_id WHERE e.id = ?')
-    .bind(id).first<{ id: number; slug: string; sport: EventView['sport']; comp: string; home: string; away: string; start_at: number }>();
+  const e = await E.DB.prepare('SELECT e.id, e.slug, e.sport, c.slug AS comp, c.name AS comp_name, e.market, e.home, e.away, e.start_at FROM events e JOIN competitions c ON c.id = e.competition_id WHERE e.id = ?')
+    .bind(id).first<{ id: number; slug: string; sport: EventView['sport']; comp: string; comp_name: string; market: Market; home: string; away: string; start_at: number }>();
   if (!e) return null;
   const [src, off, hist] = await E.DB.batch([
     E.DB.prepare('SELECT book, path, mismatch, removed_at FROM event_sources WHERE event_id = ?').bind(id),
-    E.DB.prepare("SELECT book, outcome, odds, enabled, removed_at, changed_at, first_odds, first_at, min_odds, max_odds FROM offers WHERE event_id = ? AND market = '1x2'").bind(id),
-    E.DB.prepare("SELECT book, outcome, at, odds, enabled FROM odds_history WHERE event_id = ? AND market = '1x2' ORDER BY at").bind(id),
+    E.DB.prepare("SELECT book, outcome, odds, enabled, removed_at, changed_at, first_odds, first_at, min_odds, max_odds FROM offers WHERE event_id = ? AND market = ?").bind(id, e.market),
+    E.DB.prepare("SELECT book, outcome, at, odds, enabled FROM odds_history WHERE event_id = ? AND market = ? ORDER BY at").bind(id, e.market),
   ]);
   const ev: EventView = {
-    id: e.id, url: eventUrl(e.slug, e.id), sport: e.sport, comp: e.comp, compName: competitionBySlug(e.comp)?.name ?? e.comp,
-    home: e.home, away: e.away, startAt: e.start_at, market: '1x2', books: {},
+    id: e.id, url: eventUrl(e.slug, e.id), sport: e.sport, comp: e.comp, compName: e.comp_name,
+    home: e.home, away: e.away, startAt: e.start_at, market: e.market, books: {},
   };
   const sources = (src!.results as { book: FeedBook; path: string; mismatch: number; removed_at: number | null }[])
     .filter((s) => FEED_BOOKS.includes(s.book))

@@ -1,11 +1,14 @@
 /**
- * Pilot scope: football and hockey competitions we import, compare and publish.
+ * Curated football and hockey competitions (own names, colours and intros). Every other competition of every sport is created
+ * on demand from the platform's own name (see server/normalize/competition.ts), so nothing a visitor can bet on is left out.
+ * The first list below:
  * `match` is tested against the platform's nameCompetition (Tipsport and Chance use the same names) together with
  * the gender taken from the source idSport: the platform names the men's and women's leagues the same way
  * ("1. španělská liga" = La Liga for idSport -1 and the women's Liga F for idSport 295).
- * Everything outside this list is ignored by the import, so the database and the sitemap stay small.
  */
-export type Sport = 'fotbal' | 'hokej';
+export type Sport =
+  | 'fotbal' | 'hokej' | 'basketbal' | 'tenis' | 'volejbal' | 'americky-fotbal' | 'stolni-tenis' | 'hazena' | 'esporty' | 'bojove-sporty' | 'box'
+  | 'florbal' | 'rugby' | 'sipky' | 'futsal' | 'badminton' | 'baseball' | 'vodni-polo' | 'kriket' | 'snooker' | 'squash';
 export type Gender = 'muzi' | 'zeny';
 
 export interface Competition {
@@ -23,18 +26,58 @@ export interface Competition {
   intro: string;
 }
 
-/** idSuperSport on the Tipsport/Chance platform. */
-export const SPORT_IDS: Record<number, Sport> = { 16: 'fotbal', 23: 'hokej' };
-/** idSport (sport + gender) on the platform: "Fotbal - muži" -1, "Fotbal - ženy" 295, "Lední hokej - muži" -2. Others are skipped. */
+export interface SportInfo {
+  name: string;
+  /** Page path, /fotbal/ … */
+  path: string;
+  /** idSuperSport on the Tipsport/Chance platform. */
+  superId: number;
+  /** Leading words of the platform's idSport name ("Tenis muži - dvouhra" → "Tenis"); what is left describes the variant (women, doubles, juniors). */
+  prefix: string[];
+  /** Light tint of the ticket stub. */
+  color: string;
+  /** Lower-case name for sentences ("na tenis"). */
+  accusative: string;
+}
+
+/**
+ * Every sport whose platform match is a plain head-to-head with a result market we can compare (three-way "Výsledek zápasu"
+ * or two-way "Vítěz zápasu"). Season-long and multi-runner offers (horse racing, motorsport, politics, skiing) are not here.
+ */
+export const SPORTS: Record<Sport, SportInfo> = {
+  fotbal: { name: 'Fotbal', path: '/fotbal/', superId: 16, prefix: ['Fotbal'], color: '#d7ecd9', accusative: 'fotbal' },
+  hokej: { name: 'Hokej', path: '/hokej/', superId: 23, prefix: ['Lední hokej'], color: '#d6e5f5', accusative: 'hokej' },
+  basketbal: { name: 'Basketbal', path: '/basketbal/', superId: 7, prefix: ['Basketbal'], color: '#fbe1c8', accusative: 'basketbal' },
+  tenis: { name: 'Tenis', path: '/tenis/', superId: 43, prefix: ['Tenis'], color: '#eef0c2', accusative: 'tenis' },
+  volejbal: { name: 'Volejbal', path: '/volejbal/', superId: 47, prefix: ['Volejbal'], color: '#f6d5d2', accusative: 'volejbal' },
+  'americky-fotbal': { name: 'Americký fotbal', path: '/americky-fotbal/', superId: 2, prefix: ['Americký fotbal'], color: '#e2d9f1', accusative: 'americký fotbal' },
+  'stolni-tenis': { name: 'Stolní tenis', path: '/stolni-tenis/', superId: 40, prefix: ['Stolní tenis'], color: '#d3e3f5', accusative: 'stolní tenis' },
+  hazena: { name: 'Házená', path: '/hazena/', superId: 20, prefix: ['Házená'], color: '#f2dada', accusative: 'házenou' },
+  esporty: { name: 'Esporty', path: '/esporty/', superId: 188, prefix: [], color: '#dfd6f3', accusative: 'esporty' },
+  'bojove-sporty': { name: 'Bojové sporty', path: '/bojove-sporty/', superId: 208, prefix: ['Bojové sporty'], color: '#f3dfe0', accusative: 'bojové sporty' },
+  box: { name: 'Box', path: '/box/', superId: 11, prefix: ['Box'], color: '#f7d4d6', accusative: 'box' },
+  florbal: { name: 'Florbal', path: '/florbal/', superId: 14, prefix: ['Florbal'], color: '#e9dfd6', accusative: 'florbal' },
+  rugby: { name: 'Rugby', path: '/rugby/', superId: 31, prefix: ['Rugby'], color: '#d8ead8', accusative: 'rugby' },
+  sipky: { name: 'Šipky', path: '/sipky/', superId: 42, prefix: ['Šipky'], color: '#fbedc4', accusative: 'šipky' },
+  futsal: { name: 'Futsal', path: '/futsal/', superId: 17, prefix: ['Futsal'], color: '#d5e2f4', accusative: 'futsal' },
+  badminton: { name: 'Badminton', path: '/badminton/', superId: 88, prefix: ['Badminton'], color: '#dde3ee', accusative: 'badminton' },
+  baseball: { name: 'Baseball', path: '/baseball/', superId: 6, prefix: ['Baseball'], color: '#e7d6f0', accusative: 'baseball' },
+  'vodni-polo': { name: 'Vodní pólo', path: '/vodni-polo/', superId: 45, prefix: ['Vodní pólo'], color: '#d3e3f5', accusative: 'vodní pólo' },
+  kriket: { name: 'Kriket', path: '/kriket/', superId: 169, prefix: ['Kriket'], color: '#d9deea', accusative: 'kriket' },
+  snooker: { name: 'Snooker', path: '/snooker/', superId: 37, prefix: ['Snooker'], color: '#d3ead3', accusative: 'snooker' },
+  squash: { name: 'Squash', path: '/squash/', superId: 39, prefix: ['Squash'], color: '#e2e4e6', accusative: 'squash' },
+};
+export const SPORT_LIST = Object.keys(SPORTS) as Sport[];
+export const isSport = (v: string | null | undefined): v is Sport => !!v && v in SPORTS;
+export const sportBySlugPath = (slug: string): Sport | null => (isSport(slug) ? slug : null);
+
+/** idSuperSport on the platform → our sport. */
+export const SPORT_IDS: Record<number, Sport> = Object.fromEntries(SPORT_LIST.map((s) => [SPORTS[s].superId, s]));
+/** idSport (sport + gender) on the platform for the curated competitions: "Fotbal - muži" -1, "Fotbal - ženy" 295, "Lední hokej - muži" -2. */
 export const GENDER_BY_ID_SPORT: Record<number, { sport: Sport; gender: Gender }> = {
   [-1]: { sport: 'fotbal', gender: 'muzi' },
   295: { sport: 'fotbal', gender: 'zeny' },
   [-2]: { sport: 'hokej', gender: 'muzi' },
-};
-
-export const SPORTS: Record<Sport, { name: string; path: string; adjective: string }> = {
-  fotbal: { name: 'Fotbal', path: '/fotbal/', adjective: 'fotbalové' },
-  hokej: { name: 'Hokej', path: '/hokej/', adjective: 'hokejové' },
 };
 
 export const COMPETITIONS: Competition[] = [
@@ -113,3 +156,6 @@ export function competitionOf(sport: Sport, name: string, gender: Gender = 'muzi
   for (const c of COMPETITIONS) if (c.sport === sport && (c.gender ?? 'muzi') === gender && c.match.test(name.trim())) return c;
   return null;
 }
+
+/** Ticket stub colour: the curated competition's tint, otherwise the sport's. */
+export const stubColor = (slug: string, sport: Sport) => BY_SLUG.get(slug)?.color ?? SPORTS[sport].color;

@@ -3,9 +3,12 @@
 // moves that point to now. DOM is built with createElement only (no innerHTML of stored or fetched data).
 import { load, save, nowS, type FollowBet, type FollowState, type Odds3 } from './follow';
 import { evaluateTarget, parseTarget } from '../lib/target';
+import { betTarget } from '../lib/market';
+import { SPORTS, type Sport } from '../config/competitions';
+import type { Outcome } from '../server/types';
 
 interface Outc { who: string; odds: number | null; books: string[]; same: boolean }
-interface Ev { id: number; url: string; home: string; away: string; comp: string; compName: string; sport: string; startAt: number; started: boolean; checkedAt: number | null; outcomes: Record<string, Outc> }
+interface Ev { id: number; market?: string; url: string; home: string; away: string; comp: string; compName: string; sport: string; startAt: number; started: boolean; checkedAt: number | null; outcomes: Record<string, Outc> }
 
 const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = '') => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
@@ -14,8 +17,8 @@ const fmt = (m: number) => (m / 1000).toFixed(2).replace('.', ',');
 const tz = { timeZone: 'Europe/Prague' } as const;
 const when = (s: number) => new Intl.DateTimeFormat('cs-CZ', { ...tz, day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(s * 1000));
 const kick = (s: number) => new Intl.DateTimeFormat('cs-CZ', { ...tz, weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(s * 1000));
-const target = (o: string, who: string) => (o === 'x' ? who.replace(/^Remíza/, 'remízu') : `výhru týmu ${who}`);
-const betHref = (url: string, o: string) => `${url}?${new URLSearchParams({ trh: '1x2', vysledek: o, zpet: '/oblibene/' })}#sazka`;
+const target = (e: Ev, o: string) => betTarget(e.sport as Sport, o as Outcome, e.home, e.away);
+const betHref = (url: string, o: string, market = '1x2') => `${url}?${new URLSearchParams({ trh: market === '12' ? '12' : '1x2', vysledek: o, zpet: '/oblibene/' })}#sazka`;
 
 async function getJson(url: string): Promise<{ events: Ev[] }> {
   try { return (await (await fetch(url)).json()) as { events: Ev[] }; } catch { return { events: [] }; }
@@ -103,12 +106,11 @@ async function render(markSeen: boolean) {
     if (!b.seen) continue;
     note(b.seen.at);
     if (e && !e.started && now !== null && b.seen.odds !== null && now !== b.seen.odds) {
-      const who = e.outcomes[b.outcome]!.who;
       changes.push(card(
         el('p', 'm-0 text-ink-2 text-[0.95rem]', `${b.home} vs ${b.away} · ${b.comp}`),
-        el('p', 'm-0 text-[1.05rem]', `Kurz na ${target(b.outcome, who)} ${now < b.seen.odds ? 'klesl' : 'stoupl'} z ${fmt(b.seen.odds)} na ${fmt(now)}.`),
+        el('p', 'm-0 text-[1.05rem]', `Kurz na ${target(e, b.outcome)} ${now < b.seen.odds ? 'klesl' : 'stoupl'} z ${fmt(b.seen.odds)} na ${fmt(now)}.`),
         el('p', 'm-0 text-[0.88rem] text-ink-2', `Porovnáno s ${b.seen.via === 'zobrazeni' ? 'tvým posledním zobrazením' : 'uložením'} ${when(b.seen.at)}${e.checkedAt ? `, teď ověřeno ${when(e.checkedAt)}` : ''}.`),
-        link('Prohlédnout sázku →', betHref(b.url, b.outcome)),
+        link('Prohlédnout sázku →', betHref(b.url, b.outcome, e?.market)),
       ));
     }
   }
@@ -123,9 +125,9 @@ async function render(markSeen: boolean) {
       if (s.bets.some((b) => b.id === f.id && b.outcome === o)) continue; // already listed as a bet
       changes.push(card(
         el('p', 'm-0 text-ink-2 text-[0.95rem]', `${f.home} vs ${f.away} · ${f.comp}`),
-        el('p', 'm-0 text-[1.05rem]', `Kurz na ${target(o, e.outcomes[o]!.who)} ${now < was ? 'klesl' : 'stoupl'} z ${fmt(was)} na ${fmt(now)}.`),
+        el('p', 'm-0 text-[1.05rem]', `Kurz na ${target(e, o)} ${now < was ? 'klesl' : 'stoupl'} z ${fmt(was)} na ${fmt(now)}.`),
         el('p', 'm-0 text-[0.88rem] text-ink-2', `Porovnáno s ${f.seen.via === 'zobrazeni' ? 'tvým posledním zobrazením' : 'uložením'} ${when(f.seen.at)}${e.checkedAt ? `, teď ověřeno ${when(e.checkedAt)}` : ''}.`),
-        link('Prohlédnout sázku →', betHref(f.url, o)),
+        link('Prohlédnout sázku →', betHref(f.url, o, e.market)),
       ));
     }
   }
@@ -146,7 +148,7 @@ async function render(markSeen: boolean) {
       el('h3', 'm-0 text-[1.15rem]', `${b.label} (${b.home} vs ${b.away})`),
       el('p', 'm-0', !e ? 'Zápas už v nabídce není.' : e.started ? 'Zápas začal, předzápasové kurzy už nesledujeme.' : o?.odds ? `Teď ${fmt(o.odds)}${o.books.length ? ` (${o.same && o.books.length > 1 ? 'stejně u ' + o.books.join(' i ') : 'nejvýš u ' + o.books[0]})` : ''}.` : 'Kurz teď není v nabídce.'),
       targetBlock(b, e, reach.get(`${b.id}-${b.outcome}`)),
-      add(el('div', 'flex flex-wrap gap-2'), link('Prohlédnout sázku', betHref(b.url, b.outcome), 'btn btn--sm'),
+      add(el('div', 'flex flex-wrap gap-2'), link('Prohlédnout sázku', betHref(b.url, b.outcome, e?.market), 'btn btn--sm'),
         followBtn('bet', { followBet: JSON.stringify({ id: b.id, outcome: b.outcome, url: b.url, home: b.home, away: b.away, startAt: b.startAt, comp: b.comp, sport: b.sport, label: b.label, odds: null }) }, 'Přestat sledovat')) as HTMLElement,
     );
   }) : [empty('Žádné sledované sázky.')]));
@@ -167,7 +169,7 @@ async function render(markSeen: boolean) {
   // --- followed competitions and sports ---
   const chips = add(el('div', 'flex flex-wrap gap-2 mb-4'),
     ...s.comps.map((c) => followBtn('comp', { followComp: c.slug, name: c.name }, `${c.name} ✕`)),
-    ...s.sports.map((x) => followBtn('sport', { followSport: x, name: x === 'hokej' ? 'hokej' : 'fotbal' }, `${x === 'hokej' ? 'Hokej' : 'Fotbal'} ✕`))) as HTMLElement;
+    ...s.sports.map((x) => followBtn('sport', { followSport: x, name: (SPORTS[x as Sport]?.name ?? x).toLowerCase() }, `${SPORTS[x as Sport]?.name ?? x} ✕`))) as HTMLElement;
   $('[data-feed-note]').textContent = s.comps.length || s.sports.length
     ? 'Nejbližší zápasy toho, co sleduješ. Křížkem sledování zrušíš.'
     : 'Na stránce soutěže nebo sportu klikni na „Sledovat soutěž“ / „Sledovat fotbal“.';

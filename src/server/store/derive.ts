@@ -3,9 +3,8 @@
  * instead of scanning events and offers. Freshness is re-evaluated at render time from `books`.
  */
 import { FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
-import { competitionBySlug } from '../../config/competitions';
 import { computeRadar, type TrackedOffer } from '../radar/compute';
-import type { Outcome, Settings } from '../types';
+import type { Market, Outcome, Settings } from '../types';
 import type { BookStateView, EventView, OfferView, UpcomingSnapshot } from '../view';
 import { Meter, type Db } from './db';
 
@@ -31,14 +30,14 @@ export async function derive(db: Db, cfg: Settings, now: number): Promise<{ mete
     if (!FEED_BOOKS.includes(s.book)) continue;
     books[s.book] = { lastSuccessAt: s.last_success_at, lastAttemptAt: s.last_attempt_at, failing: !!s.last_error, trackingSince: s.tracking_since };
   }
-  const evRows = await m.all<{ id: number; slug: string; sport: EventView['sport']; comp: string; home: string; away: string; start_at: number }>(db.prepare(
-    'SELECT e.id, e.slug, e.sport, c.slug AS comp, e.home, e.away, e.start_at FROM events e JOIN competitions c ON c.id = e.competition_id WHERE e.start_at >= ? ORDER BY e.start_at, e.id',
+  const evRows = await m.all<{ id: number; slug: string; sport: EventView['sport']; comp: string; comp_name: string; market: Market; home: string; away: string; start_at: number }>(db.prepare(
+    'SELECT e.id, e.slug, e.sport, c.slug AS comp, c.name AS comp_name, e.market, e.home, e.away, e.start_at FROM events e JOIN competitions c ON c.id = e.competition_id WHERE e.start_at >= ? ORDER BY e.start_at, e.id',
   ).bind(from));
   const events = new Map<number, EventView>();
   for (const r of evRows) {
     events.set(r.id, {
-      id: r.id, url: eventUrl(r.slug, r.id), sport: r.sport, comp: r.comp, compName: competitionBySlug(r.comp)?.name ?? r.comp,
-      home: r.home, away: r.away, startAt: r.start_at, market: '1x2', books: {},
+      id: r.id, url: eventUrl(r.slug, r.id), sport: r.sport, comp: r.comp, compName: r.comp_name,
+      home: r.home, away: r.away, startAt: r.start_at, market: r.market, books: {},
     });
   }
   const srcRows = await m.all<{ event_id: number; book: FeedBook; mismatch: number; removed_at: number | null }>(db.prepare(
@@ -51,7 +50,7 @@ export async function derive(db: Db, cfg: Settings, now: number): Promise<{ mete
   const offRows = await m.all<{ event_id: number; book: FeedBook; outcome: Outcome; odds: number; enabled: number; removed_at: number | null; changed_at: number;
     first_odds: number; first_at: number; min_odds: number; max_odds: number }>(db.prepare(
     `SELECT o.event_id, o.book, o.outcome, o.odds, o.enabled, o.removed_at, o.changed_at, o.first_odds, o.first_at, o.min_odds, o.max_odds
-     FROM offers o JOIN events e ON e.id = o.event_id WHERE e.start_at >= ? AND o.market = '1x2'`,
+     FROM offers o JOIN events e ON e.id = o.event_id WHERE e.start_at >= ? AND o.market = e.market`,
   ).bind(from));
   let offers = 0;
   for (const o of offRows) {
@@ -66,7 +65,8 @@ export async function derive(db: Db, cfg: Settings, now: number): Promise<{ mete
   const hist = await m.all<{ event_id: number; book: FeedBook; outcome: Outcome; at: number; odds: number; enabled: number }>(db.prepare(
     `SELECT h.event_id, h.book, h.outcome, h.at, h.odds, h.enabled FROM offers o
      JOIN odds_history h ON h.event_id = o.event_id AND h.book = o.book AND h.market = o.market AND h.outcome = o.outcome
-     WHERE o.changed_at >= ? AND o.market = '1x2' ORDER BY h.event_id, h.book, h.outcome, h.at`,
+     JOIN events e ON e.id = o.event_id
+     WHERE o.changed_at >= ? AND o.market = e.market ORDER BY h.event_id, h.book, h.outcome, h.at`,
   ).bind(now - 86400));
   const byOffer = new Map<string, { at: number; odds: number; enabled: boolean }[]>();
   let changes24h = 0;
@@ -108,8 +108,28 @@ export async function derive(db: Db, cfg: Settings, now: number): Promise<{ mete
     stats: { events: evList.filter((e) => e.startAt > now).length, offers, changes24h, firstRecordAt: tracking.length ? Math.min(...tracking) : null },
   };
   const put = db.prepare('INSERT INTO derived (key, json, at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET json = excluded.json, at = excluded.at');
-  await m.batch(db, [put.bind('upcoming', JSON.stringify(upcoming), now), put.bind('radar', JSON.stringify(radar), now)]);
+  await m.batch(db, [put.bind('upcoming', snapshotJson(upcoming), now), put.bind('radar', JSON.stringify(radar), now)]);
   return { meter: m, events: evList.length };
+}
+
+/** A D1 value may be at most 2 MB; stay clear of it. */
+export const SNAPSHOT_MAX_BYTES = 1_800_000;
+/** Detail-only history fields: pages read them from the event's own rows (lib/data.ts eventDetail), never from the snapshot. */
+const DETAIL_ONLY = new Set(['firstOdds', 'firstAt', 'minOdds', 'maxOdds']);
+
+/**
+ * The upcoming snapshot as JSON: without the detail-only fields, and if the offer is still too large for one D1 value, without the
+ * matches that start last (the page lists are sorted by start, so the nearest matches always stay).
+ */
+export function snapshotJson(s: UpcomingSnapshot, max = SNAPSHOT_MAX_BYTES): string {
+  const lean = (x: UpcomingSnapshot) => JSON.stringify(x, (k, v) => (DETAIL_ONLY.has(k) ? undefined : v));
+  let json = lean(s);
+  let events = s.events;
+  while (json.length > max && events.length > 10) {
+    events = events.slice(0, Math.floor(events.length * 0.9));
+    json = lean({ ...s, events });
+  }
+  return json;
 }
 
 /** Daily: drop detail rows of events that started more than `historyDays` ago. */

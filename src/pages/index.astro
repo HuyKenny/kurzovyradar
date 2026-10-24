@@ -13,7 +13,7 @@ import { picks as pickList, MIN_DIFF_PCT, BIG_MOVE_PCT, MIN_HIGH_PCT } from '../
 import Photo from '../components/Photo.astro';
 import art from '../data/art.json';
 import { BOOKMAKERS } from '../config/bookmakers';
-import { COMPETITIONS } from '../config/competitions';
+import { competitionsIn, sportsIn } from '../lib/catalog';
 import { upcoming, radar, listable, lastCheck, mergeMoves, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
 import { int, time, dayKey } from '../lib/format';
 import { ticketView } from '../lib/ticket';
@@ -34,22 +34,21 @@ const moves = win && rd
   ? [...mergeMoves(rd.windows[win.key].drops.filter((m) => m.startAt > t)).slice(0, 2), ...mergeMoves(rd.windows[win.key].rises.filter((m) => m.startAt > t)).slice(0, 1)].map((m) => fromMove(m, win.key))
   : [];
 const checkedOf = (books: string[]) => { const v = books.map((b) => up.books[b as 'tipsport']?.lastSuccessAt ?? 0).filter(Boolean); return v.length ? Math.min(...v) : null; };
-const compCounts = new Map<string, number>();
-for (const e of events) compCounts.set(e.comp, (compCounts.get(e.comp) ?? 0) + 1);
-const comps = COMPETITIONS.filter((c) => compCounts.has(c.slug)).sort((a, b) => Number(!!b.top) - Number(!!a.top) || (compCounts.get(b.slug)! - compCounts.get(a.slug)!));
+const comps = competitionsIn(events).slice(0, 18);
+const sportList = sportsIn(events);
 const counts = { fotbal: events.filter((e) => e.sport === 'fotbal').length, hokej: events.filter((e) => e.sport === 'hokej').length };
 const today = events.filter((e) => dayKey(e.startAt) === dayKey(t)).length;
 // Real example for the explainer: the first listed favourite, else a neutral 1,85.
 const ex = next.map((e) => ({ e, v: ticketView(e, up.books, t, cfg) })).find((x) => x.v.favourite?.best);
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title="KurzovýRadar – kurzy na fotbal a hokej přehledně, i jak se mění"
-  description="Kolik vyplácí Tipsport a Chance za fotbal a hokej a jestli kurz roste, nebo padá. Srozumitelně, bez registrace. Kurzy kontrolujeme každých 15 minut.">
+<Base title="KurzovýRadar – kurzy na sport přehledně, i jak se mění"
+  description="Kolik vyplácí Tipsport a Chance za fotbal, hokej, tenis, esporty a další sporty a jestli kurz roste, nebo padá. Srozumitelně, bez registrace. Kurzy kontrolujeme každých 15 minut.">
   <section class="wrap pt-8 md:pt-14 grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
     <div>
-      <p class="hand m-0 text-[1.6rem] -rotate-2 origin-left">fotbal & hokej, bez registrace</p>
+      <p class="hand m-0 text-[1.6rem] -rotate-2 origin-left">fotbal, hokej, tenis & další, bez registrace</p>
       <h1 class="mt-2 mb-4 text-balance">Porovnej kurzy. Sleduj jejich pohyb.</h1>
-      <p class="text-[1.2rem] max-w-[46ch] m-0">Uvidíš, kolik vyplatí Tipsport a Chance za fotbal a hokej a jestli kurz roste, nebo padá.</p>
+      <p class="text-[1.2rem] max-w-[46ch] m-0">Uvidíš, kolik vyplatí Tipsport a Chance za fotbal, hokej, tenis, esporty a další sporty a jestli kurz roste, nebo padá.</p>
       <div class="flex flex-wrap gap-3 mt-7">
         <a href="/kurzy/" class="btn">Porovnat kurzy<Icon name="arrow-right" size={18} /></a>
         <a href="/radar/" class="btn btn--ghost">Otevřít radar</a>
@@ -170,12 +169,23 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
     </div>
   </section>
 
+  {sportList.length > 1 && (
+    <section class="wrap mt-16" aria-labelledby="h-sporty">
+      <h2 id="h-sporty" class="mb-2">Sporty</h2>
+      <p class="mt-0 mb-5 text-ink-2">Fotbal a hokej, ale i tenis, basketbal, esporty, šipky a další. U každého zápasu vidíš kurzy Tipsportu a Chance vedle sebe.</p>
+      <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
+        {sportList.map((s) => <li><a class="chip" href={s.path}>{s.name}<span class="count num">{s.count}</span><span class="sr"> zápasů</span></a></li>)}
+      </ul>
+      <p class="mt-4"><a href="/sporty/" class="font-bold">Všechny sporty</a></p>
+    </section>
+  )}
+
   {comps.length > 0 && (
     <section class="wrap mt-16" aria-labelledby="h-comps">
       <h2 id="h-comps" class="mb-2">Podle soutěže</h2>
-      <p class="mt-0 mb-5 text-ink-2">Sledujeme hlavní fotbalové a hokejové soutěže.</p>
+      <p class="mt-0 mb-5 text-ink-2">Největší soutěže, které právě mají zápasy.</p>
       <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
-        {comps.map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{compCounts.get(c.slug)}</span><span class="sr"> zápasů</span></a></li>)}
+        {comps.map((c) => <li><a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{c.count}</span><span class="sr"> zápasů</span></a></li>)}
       </ul>
     </section>
   )}

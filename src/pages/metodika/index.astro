@@ -14,7 +14,7 @@ const d = new Date('2026-10-23');
   <div class="strucne">
     <p><strong>Stručně:</strong></p>
     <ul>
-      <li>Každých {cfg.importIntervalMin} minut načteme kurzy Tipsportu a Chance na vybrané fotbalové a hokejové zápasy.</li>
+      <li>Každých {cfg.importIntervalMin} minut načteme kurzy Tipsportu a Chance na zápasy všech sportů, které kanceláře nabízejí jako souboj dvou soupeřů.</li>
       <li>Vedle sebe dáme jen úplně stejnou sázku. Zeleně označíme, kde se vyplatí víc.</li>
       <li>Při každé kontrole zapíšeme, co se od minulé změnilo. Z toho jsou grafy a pohyby kurzů. Změny mezi kontrolami nevidíme.</li>
       <li>Když data chybí, napíšeme to. Nic nedopočítáváme a nedáváme tipy.</li>
@@ -37,9 +37,9 @@ const d = new Date('2026-10-23');
   <h2>Co sledujeme</h2>
   <ul>
     <li><strong>Předzápasové kurzy</strong>, ne kurzy během zápasu.</li>
-    <li><strong>Trh:</strong> výsledek zápasu v základní hrací době (1X2). Fotbal 90 minut včetně nastavení, hokej 60 minut. Prodloužení, nájezdy ani penalty se nepočítají.</li>
+    <li><strong>Trh:</strong> buď výsledek zápasu v základní hrací době se třemi možnostmi (1X2; fotbal 90 minut včetně nastavení, hokej 60 minut, prodloužení, nájezdy ani penalty se nepočítají), nebo vítěz zápasu se dvěma možnostmi bez remízy (tenis, volejbal, esporty, šipky a další). U ostatních sportů a u skreče či nedohraného zápasu platí pravidla sázky u kanceláře, kterou neupravujeme ani nehádáme.</li>
     <li><strong>Okno:</strong> zápasy, které začínají v následujících {cfg.windowDays} dnech.</li>
-    <li><strong>Soutěže:</strong> {(['fotbal', 'hokej'] as const).map((s, i) => <>{i > 0 && '; '}{SPORTS[s].name.toLowerCase()} – {COMPETITIONS.filter((c) => c.sport === s).map((c) => c.name).join(', ')}</>)}.</li>
+    <li><strong>Sporty a soutěže:</strong> všechny sporty a soutěže, které kanceláře nabízejí jako souboj dvou soupeřů. Soutěže se zakládají podle názvu u kanceláře, takže seznam se mění s nabídkou. U fotbalu a hokeje máme vybrané ligy s vlastním popisem. Nesledujeme sázky na vítěze z mnoha účastníků (dostihy, motorsport, lyžování) ani dlouhodobé sázky.</li>
   </ul>
 
   <h2>Jak často</h2>

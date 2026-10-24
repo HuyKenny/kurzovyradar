@@ -7,6 +7,7 @@ import PicksStrip from '../../components/PicksStrip.astro';
 import { picks as pickList } from '../../lib/picks';
 import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { inDays } from '../../lib/days';
+import { countLine } from '../../lib/counts';
 
 const [up, rd] = await Promise.all([upcoming(), radar()]);
 const t = getNow();
@@ -14,21 +15,25 @@ const cfg = getCfg();
 const all = listable(up, t, cfg);
 const events = all.filter((e) => inDays(e.startAt, 'dnes', t));
 const chosen = pickList(up, rd, t, cfg, 3, { todayOnly: true });
+const PER = 30;
+const page = Math.max(1, Math.min(30, Number(Astro.url.searchParams.get('strana')) || 1));
+const shown = events.slice(0, page * PER);
+const line = countLine({ shown: shown.length, total: events.length, dayTotal: null, day: 'dnes', filtered: false });
 const tomorrow = all.filter((e) => inDays(e.startAt, 'zitra', t)).length;
 const day = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', weekday: 'long', day: 'numeric', month: 'numeric' }).format(new Date(t * 1000));
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title="Zápasy dnes: kurzy na fotbal a hokej | KurzovýRadar"
-  description="Dnešní fotbalové a hokejové zápasy s kurzy Tipsportu a Chance vedle sebe, seřazené podle začátku. Aktualizujeme každých 15 minut."
-  canonical="/dnes/" crumbs={[{ name: 'Zápasy dnes', url: '/dnes/' }]}>
+<Base title="Zápasy dnes: kurzy na všechny sporty | KurzovýRadar"
+  description="Dnešní zápasy všech sportů s kurzy Tipsportu a Chance vedle sebe, seřazené podle začátku. Aktualizujeme každých 15 minut."
+  canonical="/dnes/" noindex={page > 1} crumbs={[{ name: 'Zápasy dnes', url: '/dnes/' }]}>
   <div class="wrap pt-6">
-    <h1 class="m-0">Zápasy dnes: kurzy na fotbal a hokej</h1>
-    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Dnešní zápasy ({day}) s kurzy Tipsportu a Chance na výsledek po základní hrací době. Zápasy, které už začaly, tu nejsou, protože předzápasové kurzy po výkopu nesledujeme.</p>
+    <h1 class="m-0">Zápasy dnes: kurzy na všechny sporty</h1>
+    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Dnešní zápasy ({day}) s kurzy Tipsportu a Chance. Sázíš buď na výsledek zápasu (remíza je možná), nebo na vítěze zápasu (remíza tu není). Zápasy, které už začaly, tu nejsou, protože předzápasové kurzy po výkopu nesledujeme.</p>
     <FreshNote books={up.books} now={t} cfg={cfg} />
     <PicksStrip picks={chosen} now={t} back="/dnes/" scope="dnes" when="dnešních" />
-    <p class="mt-8 mb-5 hand text-[1.35rem]" role="status">{events.length ? `${events.length} ${events.length === 1 ? 'zápas' : events.length < 5 ? 'zápasy' : 'zápasů'} dnes` : ''}</p>
+    <p class="mt-8 mb-5 hand text-[1.35rem]" role="status">{line}</p>
     {events.length
-      ? <EventList events={events} books={up.books} now={t} cfg={cfg} place="dnes" />
+      ? <><EventList events={shown} books={up.books} now={t} cfg={cfg} place="dnes" />{shown.length < events.length && <p class="mt-8"><a class="btn btn--ghost" href={`/dnes/?strana=${page + 1}`}>Ukázat další zápasy</a></p>}</>
       : <div class="card p-6 max-w-[640px]"><p class="m-0 text-lg font-bold">Dnes už nemáme žádný zápas, který nezačal.</p><p class="mt-2 mb-0">{tomorrow ? `Na zítřek máme ${tomorrow} zápasů.` : 'Další zápasy najdeš v přehledu.'} <a href="/kurzy/?den=zitra">Zápasy zítra</a> · <a href="/kurzy/">Všechny kurzy</a></p></div>}
     <p class="mt-8 text-ink-2">Jiný den nebo soutěž: <a href="/kurzy/">filtry v přehledu kurzů</a>. Jak číst kurzy: <a href="/pruvodce/kurzy-pro-zacatecniky/">Kurzy pro začátečníky</a>.</p>
   </div>

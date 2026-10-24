@@ -134,7 +134,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('[data-fav], [data-
 paintFollow();
 
 /* ---------- header search suggestions (combobox) ---------- */
-interface Hit { label: string; sub: string; url: string; kind: 'zápas' | 'soutěž' | 'tým' }
+interface Hit { label: string; sub: string; url: string; kind: 'zápas' | 'soutěž' | 'tým' | 'sport' }
 let index: Hit[] | null = null;
 async function loadIndex(): Promise<Hit[]> {
   if (index) return index;

@@ -22,6 +22,7 @@ export const HELP = {
 
 export const NAV = [
   { href: '/kurzy/', label: 'Kurzy' },
+  { href: '/sporty/', label: 'Sporty' },
   { href: '/radar/', label: 'Pohyby kurzů' },
   { href: '/sazkove-kancelare/', label: 'Kde vsadit' },
   { href: '/pruvodce/', label: 'Jak na kurzy' },

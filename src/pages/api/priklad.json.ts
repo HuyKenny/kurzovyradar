@@ -17,7 +17,7 @@ export const GET: APIRoute = async () => {
   const ok = listable(up, t, c).map((e) => ({ e, v: ticketView(e, up.books, t, c) })).filter((x) => x.v.outcomes.every((o) => o.best));
   const pick = ok.find((x) => days.has(dayKey(x.e.startAt))) ?? ok[0];
   const body = pick ? {
-    event: { id: pick.e.id, url: pick.e.url, home: pick.e.home, away: pick.e.away, compName: pick.e.compName, sport: pick.e.sport, startAt: pick.e.startAt, checkedAt: pick.v.checkedAt },
+    event: { id: pick.e.id, url: pick.e.url, home: pick.e.home, away: pick.e.away, compName: pick.e.compName, sport: pick.e.sport, market: pick.e.market, startAt: pick.e.startAt, checkedAt: pick.v.checkedAt },
     odds: Object.fromEntries(pick.v.outcomes.map((o) => [o.outcome, o.best!.odds])),
   } : { event: null };
   return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=60', 'x-robots-tag': 'noindex' } });

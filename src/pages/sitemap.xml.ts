@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE } from '../config/site';
-import { COMPETITIONS } from '../config/competitions';
+import { competitionsIn, sportsIn } from '../lib/catalog';
 import { BOOKMAKERS } from '../config/bookmakers';
 import { TERMS } from '../config/glossary';
 import { upcoming, listable, cfg, now } from '../lib/data';
@@ -13,12 +13,12 @@ export const GET: APIRoute = async () => {
   const up = await upcoming();
   const t = now();
   const events = listable(up, t, cfg());
-  const comps = new Set(events.map((e) => e.comp));
   const lastmod = up.at ? new Date(up.at * 1000).toISOString() : undefined;
   const guides = await getCollection('pruvodce');
   const urls: { loc: string; lastmod?: string }[] = [
-    ...['/', '/kurzy/', '/dnes/', '/radar/', '/fotbal/', '/hokej/'].map((p) => ({ loc: p, lastmod })),
-    ...COMPETITIONS.filter((c) => comps.has(c.slug)).map((c) => ({ loc: `/souteze/${c.slug}/`, lastmod })),
+    ...['/', '/kurzy/', '/dnes/', '/radar/', '/sporty/'].map((p) => ({ loc: p, lastmod })),
+    ...sportsIn(events).map((s) => ({ loc: s.path, lastmod })),
+    ...competitionsIn(events).map((c) => ({ loc: `/souteze/${c.slug}/`, lastmod })),
     ...events.map((e) => ({ loc: e.url, lastmod })),
     { loc: '/sazkove-kancelare/' },
     { loc: '/sazkove-kancelare/srovnani/' },

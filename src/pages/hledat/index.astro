@@ -2,7 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import Ticket from '../../components/Ticket.astro';
 import Icon from '../../components/Icon.astro';
-import { COMPETITIONS } from '../../config/competitions';
+import { SPORTS } from '../../config/competitions';
+import { competitionsIn } from '../../lib/catalog';
 import { upcoming, listable, cfg as getCfg, now as getNow } from '../../lib/data';
 
 const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 60);
@@ -11,7 +12,7 @@ const f = fold(q);
 const up = await upcoming();
 const t = getNow();
 const cfg = getCfg();
-const comps = f.length >= 2 ? COMPETITIONS.filter((c) => fold(`${c.name} ${c.country}`).includes(f)) : [];
+const comps = f.length >= 2 ? competitionsIn(listable(up, t, cfg)).filter((c) => fold(`${c.name} ${SPORTS[c.sport].name}`).includes(f)).slice(0, 40) : [];
 const events = f.length >= 2 ? listable(up, t, cfg).filter((e) => fold(`${e.home} ${e.away} ${e.compName}`).includes(f)).slice(0, 30) : [];
 Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=120');
 ---

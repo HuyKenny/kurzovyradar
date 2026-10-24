@@ -18,9 +18,10 @@ describe("men's and women's leagues share names; idSport decides", () => {
     expect(s?.home).toBe('Liverpool (ž)');
     expect(s?.srcSportId).toBe('295');
   });
-  it('an unknown idSport is skipped, not guessed', () => {
-    expect(toSource('tipsport', { ...liverpool, idSport: 999 })).toBeNull();
-    expect(toSource('tipsport', { ...liverpool, idSport: -2 })).toBeNull(); // hockey id on a football match
+  it('an idSport outside the curated men/women ids still gets a competition, named after the platform and its variant', () => {
+    const u21 = toSource('tipsport', { ...liverpool, idSport: 290, nameSport: 'Fotbal - do 21 let' });
+    expect(u21).toMatchObject({ sport: 'fotbal', competition: 'fotbal-1-anglicka-liga-do-21-let', competitionName: '1. anglická liga (do 21 let)' });
+    expect(toSource('tipsport', { ...liverpool, idSport: -2 })?.competition).not.toBe('premier-league'); // a hockey id on a football match never gets the curated league
   });
   it('an event filed under the wrong league moves when the source says so', async () => {
     const db = testDb();

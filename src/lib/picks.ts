@@ -12,7 +12,7 @@
  * prediction model could later add its own reason type ('model'); none exists today.
  */
 import { BOOK, FEED_BOOKS, type FeedBook } from '../config/bookmakers';
-import { atBooks } from './ticket';
+import { atBooks, outcomesFor } from './ticket';
 import { isCurrent } from '../server/store/derive';
 import type { Outcome, Settings } from '../server/types';
 import { WINDOWS, type EventView, type RadarSnapshot, type UpcomingSnapshot, type WindowKey } from '../server/view';
@@ -54,7 +54,7 @@ export function reasons(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: 
 
   for (const ev of up.events) {
     if (ev.startAt <= now) continue;
-    for (const o of ['1', 'x', '2'] as Outcome[]) {
+    for (const o of outcomesFor(ev)) {
       const target = betTarget(ev.sport, o, ev.home, ev.away);
       const cur = FEED_BOOKS.filter((b) => isCurrent(ev, b, o, up.books, now, cfg)).map((b) => ({ b, x: ev.books[b]!.outcomes[o]! }));
       if (cur.length < 2) continue;
@@ -135,7 +135,7 @@ export function picks(up: UpcomingSnapshot, radar: RadarSnapshot | null, now: nu
   const best = new Map<number, Pick>();
   for (const ev of up.events) {
     if (ev.startAt <= now || !days.has(dayKey(ev.startAt)) || (opts.filter && !opts.filter(ev))) continue;
-    for (const o of ['1', 'x', '2'] as Outcome[]) {
+    for (const o of outcomesFor(ev)) {
       const list = all.get(key(ev.id, o));
       if (!list?.length) continue;
       const cand: Pick = { ev, outcome: o, reason: list[0]!, all: list };

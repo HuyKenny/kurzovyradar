@@ -1,0 +1,8 @@
+---
+// /tenis/, /basketbal/, /sipky/ … one page per sport (football and hockey keep their own files and share the component).
+import SportPage from '../../components/SportPage.astro';
+import { isSport } from '../../config/competitions';
+const sport = Astro.params.sport;
+if (!isSport(sport)) return Astro.rewrite('/404/');
+---
+<SportPage sport={sport} />

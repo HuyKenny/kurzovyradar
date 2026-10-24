@@ -51,9 +51,12 @@ describe('market classification', () => {
   it('three-way "Výsledek zápasu" is 1x2 in regular time', () => {
     expect(classifyMarket({ name: 'Výsledek zápasu', mySelectionId: '23-WINNER_3W-1' })).toBe('1x2');
   });
-  it('a winner incl. overtime or anything else is not compared', () => {
-    expect(classifyMarket({ name: 'Vítěz zápasu', mySelectionId: '43-WINNER_2W-1' })).toBeNull();
+  it('a two-way "Vítěz zápasu" is its own market (no draw); multi-runner winners and unknown names are not compared', () => {
+    expect(classifyMarket({ name: 'Vítěz zápasu', mySelectionId: '43-WINNER_2W-1' })).toBe('12');
+    expect(classifyMarket({ name: 'Vítěz zápasu do rozhodnutí', mySelectionId: '208-WINNER_2W-0' })).toBe('12');
+    expect(classifyMarket({ name: 'Vítěz', mySelectionId: '49-WINNER_NWAY-a' })).toBeNull();
     expect(classifyMarket({ name: 'Vítěz zápasu včetně prodloužení', mySelectionId: '23-WINNER_2W-1' })).toBeNull();
+    expect(classifyMarket({ name: 'Vítěz zápasu', mySelectionId: '43-WINNER_3W-1' })).toBeNull();
     expect(classifyMarket({ name: 'Výsledek 1. poločasu', mySelectionId: '16-WINNER_3W-1' })).toBeNull();
     expect(classifyMarket(undefined)).toBeNull();
   });
@@ -62,19 +65,33 @@ describe('market classification', () => {
       .toEqual([{ outcome: '2', odds: 3100, enabled: true }, { outcome: 'x', odds: 3400, enabled: true }, { outcome: '1', odds: 2200, enabled: false }]);
     expect(outcomesOf({ opps: [{ type: '1', odd: 2 }, { type: '1', odd: 2.1 }] })).toEqual([]);
   });
+  it('a two-way market needs exactly the outcomes 1 and 2', () => {
+    expect(outcomesOf({ opps: [{ type: '2', odd: 1.9 }, { type: '1', odd: 1.9 }] }, '12')).toEqual([{ outcome: '2', odds: 1900, enabled: true }, { outcome: '1', odds: 1900, enabled: true }]);
+    expect(outcomesOf({ opps: [{ type: '1', odd: 1.9 }] }, '12')).toEqual([]);
+    expect(outcomesOf({ opps: [{ type: '1', odd: 1.9 }, { type: 'x', odd: 3 }, { type: '2', odd: 1.9 }] }, '12')).toEqual([]);
+  });
 });
 
 describe('normalization of a real platform response', () => {
   const out = sample.matches.map((m) => toSource('tipsport', m));
   const names = out.filter(Boolean).map((s) => `${s!.home} - ${s!.away}`);
-  it('keeps pilot head-to-head matches with a 1x2 market', () => {
+  it('keeps head-to-head matches of every sport with a result or winner market', () => {
     expect(names).toContain('Liverpool - Brighton');
     expect(names).toContain('Kladno - Sparta Praha');
     expect(names).toContain('Utah Mammoth - Tampa Bay Lightning');
+    expect(names).toContain('Alcione Milano - Carpi'); // a football league outside the curated list
+    expect(names).toContain('Staeheli Luca - Butulija Boris'); // tennis, two-way winner
   });
-  it('drops specials, outrights, other sports and competitions outside the pilot', () => {
-    expect(names.some((n) => /speciál|Norris|po 22|penalt|Staeheli|Alcione/.test(n))).toBe(false);
-    expect(names).toHaveLength(3);
+  it('a tennis match is a two-way market with its own competition made from the platform name', () => {
+    const t = out.find((s) => s?.home === 'Staeheli Luca')!;
+    expect(t).toMatchObject({ sport: 'tenis', market: '12', competition: 'tenis-itf-shenzhen-033-tvrdy-p', competitionName: 'ITF Shenzhen 033 - tvrdý p.' });
+    expect(t.outcomes.map((o) => o.outcome).sort()).toEqual(['1', '2']);
+    const f = out.find((s) => s?.home === 'Alcione Milano')!;
+    expect(f).toMatchObject({ sport: 'fotbal', market: '1x2', competition: 'fotbal-3-italska-liga', competitionName: '3. italská liga' });
+  });
+  it('drops specials, season-long and multi-runner offers', () => {
+    expect(names.some((n) => /speciál|Norris|po 22|penalt/.test(n))).toBe(false);
+    expect(names).toHaveLength(5);
   });
   it('start time in UTC seconds and odds in thousandths', () => {
     const nhl = out.find((s) => s?.home === 'Utah Mammoth')!;

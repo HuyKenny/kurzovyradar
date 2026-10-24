@@ -9,7 +9,7 @@ import type { Outcome } from '../types';
 import { WINDOWS, type DiffItem, type EventView, type MoveItem, type RadarSnapshot, type WindowKey } from '../view';
 
 export interface TrackedOffer {
-  event: Pick<EventView, 'id' | 'url' | 'home' | 'away' | 'comp' | 'compName' | 'sport' | 'startAt'>;
+  event: Pick<EventView, 'id' | 'url' | 'home' | 'away' | 'comp' | 'compName' | 'sport' | 'startAt' | 'market'>;
   book: FeedBook;
   outcome: Outcome;
   odds: number;
@@ -45,7 +45,7 @@ export function computeRadar(offers: TrackedOffer[], trackingSince: Partial<Reco
           from: { odds: base.odds, at: base.at }, to: { odds: o.odds, at: o.changedAt },
           pct: round2(changePct(base.odds, o.odds)),
           points: [[base.at, base.odds], ...inside.map((h) => [h.at, h.odds] as [number, number])],
-          reason: o.odds < base.odds ? 'drop' : 'rise',
+          reason: o.odds < base.odds ? 'drop' : 'rise', market: o.event.market,
         };
         if (item.reason === 'drop') drops.push(item);
         else {
@@ -79,7 +79,7 @@ export function computeDiffs(offers: TrackedOffer[]): DiffItem[] {
     out.push({
       eventId: hi.event.id, url: hi.event.url, home: hi.event.home, away: hi.event.away, comp: hi.event.comp, compName: hi.event.compName, sport: hi.event.sport,
       startAt: hi.event.startAt, outcome: hi.outcome, high: { book: hi.book, odds: hi.odds }, low: { book: lo.book, odds: lo.odds },
-      pct: round2(changePct(lo.odds, hi.odds)),
+      pct: round2(changePct(lo.odds, hi.odds)), market: hi.event.market,
     });
   }
   return out.sort((a, b) => b.pct - a.pct || a.startAt - b.startAt).slice(0, LIMIT);

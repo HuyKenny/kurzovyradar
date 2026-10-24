@@ -11,7 +11,7 @@ import Icon from './Icon.astro';
 import Sparkline from './Sparkline.astro';
 interface Props { f: Finding; now: number; checkedAt: number | null; back?: string; compact?: boolean }
 const { f, now, checkedAt, back, compact = false } = Astro.props;
-const href = betUrl(f.url, f.outcome, back, { period: f.window ?? null, finding: f.kind });
+const href = betUrl(f.url, f.outcome, back, { period: f.window ?? null, finding: f.kind, market: f.market });
 const txt = findingText(f, now, checkedAt);
 const follow = JSON.stringify({ id: f.eventId, outcome: f.outcome, url: f.url, home: f.home, away: f.away, startAt: f.startAt, comp: f.compName, sport: f.sport,
   label: outcomeLabel(f.sport, f.outcome, f.home, f.away), odds: currentOdds(f) });

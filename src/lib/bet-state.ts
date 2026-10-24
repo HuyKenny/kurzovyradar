@@ -2,7 +2,7 @@
  * The one chosen bet of a match page, as a state that lives in the URL. Pure (no Workers or DOM imports), so the
  * server renders the initial state from the query and src/scripts/bet.ts keeps every part of the page on the same one.
  *
- *   ?trh=1x2&vysledek=1|x|2&vklad=250&obdobi=1h|6h|24h|3d|vse&zjisteni=rust|pokles|rozdil|max&zpet=/radar/…
+ *   ?trh=1x2|12&vysledek=1|x|2&vklad=250&obdobi=1h|6h|24h|3d|vse&zjisteni=rust|pokles|rozdil|max&zpet=/radar/…
  *
  * `tip` (the old calculator parameter) is still read as an alias of `vysledek`, so existing links keep working.
  */
@@ -14,6 +14,9 @@ export const PERIOD_KEYS = ['1h', '6h', '24h', '3d', 'vse'] as const;
 export type PeriodKey = (typeof PERIOD_KEYS)[number];
 export const FINDINGS = ['rust', 'pokles', 'rozdil', 'max'] as const;
 export type FindingKey = (typeof FINDINGS)[number];
+
+export type TrhKey = '1x2' | '12';
+export const trhOf = (market: string | undefined): TrhKey => (market === '12' ? '12' : '1x2');
 
 export interface BetState {
   outcome: Outcome;
@@ -48,10 +51,10 @@ export function parseBetState(q: URLSearchParams, fallback: Outcome): BetState {
 }
 
 /** Writes the state into a copy of `base`, leaving every other parameter (zpet, utm, …) untouched. */
-export function withBetState(base: URLSearchParams, s: Pick<BetState, 'outcome' | 'stake'> & Partial<Pick<BetState, 'period' | 'finding'>>): URLSearchParams {
+export function withBetState(base: URLSearchParams, s: Pick<BetState, 'outcome' | 'stake'> & Partial<Pick<BetState, 'period' | 'finding'>> & { market?: string }): URLSearchParams {
   const p = new URLSearchParams(base);
   p.delete('tip');
-  p.set('trh', '1x2');
+  p.set('trh', trhOf(s.market));
   p.set('vysledek', s.outcome);
   p.set('vklad', String(s.stake));
   if (s.period) p.set('obdobi', s.period); else p.delete('obdobi');

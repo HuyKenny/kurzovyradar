@@ -7,7 +7,7 @@ import type { EventView, UpcomingSnapshot } from '../server/view';
 export function eventJson(e: EventView, up: UpcomingSnapshot, t: number, c: Settings) {
   const v = ticketView(e, up.books, t, c);
   return {
-    id: e.id, url: e.url, home: e.home, away: e.away, comp: e.comp, compName: e.compName, sport: e.sport, startAt: e.startAt, started: e.startAt <= t,
+    id: e.id, url: e.url, home: e.home, away: e.away, comp: e.comp, compName: e.compName, sport: e.sport, startAt: e.startAt, started: e.startAt <= t, market: e.market,
     checkedAt: v.checkedAt,
     outcomes: Object.fromEntries(v.outcomes.map((o) => [o.outcome, {
       who: o.who,
