@@ -129,6 +129,9 @@ export function snapshotJson(s: UpcomingSnapshot, max = SNAPSHOT_MAX_BYTES): str
     events = events.slice(0, Math.floor(events.length * 0.9));
     json = lean({ ...s, events });
   }
+  // Visible in the Worker logs long before matches silently disappear from the site (a split of the snapshot is the next step).
+  if (events.length < s.events.length) console.error('snapshot truncated', events.length, 'of', s.events.length, 'events');
+  else if (json.length > max * 0.8) console.warn('snapshot at', Math.round((json.length / max) * 100), '% of its limit,', s.events.length, 'events');
   return json;
 }
 

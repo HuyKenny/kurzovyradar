@@ -183,5 +183,8 @@
     .btn--sm, .chip, .seg > a, .seg > label > span, .souhlas__odkaz, .pata-cookies { min-height: 44px; }
     .fav { min-width: 44px; }
     footer ul a { display: inline-flex; align-items: center; min-height: 44px; }
+    /* Text links that are tap targets in their own right: a taller hit area with the layout unchanged (padding offset by a negative margin). */
+    nav[aria-label="Drobečková navigace"] a, .ticket a:not(.btn), h2 > a, h3 > a { display: inline-block; padding-block: 12px; margin-block: -12px; }
+    summary { display: flex; align-items: center; min-height: 44px; }
   }
 }
