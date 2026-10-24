@@ -5,6 +5,7 @@ import FreshNote from '../../components/FreshNote.astro';
 import Icon from '../../components/Icon.astro';
 import { SPORTS, competitionBySlug, stubColor, isSport, type Sport } from '../../config/competitions';
 import { competitionsIn } from '../../lib/catalog';
+import { COMP_EXTRA } from '../../config/comp-extra';
 import { ON_SPORTSTREAMY, ON_ZIVEPRENOSY, SPORTSTREAMY, ZIVEPRENOSY } from '../../config/sister';
 import PicksStrip from '../../components/PicksStrip.astro';
 import { picks as pickList } from '../../lib/picks';
@@ -26,13 +27,15 @@ else {
 }
 if (!c) return Astro.rewrite('/404/');
 const S = SPORTS[c.sport];
+const extra = COMP_EXTRA[c.slug];
 const siblings = competitionsIn(all.filter((e) => e.sport === c!.sport)).filter((x) => x.slug !== c!.slug).slice(0, 30);
 const chosen = pickList(up, rd, t, cfg, 3, { filter: (e) => e.comp === c!.slug });
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
 <Base title={`${c.name} – kurzy a jejich vývoj | KurzovýRadar`}
   description={`Kurzy na zápasy soutěže ${c.name}${c.country ? ` (${c.country})` : ''}: Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný a zaznamenané změny kurzů.`}
-  noindex={events.length === 0} crumbs={[{ name: S.name, url: S.path }, { name: c.name, url: `/souteze/${c.slug}/` }]}>
+  noindex={events.length === 0} crumbs={[{ name: S.name, url: S.path }, { name: c.name, url: `/souteze/${c.slug}/` }]}
+  schema={extra ? [{ '@type': 'FAQPage', mainEntity: extra.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }] : []}>
   <div class="wrap pt-6">
     <p class="eyebrow m-0">{S.name}{c.country && <> · {c.country}</>}</p>
     <h1 class="mt-2 mb-0"><span class="inline-block px-3 rounded-[10px] border-2 border-ink" style={`background:${c.color}`}>{c.name}</span>: kurzy</h1>
@@ -50,6 +53,14 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         {ON_SPORTSTREAMY[c.slug] && <>Kde zápasy {c.name} sledovat a jaký je program přenosů najdeš na <a href={`${SPORTSTREAMY}${ON_SPORTSTREAMY[c.slug]}`}>sportstreamy.cz</a> (náš sesterský web). </>}
         {ON_ZIVEPRENOSY[c.slug] && <>Slovenské vysielanie: <a href={`${ZIVEPRENOSY}${ON_ZIVEPRENOSY[c.slug]}`} rel="nofollow noopener" hreflang="sk" lang="sk">ziveprenosy.sk</a>.</>}
       </p>
+    )}
+    {extra && (
+      <section class="mt-10 max-w-[72ch] prose" aria-labelledby="h-about">
+        <h2 id="h-about">O soutěži {c.name}</h2>
+        {extra.intro.map((p) => <p>{p}</p>)}
+        <h2>Časté otázky</h2>
+        {extra.faq.map((f) => <details class="faq"><summary class="font-display font-bold cursor-pointer">{f.q}</summary><p class="mt-2">{f.a}</p></details>)}
+      </section>
     )}
     <nav class="mt-12" aria-labelledby="h-sib">
       <h2 id="h-sib" class="text-xl">Další soutěže – {S.name.toLowerCase()}</h2>

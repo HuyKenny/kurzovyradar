@@ -26,6 +26,7 @@ export const GET: APIRoute = async () => {
     ...BONUSES.filter((b) => isFresh(b, Date.now())).map((b) => ({ loc: `/bonusy/${b.book}/` })),
     { loc: '/sazkove-kancelare/' },
     { loc: '/sazkove-kancelare/srovnani/' },
+    { loc: '/sazkove-kancelare/legalni/' },
     { loc: '/sazkove-kancelare/tipsport-vs-chance/' },
     ...BOOKMAKERS.filter((b) => b.review === 'published' || b.review === 'info').map((b) => ({ loc: `/sazkove-kancelare/${b.id}/` })),
     { loc: '/pojem/' },

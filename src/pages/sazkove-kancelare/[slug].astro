@@ -34,7 +34,7 @@ const faq = [
   <div class="not-prose flex flex-wrap items-center gap-4">
     <BookLogo id={b.id} h={40} lazy={false} />
     {b.affiliate === 'approved' && <a class="btn" href={`/go/${b.id}/?p=recenze`} rel="sponsored nofollow">Přejít na {r.web}<Icon name="external-link" size={16} /></a>}
-    {info && <a class="btn btn--ghost" href={b.site} rel="nofollow noopener" target="_blank">Oficiální web {r.web}<Icon name="external-link" size={16} /></a>}
+    {info && b.site && <a class="btn btn--ghost" href={b.site} rel="nofollow noopener" target="_blank">Oficiální web {r.web}<Icon name="external-link" size={16} /></a>}
   </div>
   {bonus && <div class="not-prose mt-6 max-w-[720px]"><BonusCard b={bonus} placement="bonus-recenze" /></div>}
   <div class="strucne not-prose mt-6">
@@ -78,6 +78,7 @@ const faq = [
   <ul>
     {bonus && <li><a href={`/bonusy/${b.id}/`}>Vstupní bonus {b.name}: podmínky a prosázení</a></li>}
     <li><a href="/sazkove-kancelare/srovnani/">Srovnání všech kanceláří v tabulce</a></li>
+    <li><a href="/sazkove-kancelare/legalni/">Legální sázkové kanceláře podle Ministerstva financí</a></li>
     {(r.id === 'tipsport' || r.id === 'chance') && <li><a href="/sazkove-kancelare/tipsport-vs-chance/">Tipsport vs Chance</a></li>}
     <li><a href="/pruvodce/jak-poznat-legalni-sazkovou-kancelar/">Jak poznat legální sázkovou kancelář</a></li>
     <li><a href="/pojem/cashout/">Co je cashout</a></li>

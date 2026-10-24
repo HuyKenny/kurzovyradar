@@ -1,0 +1,54 @@
+---
+// Which bookmakers may offer betting in the Czech Republic: copied from the Ministry of Finance list, nothing added from memory.
+import Article from '../../../components/Article.astro';
+import { BETTING_OPERATORS, NOT_IN_LIST, MF_LIST_URL, MF_PAGE_URL } from '../../../config/mf-list';
+export const prerender = true;
+const d = new Date('2026-10-24');
+const cz = (iso: string | null) => (iso ? `${Number(iso.slice(8))}. ${Number(iso.slice(5, 7))}. ${iso.slice(0, 4)}` : '–');
+const faq = [
+  { q: 'Které sázkové kanceláře jsou v Česku legální?', a: `Podle seznamu Ministerstva financí ke dni 1. 10. 2026 má povolení pro kurzové sázky ${BETTING_OPERATORS.length} provozovatelů: ${BETTING_OPERATORS.map((o) => o.brand).join(', ')}.` },
+  { q: 'Jak poznám, že je sázková kancelář legální?', a: 'Provozovatel musí být v seznamu provozovatelů hazardních her Ministerstva financí a u kurzových sázek mít v tabulce uvedený internet nebo pobočky. V seznamu vyhledej adresu webu kanceláře.' },
+  { q: 'Je bet365 legální v Česku?', a: 'V seznamu Ministerstva financí k 1. 10. 2026 žádný provozovatel s touto značkou nefiguruje. Aktuální stav ověř v seznamu, protože se mění.' },
+  { q: 'Má Betor povolení na kurzové sázky?', a: 'V seznamu je u provozovatele Betoru (TRELANGEN a.s.) uvedená jen internetová technická hra. Kurzové sázky tam uvedené nejsou.' },
+  { q: 'Jak často se seznam mění?', a: 'Ministerstvo ho aktualizuje průběžně. My jsme údaje opsali ze seznamu ke dni 1. 10. 2026 a kontrolujeme je při změnách.' },
+];
+---
+<Article art="kancelar" title="Legální sázkové kanceláře v ČR: seznam podle Ministerstva financí" metaTitle="Legální sázkové kanceláře v ČR – seznam MF (2026) | KurzovýRadar"
+  description="Které sázkové kanceláře mají v Česku povolení pro kurzové sázky: Tipsport, Chance, Fortuna, Allwyn, Betano, SYNOTtip a další. Opsáno ze seznamu Ministerstva financí ke dni 1. 10. 2026, včetně toho, koho v seznamu u kurzových sázek nenajdeš."
+  lead="Kurzové sázky smí v Česku nabízet jen provozovatel s povolením. Tady je seznam z Ministerstva financí přehledně: kdo ho má, od kdy a kdo v něm u kurzových sázek chybí."
+  crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: 'Legální kanceláře', url: '/sazkove-kancelare/legalni/' }]}
+  published={d} updated={d} checked={d} schemaType="Article" faq={faq}
+  extraSchema={[{ '@type': 'ItemList', name: 'Provozovatelé s povolením pro kurzové sázky (MF, 1. 10. 2026)', itemListElement: BETTING_OPERATORS.map((o, i) => ({ '@type': 'ListItem', position: i + 1, name: o.brand })) }]}>
+  <div class="strucne"><p class="m-0"><strong>Stručně:</strong> podle seznamu Ministerstva financí ke dni 1. 10. 2026 má povolení pro kurzové sázky {BETTING_OPERATORS.length} provozovatelů. Značky, které tam u kurzových sázek nejsou (třeba bet365 nebo Betor), v tabulce níže nenajdeš. Nehodnotíme, která je lepší: jen říkáme, kdo smí sázky nabízet.</p></div>
+  <h2>Seznam provozovatelů s povolením pro kurzové sázky</h2>
+  <div class="not-prose overflow-x-auto">
+    <table class="w-full text-[0.95rem]">
+      <caption class="sr">Provozovatelé s povolením pro kurzové sázky podle seznamu Ministerstva financí</caption>
+      <thead><tr><th scope="col">Značka a web</th><th scope="col">Provozovatel</th><th scope="col">IČ</th><th scope="col">Internet od</th><th scope="col">Pobočky od</th></tr></thead>
+      <tbody>
+        {BETTING_OPERATORS.map((o) => (
+          <tr>
+            <th scope="row">{o.page ? <a href={o.page}>{o.brand}</a> : o.brand}<br /><span class="font-normal text-ink-2">{o.web}</span></th>
+            <td>{o.operator}<br /><span class="text-ink-2">{o.seat}</span></td>
+            <td class="num">{o.ico}</td>
+            <td>{cz(o.internet)}</td>
+            <td>{cz(o.landBased)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-sm text-ink-2">Datum znamená právní moc povolení pro danou formu podle seznamu. Pomlčka u poboček znamená, že seznam u provozovatele kurzové sázky na pobočkách neuvádí. Zdroj: <a href={MF_LIST_URL} rel="nofollow noopener" target="_blank">seznam provozovatelů ke dni 1. 10. 2026 (XLSX)</a>, <a href={MF_PAGE_URL} rel="nofollow noopener" target="_blank">stránka Ministerstva financí</a>.</p>
+  <h2>Značky, které v seznamu u kurzových sázek nenajdeš</h2>
+  <p>Hledáš-li konkrétní značku a není v tabulce výše, najdeš ji tady, pokud ji lidé často hledají. U každé je napsáno jen to, co seznam skutečně uvádí.</p>
+  <ul>{NOT_IN_LIST.map((n) => <li><strong>{n.page ? <a href={n.page}>{n.brand}</a> : n.brand}:</strong> {n.note}</li>)}</ul>
+  <h2>Jak si to ověříš sám</h2>
+  <ol>
+    <li>Otevři seznam provozovatelů na stránce <a href={MF_PAGE_URL} rel="nofollow noopener" target="_blank">Ministerstva financí</a>.</li>
+    <li>Najdi adresu webu kanceláře (například tipsport.cz). U legálního provozovatele je uvedená u druhu hry, který nabízí.</li>
+    <li>U kurzových sázek se dívej na sloupec „Kursové sázky“ (pobočky nebo internet).</li>
+    <li>Pokud tam web není, kancelář podle seznamu povolení pro kurzové sázky nemá. Aktuální stav seznamu se mění, proto ho kontroluj při registraci.</li>
+  </ol>
+  <h2>Co z toho neplyne</h2>
+  <p>Seznam říká, kdo má povolení, ne kdo nabízí lepší kurzy nebo férovější podmínky. Podmínky kanceláří porovnáváme jinde: <a href="/sazkove-kancelare/srovnani/">srovnání kanceláří</a>, <a href="/bonusy/">vstupní bonusy</a> a <a href="/pruvodce/jak-poznat-legalni-sazkovou-kancelar/">jak poznat legální kancelář</a>. Sázení je placená zábava. <a href="/odpovedne-hrani/">Odpovědné hraní</a>.</p>
+</Article>

@@ -24,6 +24,10 @@ export const ON_SPORTSTREAMY: Record<string, string> = {
   'maxa-liga': '/hokej-online/maxa-liga/',
   'nhl': '/hokej-online/nhl/',
   'tipos-extraliga': '/hokej-online/slovenska-extraliga/',
+  'basketbal-nba': '/basketbal-online/nba/',
+  'americky-fotbal-nfl': '/americky-fotbal-online/nfl/',
+  'bojove-sporty-clash': '/bojove-sporty-online/clash/',
+  'hokej-ahl': '/hokej-online/ahl/',
 };
 
 /** Slovak competitions → path on ziveprenosy.sk (Slovak-language sister site). */

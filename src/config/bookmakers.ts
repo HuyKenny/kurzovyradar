@@ -6,7 +6,7 @@
  *               no rating and no bonus figures (Fortuna, Betano, Sazkabet, fBET, SYNOTtip, KingsBet)
  * Link targets live in wrangler vars (TIPSPORT_URL, CHANCE_URL, ALLWYN_URL, MERKURXTIP_URL) and are read only by /go/.
  */
-export type BookId = 'tipsport' | 'chance' | 'allwyn' | 'merkurxtip' | 'fortuna' | 'betano' | 'sazkabet' | 'fbet' | 'synottip' | 'kingsbet';
+export type BookId = 'tipsport' | 'chance' | 'allwyn' | 'merkurxtip' | 'fortuna' | 'betano' | 'sazkabet' | 'fbet' | 'synottip' | 'kingsbet' | 'betx' | 'betor' | 'bet365';
 export type FeedBook = 'tipsport' | 'chance';
 
 export interface Bookmaker {
@@ -45,6 +45,13 @@ export const BOOKMAKERS: Bookmaker[] = [
     logo: null, site: 'https://www.synottip.cz' },
   { id: 'kingsbet', name: 'KingsBet', locative: 'u KingsBetu', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#c8a24a',
     logo: null, site: 'https://www.kingsbet.cz' },
+  // Overviews of brands people search for, written from the MF list only (see config/mf-list.ts): not partners, no feed.
+  { id: 'betx', name: 'BETX', locative: 'u BETX', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#6b2cff',
+    logo: null, site: 'https://www.bet-x.cz' },
+  { id: 'betor', name: 'Betor', locative: 'u Betoru', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#c0392b',
+    logo: null, site: 'https://www.betor.cz' },
+  { id: 'bet365', name: 'bet365', locative: 'u bet365', oddsFeed: 'none', affiliate: 'none', review: 'info', color: '#027b5b',
+    logo: null, site: '' },
 ];
 
 export const BOOK = Object.fromEntries(BOOKMAKERS.map((b) => [b.id, b])) as Record<BookId, Bookmaker>;
