@@ -140,3 +140,6 @@ Podrobnosti: `docs/ASSETS.md` (vizuály a jejich původ), `docs/CAPACITY.md` (m�
 - **Čerstvost:** čísla se zobrazí 21 dní po `verifiedAt`, pak je nahradí odkaz na kancelář. Stránky s bonusy jsou proto server-rendered (ne prerender). Týdně: `node --experimental-strip-types scripts/kurzovyradar-bonusy-over.mjs` (Chance) a Apify web-fetch `https://www.tipsport.cz/bonusy/vstupni-bonus` s `wait: 9000` (Tipsport je JS a blokuje Malinu), pak aktualizovat `verifiedAt`.
 - **Měření:** `/go/<kancelář>/?p=` — `bonus-home`, `bonus-stranka`, `bonus-recenze`, `bonus-detail` (Analytics Engine `CLICKS`, blob 2 = placement).
 - Otevřené: Tipsport uvádí na banneru „1 000 Kč za registraci“, na kartě Registrační bonus 500 Kč; web cituje oba údaje. Potvrdit složení z partnerského panelu.
+
+## Měření (GA4)
+GA4 `G-1CXMKBC3YF` (`SITE.ga4`) se načte jen po souhlasu: `src/components/Souhlas.astro` (lišta s rovnocenným „Odmítnout vše“, volba v localStorage `kurzovyradar-souhlas` na 6 měsíců, bez souhlasu se gtag.js vůbec nenačte, odvolání smaže `_ga*`). Prokliky `/go/…` se po souhlasu posílají i jako událost `affiliate_click` (partner, placement, page); serverové počítání v Analytics Engine zůstává hlavní zdroj. CSP povoluje jen googletagmanager a google-analytics (`src/lib/security.ts`). Texty: `/cookies/`, `/soukromi/`.

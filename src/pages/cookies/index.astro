@@ -3,10 +3,12 @@ import Article from '../../components/Article.astro';
 export const prerender = true;
 const d = new Date('2026-10-23');
 ---
-<Article title="Cookies" metaTitle="Cookies | KurzovýRadar" description="KurzovýRadar nepoužívá analytické ani reklamní cookies. Sledované položky jsou uložené jen v prohlížeči."
+<Article title="Cookies" metaTitle="Cookies | KurzovýRadar" description="Jaké cookies KurzovýRadar používá: nezbytné úložiště vždy, Google Analytics jen s tvým souhlasem. Souhlas můžeš kdykoli změnit."
   crumbs={[{ name: 'Cookies', url: '/cookies/' }]} published={d} updated={d}>
-  <p>KurzovýRadar <strong>nepoužívá analytické ani reklamní cookies</strong>, a proto se tě na souhlas neptáme.</p>
+  <p>KurzovýRadar používá <strong>analytické cookies (Google Analytics) jen s tvým souhlasem</strong>. Reklamní cookies nepoužíváme. Bez souhlasu se nic neměří a služba Google se ani nenačte.</p>
   <ul>
+    <li><strong>Statistika (jen se souhlasem):</strong> Google Analytics 4 (cookies <code>_ga</code> a <code>_ga_*</code>, platnost podle Google až 2 roky) měří návštěvnost a prokliky na partnery, abychom viděli, které stránky ti pomáhají. Nevyužíváme reklamní funkce ani personalizaci. Souhlas můžeš kdykoli změnit nebo odvolat přes <button type="button" class="underline" data-souhlas-otevri>Nastavení cookies</button>. Odvolání smaže cookies Google Analytics.</li>
+    <li><strong>Tvá volba</strong> se uloží do úložiště prohlížeče (localStorage) na 6 měsíců.</li>
     <li><strong>Sledované sázky, zápasy a soutěže</strong> ukládáme do úložiště tvého prohlížeče (localStorage), ne do cookies. Data zůstávají jen u tebe.</li>
     <li>Poskytovatel infrastruktury Cloudflare může při podezřelém provozu nastavit nezbytnou bezpečnostní cookie k ochraně webu před roboty.</li>
     <li>Po přechodu na web sázkové kanceláře platí její vlastní zásady cookies.</li>

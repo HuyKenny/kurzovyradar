@@ -10,7 +10,7 @@ export const SITE = {
   /** Who writes and checks the editorial pages. */
   editor: 'Redakce KurzovéhoRadaru',
   /** GA4 measurement ID; empty = no analytics and no cookie bar. */
-  ga4: '',
+  ga4: 'G-1CXMKBC3YF',
   timeZone: 'Europe/Prague',
 };
 
