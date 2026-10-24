@@ -106,7 +106,7 @@ Zóna: SSL strict, `browser_cache_ttl` 0, WAF (blok CN, skenerů a bezcenných c
 5. **Souhlas Tipsportu** s dalším webem nad jejich API. Kenny zvolil vlastní volání (2× token + 2× hromadný dotaz za 15 min).
 6. **Fortuna, Betano:** API ani partnerství nejsou.
 7. **Brand kity log:** loga Tipsport/Chance jsou ze souborů portfolia (oficiální dlaždice), Allwyn z jejich webu. Viz `docs/ASSETS.md`.
-8. **GA4:** nenasazeno (bez měření, bez cookie lišty). Pokud bude chtít, doplnit `SITE.ga4` a převzít cookie lištu z freespiny.
+8. **GA4:** nasazeno 24. 10. 2026 (G-1CXMKBC3YF, jen po souhlasu, viz sekce Měření níže).
 
 Podrobnosti: `docs/ASSETS.md` (vizuály a jejich původ), `docs/CAPACITY.md` (měření a odhad kapacity).
 
