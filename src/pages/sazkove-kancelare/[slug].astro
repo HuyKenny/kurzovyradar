@@ -3,7 +3,7 @@ import Article from '../../components/Article.astro';
 import BookLogo from '../../components/BookLogo.astro';
 import Icon from '../../components/Icon.astro';
 import { BOOK } from '../../config/bookmakers';
-import { REVIEWS } from '../../config/reviews';
+import { REVIEWS, SECTION_TITLES, type SectionKey } from '../../config/reviews';
 import BonusCard from '../../components/BonusCard.astro';
 import { bonusOf } from '../../config/bonuses';
 import { cacheHeader } from '../../lib/data';
@@ -15,11 +15,22 @@ const info = b.review === 'info';
 const bonus = b.affiliate === 'approved' ? bonusOf(b.id) : undefined;
 Astro.response.headers.set('Cache-Control', cacheHeader()); // factual overview: no rating, no bonus figures, no partner link
 const checked = new Date(r.checked);
+const sections = (Object.keys(SECTION_TITLES) as SectionKey[]).filter((k) => r.more?.[k]?.length);
+const stripLabel = (s: string) => s.replace(/[.!?]+$/, '');
+// FAQ from confirmed points only: each answer is the same visible text as in the section below.
+const faqOf = (k: SectionKey, q: string) => r.more?.[k]?.length ? [{ q, a: r.more[k]!.map((p) => stripLabel(p.text)).join('. ') + '.' }] : [];
+const faq = [
+  ...faqOf('registrace', `Jak se zaregistrovat ${b.locative}?`),
+  ...faqOf('aplikace', `Má ${b.name} mobilní aplikaci?`),
+  ...faqOf('platby', `Jak se u ${b.name} vkládá a vybírá?`),
+  { q: `Je ${b.name} legální v ČR?`, a: `${r.operator} (IČ ${r.ico}) je podle seznamu Ministerstva financí ČR držitelem povolení. Seznam je uvedený ve zdrojích níže.` },
+  ...(b.oddsFeed === 'active' ? [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: 'Ano, kurzy sledujeme každých 15 minut a ukazujeme je u každého zápasu vedle ostatních kanceláří.' }] : [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: 'Zatím ne, kurzy této kanceláře nemáme připojené, takže je ve srovnání nebudeš hledat.' }]),
+];
 ---
 <Article art="kancelar" title={info ? `${b.name}: přehled sázkové kanceláře` : `${b.name}: recenze sázkové kanceláře`} metaTitle={info ? `${b.name} – přehled, provozovatel a licence | KurzovýRadar` : `${b.name} – recenze, licence a kurzy | KurzovýRadar`}
   description={`${b.name}: provozovatel ${r.operator}, licence Ministerstva financí, nabídka a omezení. ${b.oddsFeed === 'active' ? 'Kurzy sledujeme a porovnáváme.' : 'Kurzy zatím nesledujeme.'}`}
   lead={r.summary} crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: b.name, url: `/sazkove-kancelare/${b.id}/` }]}
-  published={checked} updated={checked} checked={checked} schemaType="Article">
+  published={checked} updated={checked} checked={checked} schemaType="Article" faq={faq}>
   <div class="not-prose flex flex-wrap items-center gap-4">
     <BookLogo id={b.id} h={40} lazy={false} />
     {b.affiliate === 'approved' && <a class="btn" href={`/go/${b.id}/?p=recenze`} rel="sponsored nofollow">Přejít na {r.web}<Icon name="external-link" size={16} /></a>}
@@ -44,7 +55,11 @@ const checked = new Date(r.checked);
   <p>{r.onSite} {b.oddsFeed === 'active' && <a href="/kurzy/">Srovnání kurzů</a>}</p>
   <h2>{info ? 'Co kancelář uvádí o své nabídce' : 'Co nabízí'}</h2>
   <ul>{r.features.map((f) => <li>{f}</li>)}</ul>
-  {info && r.unverified && r.unverified.length > 0 && (<>
+  {sections.map((k) => (<>
+    <h2>{SECTION_TITLES[k]}</h2>
+    <ul>{r.more![k]!.map((p) => <li>{p.text}{p.url && <> <a href={p.url} rel="nofollow noopener" target="_blank" class="text-sm">zdroj</a></>}</li>)}</ul>
+  </>))}
+  {r.unverified && r.unverified.length > 0 && (<>
     <h2>Co jsme neověřili</h2>
     <p>Tohle jsme hledali a nepotvrdili jsme to z oficiálních zdrojů, proto to tady není. Chybějící údaj neznamená, že to kancelář nemá.</p>
     <ul>{r.unverified.map((u) => <li>{u}</li>)}</ul>
@@ -59,6 +74,14 @@ const checked = new Date(r.checked);
   </div>
   <p class="text-sm text-ink-2">Nehodnotíme hvězdičkami. Vstupní bonus porovnáváme na stránce <a href="/bonusy/">Bonusy</a>. Podmínky bonusů a akcí se mění, platné znění najdeš vždy přímo u kanceláře.{b.affiliate === 'approved' && ' Odkaz na kancelář je partnerský – při registraci můžeme dostat provizi.'}</p>
   </>)}
+  <h2>Další na KurzovémRadaru</h2>
+  <ul>
+    {bonus && <li><a href={`/bonusy/${b.id}/`}>Vstupní bonus {b.name}: podmínky a prosázení</a></li>}
+    <li><a href="/sazkove-kancelare/srovnani/">Srovnání všech kanceláří v tabulce</a></li>
+    {(r.id === 'tipsport' || r.id === 'chance') && <li><a href="/sazkove-kancelare/tipsport-vs-chance/">Tipsport vs Chance</a></li>}
+    <li><a href="/pruvodce/jak-poznat-legalni-sazkovou-kancelar/">Jak poznat legální sázkovou kancelář</a></li>
+    <li><a href="/pojem/cashout/">Co je cashout</a></li>
+  </ul>
   <h2>Zdroje</h2>
   <ul>{r.sources.map((s) => <li><a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></li>)}</ul>
 </Article>

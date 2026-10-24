@@ -17,7 +17,7 @@ const EXTRA: Record<string, { app: string; bankId: string }> = {
   kingsbet: { app: 'iOS, Android', bankId: 'ano' },
 };
 const checked = new Date('2026-10-24');
-const LABELS = ['Ověření totožnosti', 'Platební prostředek', 'Vklad (podle herního plánu)', 'Výběr (podle herního plánu)', 'Mobil a orientace v nabídce'];
+const LABELS = ['Ověření totožnosti', 'Platební prostředek', 'Vklad (nápověda 24. 10. 2026)', 'Výběr (nápověda 24. 10. 2026)', 'Aplikace'];
 const fact = (id: string, label: string) => reviewOf(id)?.facts.find((f) => f.label === label)?.value ?? '–';
 const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
 ---
@@ -52,7 +52,7 @@ const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
     <table class="w-full text-[0.95rem]">
       <caption class="sr">Tipsport a Chance v praxi</caption>
       <thead><tr><th scope="col">Téma</th><th scope="col">Tipsport</th><th scope="col">Chance</th></tr></thead>
-      <tbody>{LABELS.map((l) => <tr><th scope="row">{l.replace(' (podle herního plánu)', '')}</th><td>{fact('tipsport', l)}</td><td>{fact('chance', l)}</td></tr>)}</tbody>
+      <tbody>{LABELS.map((l) => <tr><th scope="row">{l.replace(' (nápověda 24. 10. 2026)', '')}</th><td>{fact('tipsport', l)}</td><td>{fact('chance', l)}</td></tr>)}</tbody>
     </table>
   </div>
   <p class="text-sm text-ink-2">Zdroje: <a href="https://minshara.tipsport.cz/datafiles/hp-tipsportnet-as-01042019-cz-1554208441.pdf" rel="nofollow noopener" target="_blank">herní plán Tipsportu</a>, <a href="https://home.chance.cz/datafiles/hp-internet-chance.pdf" rel="nofollow noopener" target="_blank">herní plán Chance</a>. Údaj o mobilu a orientaci v nabídce jsme z oficiálního zdroje neověřili, proto ho nehodnotíme.</p>

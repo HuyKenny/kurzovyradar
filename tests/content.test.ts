@@ -12,6 +12,12 @@ describe('bookmaker overview pages', () => {
     for (const b of BOOKMAKERS.filter((x) => x.review === 'published' || x.review === 'info')) expect(REVIEWS.some((r) => r.id === b.id), b.id).toBe(true);
     for (const r of REVIEWS) expect(['published', 'info'], r.id).toContain(BOOKMAKERS.find((b) => b.id === r.id)?.review);
   });
+  it('checked statements: every one has a source page and none promises a bonus, a rating or a result', () => {
+    for (const r of REVIEWS) for (const [k, pts] of Object.entries(r.more ?? {})) for (const p of pts) {
+      expect(p.url, `${r.id}.${k}`).toMatch(/^https:\/\//);
+      expect(p.text, `${r.id}.${k}`).not.toMatch(/bonus|promo|free ?spin|zdarma|hvězd|testovali jsme|nejlepší|určitě|zaručen/i);
+    }
+  });
   it('an overview ("info") never has a partner link, a feed, a rating or a bonus figure', () => {
     for (const b of BOOKMAKERS.filter((x) => x.review === 'info')) {
       expect(b.affiliate, b.id).toBe('none');
