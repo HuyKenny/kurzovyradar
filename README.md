@@ -95,7 +95,7 @@ PROBE_DIR=… pnpm exec vitest run tests/probe.test.ts   # suchý běh nad ulož
 
 ⚠️ **Vždy `-c dist/server/wrangler.json`.** Astro po každém buildu přesměruje `.wrangler/deploy/config.json` na poslední build. Po `pnpm demo` by holý `wrangler deploy` nasadil demo. Skript to hlídá (kontroluje `ENVIRONMENT=production`).
 
-Zóna: SSL strict, `browser_cache_ttl` 0, WAF (blok CN, skenerů a bezcenných crawlerů) a rate limit `/api/` + `/hledat/` zkopírované ze sportstreamy. Email Routing `info@` → h@huy.cz, DMARC `p=none`, GSC ověřeno DNS TXT (`scripts/kurzovyradar/gsc-setup.py`), IndexNow z Maliny (`bin/indexnow.py kurzovyradar`, cron :55).
+Zóna: SSL strict, `browser_cache_ttl` 0, WAF (blok CN, skenerů a bezcenných crawlerů) a rate limit `/api/` + `/hledat/` zkopírované ze sportstreamy. Email Routing `info@` → napis@sbalit.cz (od 24. 10. 2026), DMARC `p=reject`, GSC ověřeno DNS TXT (`scripts/kurzovyradar/gsc-setup.py`), IndexNow z Maliny (`bin/indexnow.py kurzovyradar`, cron :55).
 
 ## Zbývající podklady (pro Kennyho)
 
