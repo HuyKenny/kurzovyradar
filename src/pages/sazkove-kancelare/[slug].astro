@@ -3,14 +3,17 @@ import Article from '../../components/Article.astro';
 import BookLogo from '../../components/BookLogo.astro';
 import Icon from '../../components/Icon.astro';
 import { BOOK } from '../../config/bookmakers';
-import { REVIEWS, type Review } from '../../config/reviews';
-export const prerender = true;
-export function getStaticPaths() {
-  return REVIEWS.filter((r) => BOOK[r.id].review !== 'none' && BOOK[r.id].review !== 'draft').map((r) => ({ params: { slug: r.id }, props: { r } }));
-}
-const { r } = Astro.props as { r: Review };
+import { REVIEWS } from '../../config/reviews';
+import BonusCard from '../../components/BonusCard.astro';
+import { bonusOf } from '../../config/bonuses';
+import { cacheHeader } from '../../lib/data';
+// Server-rendered (not prerendered): the bonus box shows figures only while the check is recent, which depends on today's date.
+const r = REVIEWS.find((x) => x.id === Astro.params.slug && BOOK[x.id].review !== 'none' && BOOK[x.id].review !== 'draft');
+if (!r) return Astro.rewrite('/404/');
 const b = BOOK[r.id];
-const info = b.review === 'info'; // factual overview: no rating, no bonus figures, no partner link
+const info = b.review === 'info';
+const bonus = b.affiliate === 'approved' ? bonusOf(b.id) : undefined;
+Astro.response.headers.set('Cache-Control', cacheHeader()); // factual overview: no rating, no bonus figures, no partner link
 const checked = new Date(r.checked);
 ---
 <Article art="kancelar" title={info ? `${b.name}: přehled sázkové kanceláře` : `${b.name}: recenze sázkové kanceláře`} metaTitle={info ? `${b.name} – přehled, provozovatel a licence | KurzovýRadar` : `${b.name} – recenze, licence a kurzy | KurzovýRadar`}
@@ -22,6 +25,7 @@ const checked = new Date(r.checked);
     {b.affiliate === 'approved' && <a class="btn" href={`/go/${b.id}/?p=recenze`} rel="sponsored nofollow">Přejít na {r.web}<Icon name="external-link" size={16} /></a>}
     {info && <a class="btn btn--ghost" href={b.site} rel="nofollow noopener" target="_blank">Oficiální web {r.web}<Icon name="external-link" size={16} /></a>}
   </div>
+  {bonus && <div class="not-prose mt-6 max-w-[720px]"><BonusCard b={bonus} placement="bonus-recenze" /></div>}
   <div class="strucne not-prose mt-6">
     <p class="m-0 font-display font-bold text-lg">V kostce</p>
     <ul class="list-disc pl-5 mt-2 mb-0 grid gap-1">{r.inShort.map((x) => <li>{x}</li>)}</ul>
@@ -53,7 +57,7 @@ const checked = new Date(r.checked);
     <div class="card p-4"><h3 class="text-base m-0 mb-2 flex items-center gap-1.5"><Icon name="arrow-up" size={16} class="text-up" />Výhody</h3><ul class="list-disc pl-5 m-0 grid gap-1">{r.pros.map((p) => <li>{p}</li>)}</ul></div>
     <div class="card p-4"><h3 class="text-base m-0 mb-2 flex items-center gap-1.5"><Icon name="minus" size={16} class="text-down" />Omezení</h3><ul class="list-disc pl-5 m-0 grid gap-1">{r.limits.map((p) => <li>{p}</li>)}</ul></div>
   </div>
-  <p class="text-sm text-ink-2">Nehodnotíme hvězdičkami a neuvádíme bonusy. Podmínky bonusů a akcí se mění, platné znění najdeš vždy přímo u kanceláře.{b.affiliate === 'approved' && ' Odkaz na kancelář je partnerský – při registraci můžeme dostat provizi.'}</p>
+  <p class="text-sm text-ink-2">Nehodnotíme hvězdičkami. Vstupní bonus porovnáváme na stránce <a href="/bonusy/">Bonusy</a>. Podmínky bonusů a akcí se mění, platné znění najdeš vždy přímo u kanceláře.{b.affiliate === 'approved' && ' Odkaz na kancelář je partnerský – při registraci můžeme dostat provizi.'}</p>
   </>)}
   <h2>Zdroje</h2>
   <ul>{r.sources.map((s) => <li><a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></li>)}</ul>

@@ -37,7 +37,7 @@ Podobné adresy nemusí patřit stejné firmě. Například doména forbet.cz s 
 
 ## 5. Nedůvěřuj příliš dobrým nabídkám
 
-Kdo slibuje jistý zisk nebo bonus bez podmínek, obvykle něco neříká. Podmínky bonusů se mění a čti je v pravidlech konkrétní akce. Na KurzovémRadaru bonusy záměrně neuvádíme, dokud je neověříme z oficiálních zdrojů.
+Kdo slibuje jistý zisk nebo bonus bez podmínek, obvykle něco neříká. Podmínky bonusů se mění a čti je v pravidlech konkrétní akce. Na KurzovémRadaru uvádíme jen bonusy partnerských kanceláří, jejichž podmínky jsme ověřili z oficiálních stránek, s datem kontroly a s tím, kolik musíš prosázet. Najdeš je na stránce [Bonusy](/bonusy/).
 
 ## Co ukazuje KurzovýRadar
 

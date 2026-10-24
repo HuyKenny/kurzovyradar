@@ -1,0 +1,38 @@
+---
+// One welcome bonus of a partner bookmaker: what it advertises, the exact conditions for the published example deposit, a registration
+// button (partner link, tracked by placement) and the notice. After FRESH_DAYS without a check the figures are replaced by a pointer to the bookmaker.
+import { BOOK } from '../config/bookmakers';
+import { isFresh, short, terms, czDate } from '../lib/bonus';
+import type { Bonus } from '../config/bonuses';
+import BookLogo from './BookLogo.astro';
+import BonusNotice from './BonusNotice.astro';
+import Icon from './Icon.astro';
+interface Props { b: Bonus; placement: string; compact?: boolean; first?: boolean }
+const { b, placement, compact = false, first = false } = Astro.props;
+const book = BOOK[b.book];
+const fresh = isFresh(b, Date.now());
+---
+<article class="ticket p-5 grid gap-3 content-start" data-bonus={b.book} data-placement={placement}>
+  <div class="flex items-center gap-3 flex-wrap">
+    <BookLogo id={b.book} h={30} />
+    <h3 class="m-0 text-[1.2rem]">{book.name}: vstupní bonus</h3>
+    {first && <span class="badge badge--green ml-auto">Nejmírnější podmínky</span>}
+  </div>
+  {fresh ? (
+    <>
+      <p class="m-0 text-[1.05rem]">{b.headline}</p>
+      {compact ? <p class="m-0 text-[0.95rem]">{short(b)}. <a href="/bonusy/">Všechny podmínky</a></p> : (
+        <>
+          <ul class="m-0 pl-5 list-disc grid gap-1">{terms(b).map((t) => <li>{t}</li>)}</ul>
+          {b.registrationNote && <p class="m-0 text-[0.9rem] text-ink-2">{b.registrationNote}</p>}
+        </>
+      )}
+    </>
+  ) : <p class="m-0">Aktuální bonus najdeš přímo u {book.name}. Naše údaje jsou starší než tři týdny, proto je neuvádíme.</p>}
+  <div class="flex flex-wrap gap-2 items-center">
+    <a class="btn" href={`/go/${b.book}/?p=${placement}`} rel="sponsored nofollow">Registrovat {book.locative}<Icon name="external-link" size={16} /></a>
+    <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.book}/`}>Recenze</a>
+  </div>
+  {fresh && !compact && <p class="m-0 text-[0.85rem] text-ink-2">Zdroj: {b.sources.map((s, i) => <>{i > 0 && ', '}<a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></>)}, ověřeno {czDate(b.verifiedAt)}.</p>}
+  <BonusNotice checked={fresh ? b.verifiedAt : undefined} />
+</article>

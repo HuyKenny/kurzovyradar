@@ -1,0 +1,91 @@
+---
+// /bonusy/: welcome bonuses of the partner bookmakers on one page, easiest terms first, with a small "how long will it take" calculator.
+import Base from '../../layouts/Base.astro';
+import Art from '../../components/Art.astro';
+import BonusCard from '../../components/BonusCard.astro';
+import BonusNotice from '../../components/BonusNotice.astro';
+import BookLogo from '../../components/BookLogo.astro';
+import { BOOK } from '../../config/bookmakers';
+import { BONUSES } from '../../config/bonuses';
+import { czDate, isFresh, minDays, rank, wagerMultiple } from '../../lib/bonus';
+import { kc } from '../../lib/format';
+import { cacheHeader } from '../../lib/data';
+
+const ranked = rank();
+const nowMs = Date.now();
+const fresh = ranked.filter((b) => isFresh(b, nowMs));
+const checked = BONUSES.map((b) => b.verifiedAt).sort().at(-1)!;
+const q = Astro.url.searchParams;
+const perDay = Math.min(1e6, Math.max(1, Number((q.get('den') ?? '500').replace(',', '.')) || 500));
+const odds = (o: number) => o.toFixed(1).replace('.', ',');
+const d = new Date(`${checked}T12:00:00Z`);
+Astro.response.headers.set('Cache-Control', cacheHeader());
+---
+<Base title="Vstupní bonusy sázkových kanceláří: Tipsport, Chance – podmínky | KurzovýRadar"
+  description="Vstupní bonusy Tipsportu a Chance na sportovní sázky vedle sebe: kolik musíš prosázet, při jakém kurzu a jak dlouho to trvá. Podmínky z oficiálních stránek, ověřeno."
+  canonical="/bonusy/" noindex={q.size > 0} crumbs={[{ name: 'Bonusy', url: '/bonusy/' }]}>
+  <div class="wrap pt-6">
+    <div class="flex items-start gap-4">
+      <div class="flex-1 max-w-[72ch]">
+        <h1 class="m-0 text-balance">Vstupní bonusy sázkových kanceláří</h1>
+        <p class="text-[1.2rem] mt-3 mb-0">Bonusy pro nové hráče u kanceláří, se kterými spolupracujeme, a jejich podmínky z oficiálních stránek. Pod každým číslem je to, co za ním je: kolik musíš prosázet.</p>
+        <p class="text-[0.92rem] text-ink-2 mt-3 mb-0">Redakce KurzovéhoRadaru · podmínky ověřeny {czDate(checked)} · jen sportovní sázky, casino a free spiny tady neuvádíme · řadíme podle toho, jak přísné jsou podmínky při vkladu 1 000 Kč, ne podle nejvyšší částky v reklamě</p>
+      </div>
+      <Art name="kancelar" size={110} class="hidden md:block rotate-[3deg]" />
+    </div>
+  {fresh.length > 0 ? (
+    <>
+      <div class="grid gap-5 md:grid-cols-2 mt-8">
+        {fresh.map((b, i) => <BonusCard b={b} placement="bonus-stranka" first={i === 0 && fresh.length > 1} />)}
+      </div>
+
+      <div class="prose max-w-[72ch] mt-12"><h2>Podmínky vedle sebe</h2>
+      <p>Údaje platí pro první vklad 1 000 Kč, který kanceláře na své stránce předvádějí. Pro jiné vklady se podmínky mohou lišit, najdeš je u kanceláře.</p>
+      </div>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-[0.97rem]">
+          <caption class="sr">Vstupní bonusy vedle sebe</caption>
+          <thead><tr><th scope="col">&nbsp;</th>{fresh.map((b) => <th scope="col"><BookLogo id={b.book} h={24} /></th>)}</tr></thead>
+          <tbody>
+            <tr><th scope="row">Za registraci</th>{fresh.map((b) => <td>{b.registration}</td>)}</tr>
+            <tr><th scope="row">Vstupní bonus až</th>{fresh.map((b) => <td>{kc(b.maxBonus)}</td>)}</tr>
+            <tr><th scope="row">Bonus při vkladu {kc(1000)}</th>{fresh.map((b) => <td>{kc(b.tier.bonus)}</td>)}</tr>
+            <tr><th scope="row">Prosázet</th>{fresh.map((b) => <td>{kc(b.tier.wager)} ({wagerMultiple(b)}× bonus)</td>)}</tr>
+            <tr><th scope="row">Minimální kurz tiketu</th>{fresh.map((b) => <td>{odds(b.tier.minOdds)}</td>)}</tr>
+            <tr><th scope="row">Denně se počítá nejvýš</th>{fresh.map((b) => <td>{kc(b.tier.dailyCap)}</td>)}</tr>
+            <tr><th scope="row">Nejméně dní</th>{fresh.map((b) => <td>{minDays(b)}</td>)}</tr>
+            <tr><th scope="row">Výplata</th>{fresh.map((b) => <td>{kc(b.tier.pay)} za každých {kc(b.tier.payEvery)}</td>)}</tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prose max-w-[72ch]">
+      <p class="text-sm text-ink-2">Zdroje: {fresh.flatMap((b) => b.sources).map((s, i) => <>{i > 0 && ', '}<a href={s.url} rel="nofollow noopener" target="_blank">{s.label}</a></>)}. Ověřeno {czDate(checked)}.</p>
+
+      <h2>Jak jsme je seřadili</h2>
+      <p>Podle toho, kolik musíš prosázet na každou korunu bonusu: u {BOOK[fresh[0]!.book].name} {wagerMultiple(fresh[0]!)}× při kurzu {odds(fresh[0]!.tier.minOdds)}{fresh.length > 1 && <>, u {BOOK[fresh[1]!.book].name} {wagerMultiple(fresh[1]!)}× při kurzu {odds(fresh[1]!.tier.minOdds)}</>}. Při stejné hodnotě rozhoduje nižší minimální kurz. Řazení tedy nezávisí na výši provize. Do srovnání dáváme jen kanceláře, se kterými spolupracujeme a jejichž podmínky jsme ověřili.</p>
+      <p><strong>Nejvyšší číslo není nejlepší nabídka.</strong> „Až {kc(Math.max(...fresh.map((b) => b.maxBonus)))}“ je strop pro nejvyšší první vklad: kanceláře na svých stránkách píšou, že čím vyšší vklad, tím vyšší bonus, a že je potřeba splnit podmínky. Rychlost ovlivňuje i denní strop: {fresh.map((b) => `${BOOK[b.book].name} ${minDays(b)} dní`).join(', ')} nejméně.</p>
+
+      <h2 id="kalkulacka">Za jak dlouho prosázím?</h2>
+      <form method="get" action="/bonusy/#kalkulacka" data-autosubmit class="flex flex-wrap items-end gap-3">
+        <label class="grid gap-1 font-bold">Kolik denně vsadím (Kč)<input class="field num w-[10rem]" name="den" inputmode="decimal" value={String(perDay)} /></label>
+        <button class="btn btn--sm" type="submit" data-nojs>Spočítat</button>
+      </form>
+      <ul>
+        {fresh.map((b) => { const counted = Math.min(perDay, b.tier.dailyCap); const days = Math.ceil(b.tier.wager / counted); return (
+          <li><strong>{BOOK[b.book].name}:</strong> při {kc(perDay)} denně se počítá {kc(counted)}, takže prosázet {kc(b.tier.wager)} potrvá nejméně {days} {days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.</li>
+        ); })}
+      </ul>
+      <p class="text-sm text-ink-2">Je to jen výpočet z podmínek kanceláře. Nezahrnuje, jestli sázky vyjdou, a nic neslibuje. Sázej jen částku, kterou si můžeš dovolit ztratit.</p>
+      </div>
+    </>
+  ) : (
+    <p class="mt-8">Naše údaje o bonusech jsou starší než tři týdny, proto je neuvádíme. Aktuální nabídku najdeš přímo u kanceláří: <a href="/sazkove-kancelare/">přehled kanceláří</a>.</p>
+  )}
+
+  <div class="prose max-w-[72ch] mt-2">
+  <h2>Co tu není</h2>
+  <p>U Allwynu (Sazkabet) je na stránce kurzových sázek soutěž v tipování, ne vstupní bonus, a oficiální podmínky bonusu na sázky u MerkurXtipu jsme nepřečetli. Proto je tady neuvádíme. Jejich přehledy najdeš v sekci <a href="/sazkove-kancelare/">Kde vsadit</a>. Jak bonus funguje, vysvětluje <a href="/pruvodce/vstupni-bonus-jak-funguje/">průvodce</a>.</p>
+  </div>
+  <div class="max-w-[72ch] mt-8"><BonusNotice checked={checked} /></div>
+  </div>
+</Base>

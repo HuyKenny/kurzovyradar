@@ -36,7 +36,7 @@ const graph = [
 const ld = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c');
 const topComps = COMPETITIONS.filter((c) => c.top);
 const robots = noindex || isDemo ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1';
-const navLink = 'px-3 py-2 rounded-[10px] no-underline font-display font-bold text-[1.02rem] min-h-[44px] inline-flex items-center whitespace-nowrap border-2';
+const navLink = 'px-2.5 xl:px-3 py-2 rounded-[10px] no-underline font-display font-bold text-[1.02rem] min-h-[44px] inline-flex items-center whitespace-nowrap border-2';
 const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
 ---
 <!doctype html>
@@ -85,7 +85,7 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
         {NAV.map((n) => {
           const on = path.startsWith(n.href);
           return <a href={n.href} aria-current={on ? 'page' : undefined}
-            class:list={[navLink, on ? 'bg-ink text-white border-ink hover:text-white' : 'border-transparent text-ink hover:border-ink hover:bg-ticket']}>{n.label}</a>;
+            class:list={[navLink, on ? 'bg-ink text-white border-ink hover:text-white' : (n as { accent?: boolean }).accent ? 'bg-orange text-ink border-ink hover:bg-ticket' : 'border-transparent text-ink hover:border-ink hover:bg-ticket']}>{n.label}</a>;
         })}
       </nav>
       <div class="ml-auto flex items-center gap-0.5 sm:gap-1.5">

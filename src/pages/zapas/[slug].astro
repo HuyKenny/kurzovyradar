@@ -10,6 +10,8 @@ import { SPORTS, stubColor } from '../../config/competitions';
 import { E, upcoming, radar as getRadar, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { reasons, pricesFor } from '../../lib/picks';
 import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget, selectionName } from '../../lib/market';
+import BonusCard from '../../components/BonusCard.astro';
+import { rank as rankBonuses, isFresh as bonusFresh } from '../../lib/bonus';
 import { parseBetState, trhOf, winnings, payoutDelta, type FindingKey } from '../../lib/bet-state';
 import { availablePeriods, changeAsOf, periodInfo, type Change } from '../../lib/context';
 import { backLink, isOutcome } from '../../lib/links';
@@ -56,6 +58,7 @@ const betData = JSON.stringify({
 });
 const followBet = JSON.stringify({ id: ev.id, outcome: pick, url: ev.url, home: ev.home, away: ev.away, startAt: ev.startAt, comp: ev.compName, sport: ev.sport,
   pickFrom: '[data-bet-root]', labels: Object.fromEntries(OUTS.map((o) => [o, whoOf(ev, o)])), oddsBy: Object.fromEntries(OUTS.map((o) => [o, oddsOf(o)])) });
+const topBonus = rankBonuses().find((b) => bonusFresh(b, Date.now()));
 const FINDING_LABEL: Record<FindingKey, string> = { rust: 'Kurz vzrostl', pokles: 'Kurz klesl', rozdil: 'Vyšší kurz u druhé kanceláře', max: 'Nejvyšší zachycený kurz' };
 
 // Tracking window and data gaps (failed import runs).
@@ -287,6 +290,10 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
         );
       })}
     </section>
+
+    {!started && topBonus && (
+      <section class="mt-10 max-w-[760px]" aria-label="Bonus pro nové hráče"><BonusCard b={topBonus} placement="bonus-detail" compact /></section>
+    )}
 
     {enough && (
       <section class="mt-12" aria-labelledby="h-story">

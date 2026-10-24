@@ -26,4 +26,5 @@ export const NAV = [
   { href: '/radar/', label: 'Pohyby kurzů' },
   { href: '/sazkove-kancelare/', label: 'Kde vsadit' },
   { href: '/pruvodce/', label: 'Jak na kurzy' },
+  { href: '/bonusy/', label: 'Bonusy', accent: true },
 ];

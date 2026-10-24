@@ -4,6 +4,8 @@ import Base from '../layouts/Base.astro';
 import Ticket from '../components/Ticket.astro';
 import FindingCard from '../components/FindingCard.astro';
 import { fromMove } from '../lib/findings';
+import BonusCard from '../components/BonusCard.astro';
+import { rank as rankBonuses, isFresh as bonusFresh } from '../lib/bonus';
 import BookLogo from '../components/BookLogo.astro';
 import Icon from '../components/Icon.astro';
 import Art from '../components/Art.astro';
@@ -36,6 +38,7 @@ const moves = win && rd
 const checkedOf = (books: string[]) => { const v = books.map((b) => up.books[b as 'tipsport']?.lastSuccessAt ?? 0).filter(Boolean); return v.length ? Math.min(...v) : null; };
 const comps = competitionsIn(events).slice(0, 18);
 const sportList = sportsIn(events);
+const bonusList = rankBonuses().filter((b) => bonusFresh(b, Date.now()));
 const counts = { fotbal: events.filter((e) => e.sport === 'fotbal').length, hokej: events.filter((e) => e.sport === 'hokej').length };
 const today = events.filter((e) => dayKey(e.startAt) === dayKey(t)).length;
 // Real example for the explainer: the first listed favourite, else a neutral 1,85.
@@ -87,6 +90,20 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         </form></div></li>
     </ul>
   </section>
+
+  {bonusList.length > 0 && (
+    <section class="wrap mt-14" aria-labelledby="h-bonus">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+        <div class="max-w-[70ch]">
+          <p class="hand m-0 text-[1.35rem] -rotate-1 origin-left">bonus pro nové hráče</p>
+          <h2 id="h-bonus" class="m-0 mt-1">Vstupní bonusy na sportovní sázky</h2>
+          <p class="mt-2 mb-0 text-ink-2">Podmínky z oficiálních stránek kanceláří, nahoře ty nejmírnější. Pod číslem vždy najdeš, kolik musíš prosázet.</p>
+        </div>
+        <a href="/bonusy/" class="font-bold inline-flex items-center gap-1 min-h-[44px]">Všechny podmínky<Icon name="arrow-right" size={16} /></a>
+      </div>
+      <div class="grid gap-5 md:grid-cols-2">{bonusList.map((b, i) => <BonusCard b={b} placement="bonus-home" compact first={i === 0 && bonusList.length > 1} />)}</div>
+    </section>
+  )}
 
   <div class="wrap mt-10" data-follow-strip hidden></div>
 

@@ -1,0 +1,9 @@
+---
+// Under every bonus block: adults only, risk of addiction, partner links, and when we checked the figures.
+import { NOTICE, czDate } from '../lib/bonus';
+interface Props { checked?: string }
+const { checked } = Astro.props;
+---
+<p class="m-0 text-[0.82rem] text-ink-2 leading-snug" data-bonus-notice>
+  <strong class="text-ink">18+</strong> {NOTICE.age} {NOTICE.ad} <a href="/financovani/">Jak se financujeme</a> · <a href="/odpovedne-hrani/">Odpovědné hraní</a>.{checked && <> Údaje jsme ověřili {czDate(checked)}, podmínky se mohou změnit.</>}
+</p>

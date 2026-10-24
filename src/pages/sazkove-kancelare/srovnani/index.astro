@@ -3,7 +3,12 @@
 import Article from '../../../components/Article.astro';
 import { BOOKMAKERS } from '../../../config/bookmakers';
 import { reviewOf } from '../../../config/reviews';
-export const prerender = true;
+import { bonusOf } from '../../../config/bonuses';
+import { isFresh, short } from '../../../lib/bonus';
+import { cacheHeader } from '../../../lib/data';
+const nowMs = Date.now();
+const bonusText = (id: string) => { const x = bonusOf(id); return x && isFresh(x, nowMs) ? short(x) : '–'; };
+Astro.response.headers.set('Cache-Control', cacheHeader());
 // app / bankId come from the fact-check (see config/reviews.ts sources); anything not confirmed stays '–'.
 const EXTRA: Record<string, { app: string; bankId: string }> = {
   fortuna: { app: 'iOS, Android, Huawei (Fortuna Vegas); zvlášť Sport a Poker', bankId: 'ano' },
@@ -24,7 +29,7 @@ const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
   <div class="not-prose overflow-x-auto max-w-[1100px]">
     <table class="w-full text-[0.95rem]">
       <caption class="sr">Srovnání sázkových kanceláří</caption>
-      <thead><tr><th scope="col">Kancelář</th><th scope="col">Provozovatel</th><th scope="col">Naše kurzy</th><th scope="col">Partner</th><th scope="col">Aplikace</th><th scope="col">BankID</th></tr></thead>
+      <thead><tr><th scope="col">Kancelář</th><th scope="col">Provozovatel</th><th scope="col">Naše kurzy</th><th scope="col">Partner</th><th scope="col">Aplikace</th><th scope="col">BankID</th><th scope="col">Vstupní bonus na sázky</th></tr></thead>
       <tbody>
         {rows.map(({ b, r, x }) => (
           <tr>
@@ -34,6 +39,7 @@ const rows = BOOKMAKERS.map((b) => ({ b, r: reviewOf(b.id), x: EXTRA[b.id] }));
             <td>{b.affiliate === 'approved' ? 'ano' : 'ne'}</td>
             <td>{x?.app ?? '–'}</td>
             <td>{x?.bankId ?? '–'}</td>
+            <td>{b.affiliate === 'approved' ? <>{bonusText(b.id)}{bonusOf(b.id) && <> · <a href="/bonusy/">podmínky</a></>}</> : '–'}</td>
           </tr>
         ))}
       </tbody>

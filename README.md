@@ -132,3 +132,11 @@ Podrobnosti: `docs/ASSETS.md` (vizuály a jejich původ), `docs/CAPACITY.md` (m�
 - **Soutěže:** vybrané fotbalové a hokejové ligy jsou ručně popsané; ostatní se zakládají podle názvu u kanceláře (`src/server/normalize/competition.ts`: slug `sport-název[-varianta]`, varianta = ženy, čtyřhra, junioři…; esporty: hra + turnaj). Seznamy sportů a soutěží na webu se berou z aktuální nabídky (`src/lib/catalog.ts`).
 - **Kapacita:** `derived.upcoming` smí mít < 2 MB (D1) → snapshot bez polí jen pro detail a s ořezem nejvzdálenějších zápasů (`snapshotJson`). První import se rozloží do více běhů (`MAX_NEW_EVENTS`, výchozí 250 nových událostí na kancelář a běh; limit D1 je 1 000 dotazů na invokaci).
 - **Migrace 0003** přestavuje `competitions` a `events` (bez CHECK na sport, nový sloupec `market`); otestováno na node:sqlite i na lokálním D1 s daty a zapnutými cizími klíči.
+
+## Bonusy partnerů (24. 10. 2026)
+
+- **Stránka `/bonusy/`**, bonusový box na úvodu, v recenzích Tipsportu a Chance, v detailu zápasu a sloupec ve srovnání kanceláří. Data: `src/config/bonuses.ts` (jen sportovní sázky; každé číslo z oficiální stránky kanceláře s datem kontroly), výpočty a věty `src/lib/bonus.ts`, komponenty `BonusCard`/`BonusNotice` (18+, varování, označení reklamy je pod každým blokem).
+- **Řazení:** podle prosázení na korunu bonusu (Tipsport 10× při kurzu 1,5 před Chance 14× při kurzu 2,0), pak minimální kurz. Neřídí se provizí; do srovnání patří jen partneři s ověřenými podmínkami.
+- **Čerstvost:** čísla se zobrazí 21 dní po `verifiedAt`, pak je nahradí odkaz na kancelář. Stránky s bonusy jsou proto server-rendered (ne prerender). Týdně: `node --experimental-strip-types scripts/kurzovyradar-bonusy-over.mjs` (Chance) a Apify web-fetch `https://www.tipsport.cz/bonusy/vstupni-bonus` s `wait: 9000` (Tipsport je JS a blokuje Malinu), pak aktualizovat `verifiedAt`.
+- **Měření:** `/go/<kancelář>/?p=` — `bonus-home`, `bonus-stranka`, `bonus-recenze`, `bonus-detail` (Analytics Engine `CLICKS`, blob 2 = placement).
+- Otevřené: Tipsport uvádí na banneru „1 000 Kč za registraci“, na kartě Registrační bonus 500 Kč; web cituje oba údaje. Potvrdit složení z partnerského panelu.

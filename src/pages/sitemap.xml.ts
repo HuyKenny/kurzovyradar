@@ -16,7 +16,7 @@ export const GET: APIRoute = async () => {
   const lastmod = up.at ? new Date(up.at * 1000).toISOString() : undefined;
   const guides = await getCollection('pruvodce');
   const urls: { loc: string; lastmod?: string }[] = [
-    ...['/', '/kurzy/', '/dnes/', '/radar/', '/sporty/'].map((p) => ({ loc: p, lastmod })),
+    ...['/', '/kurzy/', '/dnes/', '/radar/', '/sporty/', '/bonusy/'].map((p) => ({ loc: p, lastmod })),
     ...sportsIn(events).map((s) => ({ loc: s.path, lastmod })),
     ...competitionsIn(events).map((c) => ({ loc: `/souteze/${c.slug}/`, lastmod })),
     ...events.map((e) => ({ loc: e.url, lastmod })),
