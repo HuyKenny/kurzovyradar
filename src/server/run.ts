@@ -49,7 +49,11 @@ export async function runImport(env: Env, db: Db = env.DB as unknown as Db, now 
       report.books.push({ book, status: 'error', seen: 0, changed: 0, error: msg, rowsRead: 0, rowsWritten: 0, queries: 0, ms: Date.now() - t0 });
     }
   }
-  const d = await derive(db, cfg, now);
+  // The snapshot is stamped after the newest record it contains: changes are stored with the fetch time, which is a few seconds
+  // later than `now` (taken before the fetch). Otherwise the detail page, which measures a radar period as of this time, would miss
+  // the very changes the radar showed.
+  const stamp = Math.max(now, ...fetched.map((r) => (r.status === 'fulfilled' ? r.value.fetchedAt : 0)));
+  const d = await derive(db, cfg, stamp);
   report.derived = { events: d.events, rowsRead: d.meter.read, rowsWritten: d.meter.written };
   // Once a day (the 03:xx UTC run): detail history older than HISTORY_DAYS goes.
   if (new Date(now * 1000).getUTCHours() === 3 && new Date(now * 1000).getUTCMinutes() < cfg.importIntervalMin) await cleanup(db, cfg, now);
