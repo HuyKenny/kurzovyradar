@@ -198,7 +198,7 @@ export const REVIEWS: Review[] = [
     facts: [
       { label: 'Dříve', value: 'Sazka (přejmenování na Allwyn oznámeno v roce 2025)' },
       { label: 'Skupina', value: 'Allwyn (KKCG)' },
-      { label: 'Sazkabet', value: 'Název Sazkabet označuje kurzové sázky na allwyn.cz. Adresa sazkabet.cz na ně přesměrovává, viz přehled Sazkabetu' },
+      { label: 'Sazkabet', value: 'Sazkabet není samostatná kancelář: je to název kurzových sázek Allwynu (herní plán „Herní plán kurzových sázek SAZKABET“, aplikace Sazkabet). Adresa sazkabet.cz přesměrovává na allwyn.cz/kurzove-sazky (ověřeno 24. 10. 2026)' },
     ],
     features: [
       'Kurzové sázky na allwyn.cz v sekci Sporty',
@@ -365,10 +365,10 @@ export const REVIEWS: Review[] = [
   },
   {
     id: 'betano', checked: '2026-10-24',
-    operator: 'Provozovatele (právnickou osobu a IČ) jsme z veřejných stránek nepotvrdili', ico: '–', seat: '–',
-    licence: 'Betano o sobě na betano.cz/o-nas uvádí, že má licence Ministerstva financí ČR pro kurzové sázení, live sázky, casino a hry s živými dealery',
+    operator: 'KAIZEN GAMING CZ LIMITED', ico: '685782826', seat: 'Quantum House, 75 Abate Rigord Street, Ta’Xbiex, Malta',
+    licence: 'Podle seznamu Ministerstva financí ČR (1. 10. 2026): kursové sázky na internetu (betano.cz) od 8. 3. 2022, technické hry od 3. 3. 2022 a živé hry od 22. 10. 2024, vše jen na internetu',
     web: 'betano.cz',
-    inShort: ['Značka patří do skupiny Kaizen Gaming (založena 2012).', 'Na svém webu uvádí českou licenci Ministerstva financí.', 'Kurzy Betana zatím nesledujeme. S Betanem nespolupracujeme.'],
+    inShort: ['Značka patří do skupiny Kaizen Gaming (založena 2012).', 'V seznamu Ministerstva financí má povolení pro kurzové sázky na internetu.', 'Kurzy Betana zatím nesledujeme. S Betanem nespolupracujeme.'],
     summary: 'Betano Česká republika je součástí skupiny Kaizen Gaming. Podle vlastního webu nabízí kurzové sázky, live sázky, casino i živé dealery.',
     facts: [
       { label: 'Skupina', value: 'Kaizen Gaming, technologická firma pro hry založená v roce 2012 (podle betano.cz/o-nas)' },
@@ -415,47 +415,6 @@ export const REVIEWS: Review[] = [
       ],
     },
     sources: [{ label: 'betano.cz – O nás (licence a regulace)', url: 'https://www.betano.cz/o-nas' }],
-  },
-  {
-    id: 'sazkabet', checked: '2026-10-24',
-    operator: 'Allwyn Česko a.s.', ico: '26493993', seat: 'Evropská 866/69, Vokovice, 160 00 Praha 6',
-    licence: 'Web sazkabet.cz uvádí jako provozovatele Allwyn Česko a.s.; povolení Ministerstva financí ČR najdeš u Allwynu (viz recenze)',
-    web: 'sazkabet.cz',
-    inShort: ['Sazkabet je název kurzových sázek, které provozuje Allwyn Česko (dříve Sazka).', 'Adresa sazkabet.cz dnes vede na kurzové sázky na allwyn.cz.', 'Allwyn je náš partner, jeho recenzi najdeš zvlášť.'],
-    summary: 'Sazkabet je název kurzových sázek, které provozuje Allwyn Česko a.s. (dříve Sazka). Adresa sazkabet.cz přesměrovává na kurzové sázky na allwyn.cz.',
-    facts: [
-      { label: 'Provozovatel webu', value: 'Allwyn Česko a.s., IČ 26493993 (podle patičky sazkabet.cz)' },
-      { label: 'Návaznost názvů', value: 'sazkabet.cz → sazka.cz/kurzove-sazky → allwyn.cz/kurzove-sazky (přesměrování ověřeno 24. 10. 2026). Titulek stránky: „Sazkabet – kurzové sázky, live sázení | Allwyn.cz“' },
-      { label: 'Nabídka', value: 'Kurzové sázky a live sázení (podle titulku stránky)' },
-    ],
-    features: ['Kurzové sázky', 'Live sázení'],
-    pros: [], limits: [],
-    onSite: 'Kurzy Sazkabetu zatím nesledujeme. Allwyn je náš partner, ale jeho kurzy nemáme připojené.',
-    partnerNote: 'S provozovatelem spolupracujeme jako s Allwynem: partnerský odkaz najdeš v recenzi Allwynu, protože jde o týž provoz. Podle adresy vede na registraci na allwyn.cz v kampani označené jako kurzové sázky Sazkabet. Vstupní bonus Allwynu na sázky najdeš na stránce Bonusy.',
-    unverified: ['Jestli a kdy se název Sazkabet přestane používat (Allwyn uvedl, že místní značky zatím zůstávají)', 'Aktuální bonusy', "Jestli a kdy se název Sazkabet zruší (oficiální prohlášení jsme nenašli, název dál označuje kurzové sázky na allwyn.cz)"],
-    more: {
-      registrace: [
-        { text: "Samostatná registrace Sazkabetu není; kurzové sázky Sazkabet se registrují stejným účtem na allwyn.cz (odkaz Vytvořit účet z /kurzove-sazky/ vede na allwyn.cz/registrace). Podmínky viz Allwyn.", url: "https://www.allwyn.cz/kurzove-sazky/" },
-        { text: "Herní plán SAZKABET: registrace je podmínkou účasti, jeden účet i pro další internetové hry provozovatele.", url: "https://static.sazka.cz/kentico-media/sazka/media/content/herni-plany/2026/2-hp-kurzove-sazky_betbuilder-zmena-nazvu_21-1-26-mkt-allwyn.pdf" },
-      ],
-      aplikace: [
-        { text: "Samostatná aplikace Sazkabet (Android cz.sazka.sazkabet; iOS App Store id1474630249), Allwyn ji uvádí v přehledu aplikací vedle Allwyn Online, Sazka Hry a Allwyn Klub.", url: "https://www.allwyn.cz/mobilni-aplikace/sazkabet" },
-      ],
-      nabidka: [
-        { text: "Název Sazkabet stále označuje sekci kurzových sázek na allwyn.cz: „Výhody“ uvádí „Tento symbol znamená, že v ČR tyto výhody nabízí pouze Sazkabet“; soutěže se jmenují „Soutěžte se Sazkabetem“. Nabídku viz Allwyn.", url: "https://www.allwyn.cz/kurzove-sazky/vyhody" },
-        { text: "Herní plán se jmenuje „Herní plán kurzových sázek SAZKABET“, platný od 6. 2. 2026; provozovatel Allwyn Česko a.s.", url: "https://static.sazka.cz/kentico-media/sazka/media/content/herni-plany/2026/2-hp-kurzove-sazky_betbuilder-zmena-nazvu_21-1-26-mkt-allwyn.pdf" },
-      ],
-      platby: [
-        { text: "Stejný herní účet a platební metody jako Allwyn (viz allwyn.vklad_vyber).", url: "https://www.allwyn.cz/centrum-podpory/online-hrani-na-allwyn-cz/vklady/jak-vlozit-a-vybrat-penize-z-meho-herniho-uctu" },
-      ],
-      podpora: [
-        { text: "Podpora Sazkabetu je společná s Allwyn (chat, 266 12 12 12, info@allwyn.cz); app FAQ odkazuje na chat zákaznického centra.", url: "https://www.allwyn.cz/mobilni-aplikace/sazkabet" },
-      ],
-      odpovedne: [
-        { text: "Herní limity se výslovně počítají i pro kurzové sázky Sazkabet; sebeomezující opatření jsou společná pro kurzové sázky, loterie, technické a živé hry.", url: "https://www.allwyn.cz/zodpovedne-hrani" },
-      ],
-    },
-    sources: [{ label: 'sazkabet.cz', url: 'https://www.sazkabet.cz/' }, { label: 'Forbes.cz – Allwyn zachová místní značky', url: 'https://forbes.cz/konec-jmena-sazka-komarkuv-allwyn-zmenil-nazvy-ctyr-svych-spolecnosti/' }, MF],
   },
   {
     id: 'fbet', checked: '2026-10-24',

@@ -1,43 +1,82 @@
 ---
+// Overview of bookmakers, grouped by what we can honestly say about each: whose odds we compare, who is a partner without an odds feed,
+// who else holds a betting licence (MF list), and brands people look for that the list does not show for betting.
+// Server-rendered: the bonus lines show figures only while the bonus check is recent.
 import Article from '../../components/Article.astro';
 import BookLogo from '../../components/BookLogo.astro';
 import Icon from '../../components/Icon.astro';
-import { BOOKMAKERS } from '../../config/bookmakers';
+import { BOOKMAKERS, type Bookmaker } from '../../config/bookmakers';
 import { reviewOf } from '../../config/reviews';
-export const prerender = true;
-const STATE = {
-  oddsFeed: { active: 'Kurzy porovnáváme', none: 'Kurzy zatím neporovnáváme' },
-  affiliate: { approved: 'Spolupracujeme (partnerský odkaz)', none: 'Nespolupracujeme' },
-  review: { published: 'Má recenzi', info: 'Má přehled ověřených údajů', draft: 'Recenze se připravuje', none: 'Recenzi zatím nemáme' },
-};
+import { bonusOf } from '../../config/bonuses';
+import { BETTING_OPERATORS, MF_LIST_DATE } from '../../config/mf-list';
+import { FEED_NAMES, FEED_GENITIVE } from '../../config/coverage';
+import { isFresh, short } from '../../lib/bonus';
+import { cacheHeader } from '../../lib/data';
+
+const nowMs = Date.now();
+const licensed = (b: Bookmaker) => BETTING_OPERATORS.some((o) => o.page === `/sazkove-kancelare/${b.id}/`);
+const label = (b: Bookmaker) => (b.alias ? `${b.name} (${b.alias})` : b.name);
+const GROUPS = [
+  { id: 'porovnavame', title: 'Kurzy porovnáváme', note: `U každého zápasu vidíš kurzy ${FEED_GENITIVE} vedle sebe a jejich vývoj.`, list: BOOKMAKERS.filter((b) => b.oddsFeed === 'active') },
+  { id: 'partneri', title: 'Partneři, jejichž kurzy zatím nesledujeme', note: 'Spolupracujeme s nimi (partnerský odkaz), ale jejich kurzy nemáme připojené, takže je ve srovnání nenajdeš.', list: BOOKMAKERS.filter((b) => b.oddsFeed !== 'active' && b.affiliate === 'approved') },
+  { id: 'dalsi', title: 'Další kanceláře s povolením pro kurzové sázky', note: 'Nespolupracujeme s nimi a kurzy nesledujeme. Stránka je přehled údajů z oficiálních zdrojů, bez hodnocení.', list: BOOKMAKERS.filter((b) => b.affiliate !== 'approved' && b.oddsFeed !== 'active' && licensed(b)) },
+  { id: 'mimo', title: 'Značky, které seznam MF u kurzových sázek neuvádí', note: 'Lidé je hledají, proto o nich píšeme, co seznam Ministerstva financí skutečně říká.', list: BOOKMAKERS.filter((b) => b.affiliate !== 'approved' && b.oddsFeed !== 'active' && !licensed(b) && b.review !== 'none') },
+].filter((g) => g.list.length);
+const all = GROUPS.flatMap((g) => g.list);
+const listDate = MF_LIST_DATE.split('-').map(Number).reverse().join('. ');
+const faq = [
+  { q: 'Které sázkové kanceláře jsou v Česku legální?', a: `Podle seznamu Ministerstva financí ke dni ${listDate} má povolení pro kurzové sázky ${BETTING_OPERATORS.length} provozovatelů, mimo jiné ${BETTING_OPERATORS.slice(0, 6).map((o) => o.brand).join(', ')}. Celý seznam je na stránce Legální sázkové kanceláře.` },
+  { q: 'Je Sazkabet totéž co Allwyn?', a: 'Ano. Sazkabet není samostatná kancelář, je to název kurzových sázek společnosti Allwyn Česko a.s. (dříve Sazka). Adresa sazkabet.cz přesměrovává na kurzové sázky na allwyn.cz a přehled najdeš u Allwynu.' },
+  { q: `Mají ${FEED_NAMES} stejné kurzy?`, a: 'Většinou ano. Chance patří od roku 2013 do skupiny Tipsport a obě kanceláře běží na stejné platformě. Kde se kurzy liší, ukazuje KurzovýRadar u zápasu a na stránce Pohyby kurzů.' },
+  { q: 'Která sázková kancelář má nejlepší kurzy?', a: `To neumíme poctivě říct o celém trhu, protože porovnáváme jen ${FEED_NAMES}. U konkrétního zápasu vidíš nejvyšší z aktuálně sledovaných kurzů.` },
+  { q: 'Podle čeho je přehled seřazený?', a: 'Podle toho, co o kanceláři víme: nejdřív ty, jejichž kurzy porovnáváme, pak partneři bez kurzů, pak další kanceláře s povolením. Výše provize pořadí neovlivňuje.' },
+];
+Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Article art="kancelar" title="Kde vsadit: přehled sázkových kanceláří" metaTitle="Kde vsadit – přehled sázkových kanceláří s licencí v ČR | KurzovýRadar"
-  description="Přehled sázkových kanceláří Tipsport, Chance, Allwyn, MerkurXtip, Fortuna, Betano, Sazkabet, fBET, SYNOTtip a KingsBet: provozovatel, licence, ověřené údaje a které kurzy sledujeme."
- lead="U každé kanceláře píšeme, jestli její kurzy porovnáváme, jestli s ní spolupracujeme a odkud údaje máme. Srovnání v jedné tabulce je na další stránce." crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]}>
-  <p>Chceš vědět, která kancelář má v Česku povolení? <a href="/sazkove-kancelare/legalni/">Seznam legálních kanceláří podle Ministerstva financí</a> (včetně toho, koho v něm u kurzových sázek nenajdeš).</p>
-  <div class="not-prose grid gap-4 max-w-[980px]">
-    {BOOKMAKERS.map((b) => {
-      const r = reviewOf(b.id);
-      return (
-        <section class="ticket p-5 grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-center">
-          <div><BookLogo id={b.id} h={34} lazy={false} /></div>
-          <div>
-            <h2 class="text-lg m-0">{b.name}</h2>
-            {r ? <p class="m-0 mt-1 text-ink-2 text-[15px]">{r.summary}</p> : <p class="m-0 mt-1 text-ink-2 text-[15px]">Kurzy této kanceláře zatím nesledujeme a nespolupracujeme s ní. Uvádíme ji, aby byl přehled úplný.</p>}
-            <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-3 text-sm">
-              <li class:list={['badge', b.oddsFeed === 'active' ? 'badge--green' : 'badge--grey']}><Icon name={b.oddsFeed === 'active' ? 'activity' : 'minus'} size={13} />{STATE.oddsFeed[b.oddsFeed]}</li>
-              <li class="badge badge--grey"><Icon name="shield-check" size={13} />{STATE.affiliate[b.affiliate]}</li>
-              <li class="badge badge--grey"><Icon name="book-open" size={13} />{STATE.review[b.review]}</li>
-            </ul>
-          </div>
-          <div class="flex md:flex-col gap-2">
-            {b.review === 'published' && <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.id}/`}>Recenze</a>}
-            {b.review === 'info' && <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.id}/`}>Přehled</a>}
-            {b.affiliate === 'approved' && <a class="btn btn--sm" href={`/go/${b.id}/?p=prehled`} rel="sponsored nofollow">Web {b.name}<Icon name="external-link" size={15} /></a>}
-          </div>
-        </section>
-      );
-    })}
-  </div>
-  <p class="text-sm text-ink-2">Pořadí určuje jen to, jestli kurzy kanceláře sledujeme, ne výše provize. U všech kromě Betana jsme povolení Ministerstva financí ČR ověřili v jeho seznamu nebo v údajích provozovatele. Betano licenci uvádí jen na svém webu, proto to u něj píšeme jako jeho vlastní tvrzení. Jak se web financuje, popisujeme na stránce <a href="/financovani/">Jak se financujeme</a>.</p>
+<Article art="kancelar" title="Sázkové kanceláře v ČR: přehled, licence a kurzy" metaTitle="Sázkové kanceláře v ČR – přehled, licence, kurzy a bonusy | KurzovýRadar"
+  description={`Sázkové kanceláře v ČR na jednom místě: ${all.map(label).join(', ')}. Kdo má povolení MF, čí kurzy porovnáváme, ověřené bonusy a recenze se zdroji.`}
+  lead="U každé kanceláře píšeme, jestli její kurzy porovnáváme, jestli s ní spolupracujeme a jestli má povolení Ministerstva financí. Údaje mají zdroje a datum kontroly."
+  crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }]} faq={faq}
+  extraSchema={[{ '@type': 'ItemList', name: 'Sázkové kanceláře v ČR', itemListElement: all.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: label(b), url: `https://kurzovyradar.cz/sazkove-kancelare/${b.id}/` })) }]}>
+  <nav class="not-prose flex flex-wrap gap-2" aria-label="Další přehledy">
+    <a class="chip" href="/sazkove-kancelare/srovnani/">Srovnání v tabulce</a>
+    <a class="chip" href="/sazkove-kancelare/legalni/">Legální kanceláře (seznam MF)</a>
+    <a class="chip" href="/bonusy/">Vstupní bonusy</a>
+    <a class="chip" href="/sazkove-kancelare/tipsport-vs-chance/">Tipsport vs Chance</a>
+  </nav>
+  {GROUPS.map((g) => (
+    <section aria-labelledby={`h-${g.id}`}>
+      <h2 id={`h-${g.id}`}>{g.title}</h2>
+      <p>{g.note}</p>
+      <div class="not-prose grid gap-4 max-w-[980px]">
+        {g.list.map((b) => {
+          const r = reviewOf(b.id);
+          const bonus = b.affiliate === 'approved' ? bonusOf(b.id) : undefined;
+          const fresh = bonus && isFresh(bonus, nowMs);
+          return (
+            <article class="ticket p-4 sm:p-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div class="flex gap-4 items-start min-w-0">
+                <a href={`/sazkove-kancelare/${b.id}/`} class="shrink-0" tabindex="-1" aria-hidden="true"><BookLogo id={b.id} h={44} lazy={false} /></a>
+                <div class="min-w-0">
+                  <h3 class="text-lg m-0"><a href={`/sazkove-kancelare/${b.id}/`} class="text-ink no-underline hover:underline">{label(b)}</a></h3>
+                  {r && <p class="m-0 mt-1 text-ink-2 text-[15px]">{r.summary}</p>}
+                  <ul class="flex flex-wrap gap-2 list-none p-0 m-0 mt-2 text-sm">
+                    {b.oddsFeed === 'active' && <li class="badge badge--green"><Icon name="activity" size={13} />Kurzy porovnáváme</li>}
+                    {b.affiliate === 'approved' && <li class="badge badge--grey"><Icon name="shield-check" size={13} />Partner</li>}
+                    {licensed(b) ? <li class="badge badge--grey"><Icon name="scale" size={13} />Povolení MF</li> : <li class="badge badge--warn">Kurzové sázky v seznamu MF neuvedené</li>}
+                  </ul>
+                  {fresh && <p class="m-0 mt-2 text-[15px]"><strong>Vstupní bonus:</strong> {short(bonus!)}. <a href={`/bonusy/${b.id}/`}>Podmínky</a></p>}
+                </div>
+              </div>
+              <div class="flex sm:flex-col gap-2">
+                <a class="btn btn--ghost btn--sm" href={`/sazkove-kancelare/${b.id}/`}>{b.review === 'published' ? 'Recenze' : 'Přehled'}</a>
+                {b.affiliate === 'approved' && <a class="btn btn--sm" href={`/go/${b.id}/?p=prehled`} rel="sponsored nofollow">Web {b.name}<Icon name="external-link" size={15} /></a>}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ))}
+  <p class="text-sm text-ink-2">Povolení ověřujeme v seznamu provozovatelů Ministerstva financí ČR ke dni {listDate}. Pořadí v přehledu určuje, co o kanceláři víme, ne výše provize. Partnerské odkazy jsou označené, za registraci můžeme dostat odměnu. Hazardní hry jsou zakázané osobám mladším 18 let a mohou způsobit závislost. <a href="/odpovedne-hrani/">Odpovědné hraní</a>.</p>
 </Article>

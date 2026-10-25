@@ -60,6 +60,8 @@ describe('cache key parameters', () => {
       for (const m of t.matchAll(/\b(?:q|params)\.(?:get|has)\('([a-z0-9_]+)'\)|\bnum\('([a-z0-9_]+)'|searchParams\.get\('([a-z0-9_]+)'\)|\bname="([a-z0-9_]+)"/g)) used.add((m[1] ?? m[2] ?? m[3] ?? m[4])!);
     }
     // Form field names that are not query parameters of a cached page.
+    const { ICONS } = await import('../src/lib/icons');
+    for (const icon of Object.keys(ICONS)) used.delete(icon); // <Icon name="…"> is not a query parameter
     for (const ignore of ['after', 'clock', 'fotbal', 'hero', 'kalkulacka', 'minus', 'pruvodce', 'radar', 'search', 'star', 'x', 'e', 'b', 'p', 'ids', 'souteze', 'sporty']) used.delete(ignore);
     for (const k of used) expect(KNOWN_PARAMS.has(k), `parameter "${k}" is read by a page but missing in src/lib/params.ts`).toBe(true);
   });

@@ -9,6 +9,8 @@ import { bonusOf } from '../../config/bonuses';
 import { cacheHeader, cfg as getCfg } from '../../lib/data';
 import { REVIEW_ON_KRATKERECENZE } from '../../config/sister';
 // Server-rendered (not prerendered): the bonus box shows figures only while the check is recent, which depends on today's date.
+// Sazkabet is Allwyn's betting brand, not a bookmaker of its own: its old URL moves to Allwyn for good.
+if (Astro.params.slug === 'sazkabet') return Astro.redirect('/sazkove-kancelare/allwyn/', 301);
 const r = REVIEWS.find((x) => x.id === Astro.params.slug && BOOK[x.id].review !== 'none' && BOOK[x.id].review !== 'draft');
 if (!r) return Astro.rewrite('/404/');
 const b = BOOK[r.id];
@@ -28,7 +30,7 @@ const faq = [
   ...(b.oddsFeed === 'active' ? [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: `Ano, kurzy kontrolujeme každých ${getCfg().importIntervalMin} minut a ukazujeme je u každého zápasu vedle ostatních kanceláří.` }] : [{ q: `Porovnává KurzovýRadar kurzy ${b.name}?`, a: 'Zatím ne, kurzy této kanceláře nemáme připojené, takže je ve srovnání nebudeš hledat.' }]),
 ];
 ---
-<Article art="kancelar" title={info ? `${b.name}: přehled sázkové kanceláře` : `${b.name}: recenze sázkové kanceláře`} metaTitle={info ? `${b.name} – přehled, provozovatel a licence | KurzovýRadar` : `${b.name} – recenze, licence a kurzy | KurzovýRadar`}
+<Article art="kancelar" title={info ? `${b.name}: přehled sázkové kanceláře` : `${b.alias ? `${b.name} (${b.alias})` : b.name}: recenze sázkové kanceláře`} metaTitle={info ? `${b.name} – přehled, provozovatel a licence | KurzovýRadar` : `${b.alias ? `${b.name} (${b.alias})` : b.name} – recenze, licence a kurzy | KurzovýRadar`}
   description={`${b.name}: provozovatel ${r.operator}, licence Ministerstva financí, nabídka a omezení. ${b.oddsFeed === 'active' ? 'Kurzy sledujeme a porovnáváme.' : 'Kurzy zatím nesledujeme.'}`}
   lead={r.summary} crumbs={[{ name: 'Kde vsadit', url: '/sazkove-kancelare/' }, { name: b.name, url: `/sazkove-kancelare/${b.id}/` }]}
   published={checked} updated={checked} checked={checked} schemaType="Article" faq={faq}>
