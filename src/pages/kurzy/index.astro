@@ -10,6 +10,7 @@ import { upcoming, listable, cfg as getCfg, now as getNow, cacheHeader } from '.
 import { DAY_FILTERS, DAY_LABEL, inDays, isDayFilter, type DayFilter } from '../../lib/days';
 import { countLine } from '../../lib/counts';
 import { outcomesFor } from '../../lib/ticket';
+import { marketsRule } from '../../lib/market';
 import { isCurrent } from '../../server/store/derive';
 
 const up = await upcoming();
@@ -35,6 +36,7 @@ const dayTotal = den ? allListable.filter((e) => inDays(e.startAt, den, t)).leng
 if (den) events = events.filter((e) => inDays(e.startAt, den, t));
 if (kancelar) events = events.filter((e) => outcomesFor(e).some((o) => isCurrent(e, kancelar as never, o, up.books, t, cfg)));
 const total = events.length;
+const rule = marketsRule(new Set(events.map((e) => e.market)), sport || undefined);
 const shown = events.slice(0, page * PER);
 const filtered = !!(sport || comp || den || kancelar || trh || page > 1);
 const comps = compsAll.filter((c) => !sport || c.sport === sport);
@@ -56,7 +58,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   canonical="/kurzy/" noindex={filtered} crumbs={[{ name: 'Kurzy', url: '/kurzy/' }]}>
   <div class="wrap pt-6">
     <h1 class="m-0">Kurzy na sport</h1>
-    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">U každého zápasu vidíš, kolik kancelář vyplatí za výhru domácích, remízu a výhru hostů. Platí to pro výsledek po skončení řádné hrací doby, prodloužení se nepočítá.</p>
+    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Vyber zápas a porovnej kurzy na dostupné výsledky. {rule}</p>
     <FreshNote books={up.books} now={t} cfg={cfg} />
 
     <div class="mt-6 grid gap-3">

@@ -261,3 +261,12 @@ if (strip) {
     }).catch(() => { /* nothing to show */ });
   }
 }
+
+/* ---------- menus: close on an outside click or Escape ---------- */
+document.addEventListener('click', (e) => {
+  for (const d of document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]')) if (!d.contains(e.target as Node)) d.open = false;
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]')) { d.open = false; d.querySelector('summary')?.focus(); }
+});

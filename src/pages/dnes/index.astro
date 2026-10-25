@@ -8,6 +8,7 @@ import { picks as pickList } from '../../lib/picks';
 import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
 import { inDays } from '../../lib/days';
 import { FEED_GENITIVE } from '../../config/coverage';
+import { marketsRule } from '../../lib/market';
 import { countLine } from '../../lib/counts';
 
 const [up, rd] = await Promise.all([upcoming(), radar()]);
@@ -16,6 +17,7 @@ const cfg = getCfg();
 const all = listable(up, t, cfg);
 const events = all.filter((e) => inDays(e.startAt, 'dnes', t));
 const chosen = pickList(up, rd, t, cfg, 3, { todayOnly: true });
+const rule = marketsRule(new Set(events.map((e) => e.market)));
 const PER = 30;
 const page = Math.max(1, Math.min(30, Number(Astro.url.searchParams.get('strana')) || 1));
 const shown = events.slice(0, page * PER);
@@ -29,7 +31,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   canonical="/dnes/" noindex={page > 1} crumbs={[{ name: 'Zápasy dnes', url: '/dnes/' }]}>
   <div class="wrap pt-6">
     <h1 class="m-0">Zápasy dnes: kurzy na všechny sporty</h1>
-    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Dnešní zápasy ({day}) s kurzy Tipsportu a Chance. Sázíš buď na výsledek zápasu (remíza je možná), nebo na vítěze zápasu (remíza tu není). Zápasy, které už začaly, tu nejsou, protože předzápasové kurzy po výkopu nesledujeme.</p>
+    <p class="text-[1.1rem] max-w-[62ch] mt-3 mb-3">Dnešní zápasy ({day}) s kurzy {FEED_GENITIVE}. {rule} Zápasy, které už začaly, tu nejsou, protože předzápasové kurzy po výkopu nesledujeme.</p>
     <FreshNote books={up.books} now={t} cfg={cfg} />
     <PicksStrip picks={chosen} now={t} back="/dnes/" scope="dnes" when="dnešních" />
     <p class="mt-8 mb-5 hand text-[1.35rem]" role="status">{line}</p>

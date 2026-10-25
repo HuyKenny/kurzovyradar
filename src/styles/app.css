@@ -130,10 +130,15 @@
   .odd--off .odd__val { font-weight: 600; font-size: 1.1rem; }
 
   .seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; gap: 0.4rem; }
-  .seg > a, .seg > label > span { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 40px; padding: 0.3rem 0.95rem; border-radius: 999px; border: 2px solid var(--color-ink);
+  .seg > a, .seg > button, .seg > label > span { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 40px; padding: 0.3rem 0.95rem; border-radius: 999px; border: 2px solid var(--color-ink);
     background: var(--color-ticket); color: var(--color-ink); font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; text-decoration: none; cursor: pointer; }
-  .seg > a:hover, .seg > label:hover > span { background: var(--color-green-soft); }
-  .seg > a[aria-current="page"], .seg input:checked + span { background: var(--color-ink); color: #fff; }
+  .seg > button { font: inherit; font-weight: 700; cursor: pointer; background: var(--color-ticket); color: var(--color-ink); }
+  .seg > a:hover, .seg > button:hover, .seg > label:hover > span { background: var(--color-green-soft); }
+  .seg > a[aria-current], .seg > button[aria-pressed="true"], .seg input:checked + span { background: var(--color-ink); color: #fff; }
+  /* The active choice is marked by more than colour: a check mark before the text. */
+  .seg > a[data-dim][aria-current] { background: var(--color-ticket); color: var(--color-ink); }
+  .seg > a[data-dim][aria-current]::before { content: none; }
+  .seg > a[aria-current]::before, .seg > button[aria-pressed="true"]::before { content: "✓"; font-weight: 800; }
   .seg > label { position: relative; }
   .seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
   .seg input:focus-visible + span { outline: 3px solid var(--color-orange); outline-offset: 2px; }

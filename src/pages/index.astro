@@ -31,7 +31,16 @@ const sport = Astro.url.searchParams.get('sport') === 'hokej' ? 'hokej' : 'fotba
 const soon = events.filter((e) => e.sport === sport && e.startAt <= t + 2 * 86400);
 const next = (soon.length >= 4 ? soon : events.filter((e) => e.sport === sport)).slice(0, 6);
 const checked = lastCheck(up);
-const chosen = pickList(up, rd, t, cfg);
+// Quick choice above the picks ("?vyber=fotbal|hokej"): it narrows only this block, keeps "?sport" of the next-matches block, and the
+// variant is noindex with the canonical "/" (Base does that for any query).
+const q = Astro.url.searchParams;
+const vyber = q.get('vyber') === 'fotbal' || q.get('vyber') === 'hokej' ? q.get('vyber')! : '';
+const vyberLabel = vyber === 'fotbal' ? 'fotbal' : vyber === 'hokej' ? 'hokej' : '';
+const chosen = pickList(up, rd, t, cfg, undefined, vyber ? { filter: (e) => e.sport === vyber } : {});
+const vyberHref = (v: string) => { const p = new URLSearchParams(); if (v) p.set('vyber', v); if (q.get('sport') === 'hokej') p.set('sport', 'hokej'); return `/${p.size ? `?${p}` : ''}#vybrano`; };
+// Editorial picks, by stable slug: curated competitions that have matches now.
+const FEATURED = ['chance-liga', 'tipsport-extraliga', 'nhl', 'premier-league', 'liga-mistru'];
+const featured = FEATURED.map((slug) => competitionsIn(events).find((c) => c.slug === slug)).filter((c): c is NonNullable<typeof c> => !!c);
 const win = rd ? [...WINDOWS].reverse().find((w) => rd.windows[w.key].available) : undefined;
 const moves = win && rd
   ? [...mergeMoves(rd.windows[win.key].drops.filter((m) => m.startAt > t)).slice(0, 2), ...mergeMoves(rd.windows[win.key].rises.filter((m) => m.startAt > t)).slice(0, 1)].map((m) => fromMove(m, win.key))
@@ -46,7 +55,7 @@ const today = events.filter((e) => dayKey(e.startAt) === dayKey(t)).length;
 const ex = next.map((e) => ({ e, v: ticketView(e, up.books, t, cfg) })).find((x) => x.v.favourite?.best);
 Astro.response.headers.set('Cache-Control', cacheHeader());
 ---
-<Base title="KurzovýRadar – kurzy na sport přehledně, i jak se mění"
+<Base title="KurzovýRadar – kurzy na sport přehledně, i jak se mění" canonical="/" noindex={q.size > 0}
   description={`Kolik vyplácí ${FEED_NAMES} za fotbal, hokej, tenis, esporty a další sporty a jestli kurz roste, nebo padá. Srozumitelně, bez registrace. Kurzy kontrolujeme každých ${cfg.importIntervalMin} minut.`}>
   <section class="wrap pt-8 md:pt-14 grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
     <div>
@@ -102,13 +111,29 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         <p class="mt-2 mb-0 text-ink-2">Zápasy dnes a zítra, u kterých jsme v datech něco zjistili: jiný kurz u druhé kanceláře nebo výraznou změnu. Je to zjištění, ne tip.</p>
       </div>
     </div>
-    {chosen.length ? <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{chosen.map((p) => <BetCard p={p} up={up} now={t} cfg={cfg} back="/" />)}</div> : (
+    <div class="grid gap-2 mb-5">
+      <nav class="seg" aria-label="Co chceš vidět ve výběru">
+        <a href={vyberHref('')} aria-current={!vyber ? 'true' : undefined} data-vyber="">Všechny sporty</a>
+        <a href={vyberHref('fotbal')} aria-current={vyber === 'fotbal' ? 'true' : undefined} data-vyber="fotbal">Fotbal</a>
+        <a href={vyberHref('hokej')} aria-current={vyber === 'hokej' ? 'true' : undefined} data-vyber="hokej">Hokej</a>
+        <button type="button" hidden data-my-comps aria-pressed="false">Moje soutěže</button>
+      </nav>
+      <p class="m-0 text-[0.9rem] text-ink-2">Volba mění jen tento výběr, ostatní části stránky zůstávají.</p>
+      {featured.length > 0 && (
+        <p class="m-0 flex flex-wrap items-center gap-2"><span class="text-[0.95rem] text-ink-2">Vybrané soutěže:</span>
+          {featured.map((c) => <a class="chip" href={`/souteze/${c.slug}/`}>{c.name}<span class="count num">{c.count}</span><span class="sr"> zápasů</span></a>)}</p>
+      )}
+    </div>
+    <div data-my-comps-panel hidden class="mb-5" aria-live="polite"></div>
+    <div data-picks-default>
+    {chosen.length ? <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3" data-picks-grid>{chosen.map((p) => <BetCard p={p} up={up} now={t} cfg={cfg} back="/" />)}</div> : (
       <div class="card p-6 max-w-[720px]">
-        <p class="m-0 text-lg font-bold">Dnes jsme u sledovaných zápasů nenašli rozdíl mezi kancelářemi ani výraznou změnu kurzu.</p>
-        <p class="mt-2 mb-0">Tipsport a Chance mají teď stejné kurzy a nic se výrazně nepohnulo. Můžeš si níže sledovat konkrétní zápas (hvězdička) a my ti ukážeme, až se u něj kurz změní.</p>
+        <p class="m-0 text-lg font-bold">Dnes jsme {vyberLabel ? `(${vyberLabel}) ` : ''}nenašli rozdíl mezi kancelářemi aspoň {MIN_DIFF_PCT} % ani výraznou změnu kurzu.</p>
+        <p class="mt-2 mb-0">Menší rozdíly a změny najdeš u jednotlivých zápasů. Můžeš si níže sledovat konkrétní zápas (hvězdička) a my ti ukážeme, až se u něj kurz změní.</p>
         <a href="#h-next" class="btn btn--ghost mt-4">Vybrat zápas ke sledování</a>
       </div>
     )}
+    </div>
     <details class="mt-5 text-ink-2 max-w-[80ch]">
       <summary class="font-bold text-ink min-h-[44px] inline-flex items-center">Jak vybíráme a řadíme</summary>
       <ul class="mt-2 mb-0 pl-5 list-disc grid gap-1">
@@ -239,4 +264,54 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
       </a>
     </div>
   </section>
+<script>
+  // "Moje soutěže": the competitions and sports followed in this browser (same storage as /oblibene/), shown in place of the picks.
+  import { load } from '../scripts/follow';
+  const btn = document.querySelector<HTMLButtonElement>('[data-my-comps]');
+  const panel = document.querySelector<HTMLElement>('[data-my-comps-panel]');
+  const picks = document.querySelector<HTMLElement>('[data-picks-default]');
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-vyber]')];
+  type Ev = { url: string; home: string; away: string; compName: string; startAt: number; outcomes: Record<string, { who: string; odds: number | null }> };
+  const fmt = (n: number) => (n / 1000).toFixed(2).replace('.', ',');
+  const when = (s: number) => new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(s * 1000));
+  const add = (parent: Node, ...kids: Node[]) => { for (const k of kids) parent.appendChild(k); };
+  const el = (tag: string, cls: string, text?: string) => { const e = document.createElement(tag); e.className = cls; if (text) e.textContent = text; return e; };
+  async function show() {
+    const s = load();
+    panel!.replaceChildren();
+    if (!s.comps.length && !s.sports.length) {
+      const box = el('div', 'card p-6 max-w-[640px]');
+      add(box, el('p', 'm-0 text-lg font-bold', 'Zatím nesleduješ žádnou soutěž.'), el('p', 'mt-2 mb-0', 'Na stránce soutěže klikni na „Sledovat soutěž“ a její zápasy uvidíš tady.'));
+      const a = el('a', 'btn btn--ghost mt-4', 'Vybrat soutěž') as HTMLAnchorElement; a.href = '/souteze/';
+      add(box, a); add(panel!, box); return;
+    }
+    add(panel!, el('p', 'm-0 text-ink-2', 'Načítám zápasy tvých soutěží…'));
+    try {
+      const r = await fetch(`/api/sledovane.json?souteze=${s.comps.map((c) => c.slug).join(',')}&sporty=${s.sports.join(',')}`);
+      const j = (await r.json()) as { events: Ev[] };
+      panel!.replaceChildren();
+      if (!j.events.length) { add(panel!, el('p', 'm-0', 'U tvých soutěží teď nejsou vypsané zápasy s kurzy.')); return; }
+      const ul = el('ul', 'grid gap-3 md:grid-cols-2 list-none p-0 m-0');
+      for (const e of j.events.slice(0, 8)) {
+        const li = el('li', 'ticket p-4 grid gap-1');
+        add(li, el('p', 'm-0 text-[0.92rem] text-ink-2', `${when(e.startAt)} · ${e.compName}`));
+        const a = el('a', 'font-display font-bold text-[1.1rem] text-ink no-underline hover:underline', `${e.home} vs ${e.away}`) as HTMLAnchorElement; a.href = e.url;
+        add(li, a, el('p', 'm-0 num', Object.values(e.outcomes).map((o) => (o.odds ? `${o.who} ${fmt(o.odds)}` : null)).filter(Boolean).join(' · ') || 'Aktuální kurz teď nemáme.'));
+        add(ul, li);
+      }
+      const all = el('a', 'inline-block mt-3 font-bold', 'Všechny sledované →') as HTMLAnchorElement; all.href = '/oblibene/';
+      add(panel!, ul, all);
+    } catch { panel!.replaceChildren(el('p', 'm-0', 'Zápasy se teď nepodařilo načíst. Zkus to za chvíli.')); }
+  }
+  if (btn && panel && picks) {
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      const on = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(on));
+      panel.hidden = !on; picks.hidden = on;
+      for (const l of links) l.toggleAttribute('data-dim', on);
+      if (on) void show();
+    });
+  }
+</script>
 </Base>

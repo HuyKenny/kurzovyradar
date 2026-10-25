@@ -10,6 +10,7 @@ import PicksStrip from './PicksStrip.astro';
 import { SPORTS, type Sport } from '../config/competitions';
 import { competitionsIn } from '../lib/catalog';
 import { picks as pickList } from '../lib/picks';
+import { marketsRule } from '../lib/market';
 import { upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../lib/data';
 import { countLine } from '../lib/counts';
 
@@ -27,11 +28,7 @@ const PER = 30;
 const page = Math.max(1, Math.min(30, Number(Astro.url.searchParams.get('strana')) || 1));
 const shown = events.slice(0, page * PER);
 const markets = new Set(events.map((e) => e.market));
-const rule = markets.has('1x2') && markets.has('12') ? 'U většiny zápasů sázíš na výsledek (remíza je možná), u některých jen na vítěze.'
-  : markets.has('12') ? 'Sázíš na vítěze zápasu. Remíza tu není a o skreči či nedohraném zápase rozhodují pravidla kanceláře.'
-  : sport === 'fotbal' ? 'Počítá se výsledek po 90 minutách a nastavení, prodloužení ani penalty ne.'
-  : sport === 'hokej' ? 'Počítá se výsledek po 60 minutách. Když je po třetí třetině remíza, vyhrává sázka na remízu, i když pak někdo vyhraje v prodloužení.'
-  : 'Sázíš na výsledek v základní hrací době, remíza je možný výsledek. Přesná pravidla určuje kancelář.';
+const rule = marketsRule(markets, sport);
 const TEXT = {
   title: `Kurzy na ${S.accusative} – srovnání Tipsport a Chance | KurzovýRadar`,
   desc: sport === 'fotbal' ? 'Kurzy na fotbalové zápasy Chance Ligy, Premier League, Ligy mistrů a dalších soutěží. Tipsport a Chance vedle sebe, nejvyšší kurz zvýrazněný, historie změn.'

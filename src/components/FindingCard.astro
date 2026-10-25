@@ -1,11 +1,15 @@
 ---
-// One radar finding as a card that answers five questions: which match and outcome, what we found, what it is compared
-// with, what it means for the payout, and what to do next. The wording is built in lib/findings.ts (and unit-tested).
+// One radar finding as a short card for scanning many matches: match, competition and kick-off, the exact bet, the main finding,
+// which book(s) it concerns, when it was checked, and two actions. The comparison basis, payout and implied probability are one
+// click away in "Podrobnosti" (lib/findings.ts builds and unit-tests the wording). A difference between two books is shown side by
+// side, never with an arrow (an arrow means "over time").
 import { BOOK } from '../config/bookmakers';
-import { kickoff, odds as fmt, pct } from '../lib/format';
-import { currentOdds, findingText, KIND_LABEL, selection, type Finding } from '../lib/findings';
+import { WINDOWS } from '../server/view';
+import { atTime, kickoff, odds as fmt, pct } from '../lib/format';
+import { findingText, KIND_LABEL, selection, currentOdds, type Finding } from '../lib/findings';
 import { outcomeLabel } from '../lib/market';
 import { betUrl } from '../lib/links';
+import { atBooks } from '../lib/ticket';
 import BookLogo from './BookLogo.astro';
 import Icon from './Icon.astro';
 import Sparkline from './Sparkline.astro';
@@ -15,32 +19,40 @@ const href = betUrl(f.url, f.outcome, back, { period: f.window ?? null, finding:
 const txt = findingText(f, now, checkedAt);
 const follow = JSON.stringify({ id: f.eventId, outcome: f.outcome, url: f.url, home: f.home, away: f.away, startAt: f.startAt, comp: f.compName, sport: f.sport,
   label: outcomeLabel(f.sport, f.outcome, f.home, f.away), odds: currentOdds(f) });
+const diff = f.kind === 'rozdil' && f.high && f.low;
 const up = f.kind === 'rust' || f.kind === 'max';
+const since = WINDOWS.find((w) => w.key === f.window)?.since ?? '';
+const badge = diff ? `Rozdíl ${pct(f.pct, false)}` : `${f.kind === 'pokles' ? 'Pokles' : f.kind === 'max' ? 'Nejvyšší zachycený, růst' : 'Růst'} ${pct(Math.abs(f.pct), false)}${since ? ` ${since}` : ''}`;
 ---
 <article class="ticket p-4 flex flex-col gap-2" data-comp={f.comp} data-event={f.eventId}>
-  <p class="m-0 text-[0.95rem] text-ink-2 flex flex-wrap gap-x-2"><span class="font-bold text-ink num">{kickoff(f.startAt, now)}</span><span>{f.compName}</span></p>
-  <h3 class="m-0 text-[1.15rem]"><a href={href} class="text-ink no-underline hover:underline">{f.home} vs {f.away}</a></h3>
-  <p class="m-0 flex flex-wrap items-center gap-2">
-    <span class:list={['badge', f.kind === 'rozdil' ? 'badge--green' : up ? 'badge--green' : 'badge--orange']}>
-      <Icon name={f.kind === 'rozdil' ? 'activity' : up ? 'trending-up' : 'trending-down'} size={15} />{KIND_LABEL[f.kind]}{f.kind !== 'rozdil' && <span class="num">&nbsp;{pct(f.pct)}</span>}{f.kind === 'rozdil' && <span class="num">&nbsp;o {pct(f.pct, false)}</span>}
-    </span>
-    <strong>{selection(f)}</strong>
+  <p class="m-0 text-[0.92rem] text-ink-2 flex flex-wrap gap-x-2"><span class="font-bold text-ink num">{kickoff(f.startAt, now)}</span><span>{f.compName}</span></p>
+  <h3 class="m-0 text-[1.15rem] leading-snug"><a href={href} class="text-ink no-underline hover:underline">{f.home} vs {f.away}</a></h3>
+  <p class="m-0 font-bold">{selection(f)}</p>
+  {diff ? (
+    <p class="m-0 flex flex-wrap items-center gap-x-4 gap-y-2" aria-label={`${BOOK[f.high!.book].name} ${fmt(f.high!.odds)}, ${BOOK[f.low!.book].name} ${fmt(f.low!.odds)}`}>
+      <span class="flex items-center gap-2"><BookLogo id={f.high!.book} h={22} /><span class="num text-[1.5rem] font-display font-bold">{fmt(f.high!.odds)}</span></span>
+      <span class="flex items-center gap-2"><BookLogo id={f.low!.book} h={22} /><span class="num text-[1.5rem] font-display font-bold text-ink-2">{fmt(f.low!.odds)}</span></span>
+    </p>
+  ) : (
+    <p class="m-0 num text-[1.5rem] font-display font-bold" aria-label={`Kurz z ${fmt(f.from!.odds)} na ${fmt(f.to!.odds)}`}>{fmt(f.from!.odds)} <span aria-hidden="true">→</span> {fmt(f.to!.odds)}</p>
+  )}
+  <p class="m-0"><span class:list={['badge', diff || up ? 'badge--green' : 'badge--orange']}>
+    <Icon name={diff ? 'scale' : up ? 'trending-up' : 'trending-down'} size={15} />{badge}
+  </span></p>
+  <p class="m-0 text-[0.92rem] text-ink-2">
+    {diff ? `Stejná sázka u dvou kanceláří, vyšší ${BOOK[f.high!.book].locative}.` : `${KIND_LABEL[f.kind]} ${atBooks(f.books)}.`}
+    {checkedAt ? <> Zkontrolováno {atTime(checkedAt, now)}.</> : <> Čas kontroly neznáme.</>}
   </p>
-  <p class="m-0 text-[1.05rem]">{txt.what}</p>
-  {f.kind === 'rozdil' && f.high && f.low && (
-    <div class="flex items-center gap-3 flex-wrap">
-      <span class="flex items-center gap-2"><BookLogo id={f.high.book} h={22} /><span class="odd odd--best !min-h-0 !py-1"><span class="odd__val">{fmt(f.high.odds)}</span></span></span>
-      <span class="flex items-center gap-2"><BookLogo id={f.low.book} h={22} /><span class="odd !min-h-0 !py-1"><span class="odd__val text-ink-2">{fmt(f.low.odds)}</span></span></span>
+  <details class="text-[0.95rem]">
+    <summary class="font-bold cursor-pointer min-h-[44px] inline-flex items-center">Podrobnosti</summary>
+    <div class="grid gap-2 pt-1">
+      {!diff && f.points && f.points.length > 1 && !compact && <Sparkline points={f.points} to={now} label={`Zapsaný vývoj kurzu od ${fmt(f.from!.odds)} do ${fmt(f.to!.odds)}`} />}
+      <p class="m-0"><span class="font-bold">Proti čemu porovnáváme:</span> {txt.against}</p>
+      <p class="m-0"><span class="font-bold">Dopad na výplatu:</span> {txt.impact}</p>
     </div>
-  )}
-  {f.kind !== 'rozdil' && f.points && f.points.length > 1 && !compact && (
-    <div><Sparkline points={f.points} to={now} label={`Zapsaný vývoj kurzu od ${fmt(f.from!.odds)} do ${fmt(f.to!.odds)}`} /></div>
-  )}
-  {!compact && <p class="m-0 text-[0.92rem] text-ink-2"><span class="font-bold">Proti čemu porovnáváme:</span> {txt.against}</p>}
-  <p class="m-0 text-[0.95rem]"><span class="font-bold">Dopad na výplatu:</span> {txt.impact}</p>
+  </details>
   <div class="mt-auto flex flex-wrap gap-2 pt-1">
-    <a href={href} class="btn btn--sm">Prohlédnout sázku<Icon name="arrow-right" size={16} /></a>
+    <a href={href} class="btn btn--sm">Detail změny<Icon name="arrow-right" size={16} /></a>
     <button type="button" hidden class="btn btn--ghost btn--sm follow-bet" data-follow-bet={follow} aria-pressed="false"><Icon name="star" size={16} /><span data-follow-label>Sledovat změny</span></button>
   </div>
-  <span class="sr">{f.books.map((b) => BOOK[b].name).join(', ')}</span>
 </article>

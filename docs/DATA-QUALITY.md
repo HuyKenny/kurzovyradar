@@ -44,3 +44,6 @@ Anything else is shown with its state (`starší údaj`, `pozastaveno`, `už nen
 - 15-minute checks: changes between two checks are not seen; a change is dated by the check that found it.
 - Outages show as gaps in the detail chart (failed runs are listed); no values are interpolated.
 - Two books of one group are not "the market".
+
+## Shoda cen v textech
+Jedna funkce `priceAgreement()` (`src/lib/agreement.ts`) pro všechny stránky: porovnává uložené celé tisíciny přesně. `same` jen při stejném čísle; rozdíl pod prahem radaru (`MIN_DIFF_PCT` 1 %) je „Kurzy se mírně liší.“, nikdy „stejný kurz“. Jedna kancelář = „Pro srovnání chybí kurz druhé kanceláře.“ Kdyby dvě různé hodnoty po zaokrouhlení na 2 místa vypadaly stejně, `oddsPair()` je ukáže na 3 místa (platforma kotuje po 0,01, je to pojistka).

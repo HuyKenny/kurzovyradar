@@ -70,3 +70,16 @@ describe('one source of truth for coverage claims', () => {
     expect(FEED_NAMES).toBe('Tipsport a Chance');
   });
 });
+
+describe('match detail order', () => {
+  it('the history summary and chart come before the bonus block', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/pages/zapas/[slug].astro', import.meta.url), 'utf8');
+    const graf = src.indexOf('aria-labelledby="h-hist"');
+    const story = src.indexOf('aria-labelledby="h-story"');
+    const bonus = src.indexOf('<BonusCard b={topBonus}');
+    expect(graf).toBeGreaterThan(0);
+    expect(story).toBeLessThan(bonus);
+    expect(graf).toBeLessThan(bonus);
+  });
+});

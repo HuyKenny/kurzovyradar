@@ -25,3 +25,14 @@ describe('market wording', () => {
     expect(payoutSentence(150, 1850)).toBe('Pokud sázka vyhraje, ze 150 Kč dostaneš 277,5 Kč včetně vkladu. Čistý zisk je 127,5 Kč.');
   });
 });
+
+describe('listing explanation follows the markets in the listing', () => {
+  it('a two-way listing never explains a draw; a three-way one does; mixed says both', async () => {
+    const { marketsRule } = await import('../src/lib/market');
+    expect(marketsRule(new Set(['12']), 'tenis')).not.toMatch(/remíza je možn|vyhrává sázka na remízu/);
+    expect(marketsRule(new Set(['12']))).toContain('Remíza tu není');
+    expect(marketsRule(new Set(['1x2']), 'fotbal')).toContain('90 minutách');
+    expect(marketsRule(new Set(['1x2', '12']))).toContain('vítěze');
+    expect(marketsRule(new Set())).toBe('');
+  });
+});

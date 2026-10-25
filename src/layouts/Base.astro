@@ -1,6 +1,6 @@
 ---
 import '../styles/app.css';
-import { SITE, HELP, NAV } from '../config/site';
+import { SITE, HELP, NAV, NAV_MORE } from '../config/site';
 import { COMPETITIONS } from '../config/competitions';
 import { PARTNERS } from '../config/bookmakers';
 import Logo from '../components/Logo.astro';
@@ -87,31 +87,38 @@ const footLink = 'text-[#d6e4dc] hover:text-white no-underline hover:underline';
           return <a href={n.href} aria-current={on ? 'page' : undefined}
             class:list={[navLink, on ? 'bg-ink text-white border-ink hover:text-white' : (n as { accent?: boolean }).accent ? 'bg-orange text-ink border-ink hover:bg-ticket' : 'border-transparent text-ink hover:border-ink hover:bg-ticket']}>{n.label}</a>;
         })}
+        <details class="relative" data-menu>
+          <summary class={`${navLink} border-transparent text-ink hover:border-ink hover:bg-ticket list-none [&::-webkit-details-marker]:hidden cursor-pointer gap-1`}>Více<Icon name="chevron-down" size={16} /></summary>
+          <div class="absolute left-0 top-[calc(100%+8px)] w-[220px] card p-2 grid z-50">
+            {NAV_MORE.map((n) => <a class="px-3 py-2.5 rounded-lg no-underline text-ink font-bold hover:bg-green-soft" href={n.href} aria-current={path.startsWith(n.href) ? 'page' : undefined}>{n.label}</a>)}
+          </div>
+        </details>
       </nav>
       <div class="ml-auto flex items-center gap-0.5 sm:gap-1.5">
         <form action="/hledat/" method="get" role="search" class="relative hidden lg:block" data-search>
           <label for="q-head" class="sr">Hledat tým, soutěž nebo zápas</label>
           <Icon name="search" size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-2 pointer-events-none" />
           <input id="q-head" name="q" type="search" autocomplete="off" placeholder="Najdi tým nebo soutěž" minlength="2"
-            class="field !min-h-[44px] w-[150px] xl:w-[250px] pl-10 text-[16px]" aria-controls="q-head-list" aria-expanded="false" aria-autocomplete="list" role="combobox" />
+            class="field !min-h-[44px] w-[120px] xl:w-[220px] pl-10 text-[16px]" aria-controls="q-head-list" aria-expanded="false" aria-autocomplete="list" role="combobox" />
           <ul id="q-head-list" role="listbox" hidden class="absolute right-0 top-[calc(100%+8px)] w-[360px] max-h-[70vh] overflow-auto card p-1.5"></ul>
         </form>
         <a href="/hledat/" class="lg:hidden btn btn--quiet min-w-[44px]" aria-label="Hledat"><Icon name="search" size={22} /></a>
         <a href="/oblibene/" class="btn btn--quiet min-w-[44px] relative text-ink" aria-label="Moje sledované" data-fav-link>
-          <Icon name="star" size={22} /><span class="hidden xl:inline font-display">Sledované</span>
+          <Icon name="star" size={22} /><span class="hidden min-[1100px]:inline xl:hidden font-display">Sledované</span><span class="hidden xl:inline font-display">Moje sledované</span>
           <span data-fav-count hidden class="absolute -top-0.5 -right-0.5 sm:static min-w-[22px] h-[22px] px-1 rounded-full bg-orange text-ink border-2 border-ink text-xs font-bold grid place-items-center num"></span>
         </a>
         <details class="lg:hidden relative" data-menu>
           <summary class="btn btn--ghost btn--sm !px-2.5 list-none [&::-webkit-details-marker]:hidden" aria-label="Menu"><Icon name="menu" size={20} /><span class="hidden sm:inline">Menu</span></summary>
           <nav class="absolute right-0 top-[calc(100%+10px)] w-[min(88vw,320px)] card p-2 grid" aria-label="Menu">
+            <a class="px-4 py-3 rounded-lg no-underline text-ink font-display font-bold text-lg hover:bg-green-soft flex items-center gap-2" href="/oblibene/"><Icon name="star" size={18} />Moje sledované</a>
             {NAV.map((n) => <a class="px-4 py-3 rounded-lg no-underline text-ink font-display font-bold text-lg hover:bg-green-soft" href={n.href}>{n.label}</a>)}
             <hr class="my-1 border-line" />
+            {NAV_MORE.map((n) => <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href={n.href}>{n.label}</a>)}
             <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/fotbal/">Fotbal</a>
             <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/hokej/">Hokej</a>
             <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/tenis/">Tenis</a>
             <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/basketbal/">Basketbal</a>
             <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/esporty/">Esporty</a>
-            <a class="px-4 py-3 rounded-lg no-underline text-ink hover:bg-green-soft" href="/kalkulacky/">Kolik vyhraju? (kalkulačka)</a>
           </nav>
         </details>
       </div>

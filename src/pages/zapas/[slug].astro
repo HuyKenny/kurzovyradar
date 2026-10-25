@@ -8,9 +8,10 @@ import Art from '../../components/Art.astro';
 import { BOOK, FEED_BOOKS, type FeedBook } from '../../config/bookmakers';
 import { SPORTS, stubColor } from '../../config/competitions';
 import { E, upcoming, radar as getRadar, eventDetail, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
-import { reasons, pricesFor } from '../../lib/picks';
+import { reasons, pricesFor, MIN_DIFF_PCT } from '../../lib/picks';
 import { winCondition, outcomeSentence, settlement, payoutSentence, betTarget, selectionName } from '../../lib/market';
 import BonusCard from '../../components/BonusCard.astro';
+import { priceAgreement, AGREEMENT_TEXT, oddsPair } from '../../lib/agreement';
 import { rank as rankBonuses, isFresh as bonusFresh } from '../../lib/bonus';
 import { parseBetState, trhOf, winnings, payoutDelta, type FindingKey } from '../../lib/bet-state';
 import { availablePeriods, changeAsOf, periodInfo, type Change } from '../../lib/context';
@@ -206,7 +207,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
           {v.books.length > 1 && !v.allSame && (
             <table class="w-full mt-3 text-[1rem]">
               <caption class="sr">Kurzy podle kanceláří</caption>
-              <thead><tr class="text-ink-2 text-[0.9rem]"><th scope="col" class="text-left font-normal pb-1">Kancelář</th>{v.outcomes.map((o) => <th scope="col" class="font-normal pb-1 truncate max-w-[8ch]">{o.who}</th>)}</tr></thead>
+              <thead><tr class="text-ink-2 text-[0.9rem]"><th scope="col" class="text-left font-normal pb-1">Kancelář</th>{v.outcomes.map((o) => <th scope="col" class="font-normal pb-1 leading-tight [overflow-wrap:anywhere]">{o.who}</th>)}</tr></thead>
               <tbody>{v.books.map((b) => (
                 <tr class="border-t border-line"><th scope="row" class="text-left py-1.5 font-normal"><BookLogo id={b} h={20} /></th>
                   {v.outcomes.map((o) => { const c = o.cells.find((x) => x.book === b)!; return <td class:list={['num text-center', o.best && c.current && c.odds === o.best.odds ? 'font-bold' : 'text-ink-2']}>{c.current && c.odds ? fmt(c.odds) : '–'}</td>; })}</tr>
@@ -251,53 +252,7 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
       </div>
     </article>
 
-    <section class="mt-12" aria-labelledby="h-bet">
-      <p class="hand m-0 text-[1.3rem]">tvoje sázka</p>
-      {OUTS.map((o) => {
-        const prices = pickPricesAll[o];
-        const why = allReasons.get(`${ev.id}|${o}`) ?? [];
-        const ctx = contextLines(o);
-        return (
-          <div data-bet-panel={o} hidden={o !== pick}>
-            <h2 id={o === pick ? 'h-bet' : undefined} class="m-0 mt-1">{outcomeSentence(ev.sport, o, ev.home, ev.away, ev.market)}</h2>
-            <p class="mt-2 mb-5 text-ink-2"><strong class="text-ink">{sel(o)}.</strong> {settlement(ev.sport, ev.market)} Jinou sázku vybereš v kalkulačce nahoře nebo u grafu.</p>
-            <div class="grid gap-5 lg:grid-cols-3">
-              <div class="card p-5">
-                <h3 class="m-0 mb-2">Co musí nastat, aby sázka vyhrála?</h3>
-                <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, o, ev.home, ev.away, ev.market).map((x) => <li>{x}</li>)}</ul>
-              </div>
-              <div class="card p-5">
-                <h3 class="m-0 mb-2">Proč ji radar vybral?</h3>
-                {bs.finding && reqPeriod && o === bs.outcome && <p class="m-0 mb-2"><span class="badge badge--grey mr-1">Z radaru</span> Přišel jsi od zjištění „{FINDING_LABEL[bs.finding]}“ {periodInfo(reqPeriod).since}.</p>}
-                {ctx.length > 0 && <ul class="m-0 pl-0 list-none grid gap-2 mb-2">{ctx.map((c) => <li>{c}</li>)}</ul>}
-                {why.length ? (
-                  <ul class="m-0 pl-0 list-none grid gap-2">{why.map((r) => <li><span class:list={['badge mr-1', r.type === 'one-moved' || r.type === 'higher-elsewhere' ? 'badge--green' : 'badge--orange']}>{r.label}</span> {r.text}</li>)}</ul>
-                ) : !ctx.length ? <p class="m-0">Mezi dnešními zajímavostmi tahle sázka není: kurzy obou kanceláří jsou stejné a výrazně se nepohnuly. Ukazujeme ji, protože sis ji otevřel.</p> : null}
-                <p class="mt-3 mb-0 text-[0.88rem] text-ink-2">Je to zjištění z dat, ne tip. Důvod změn kanceláře neuvádějí.</p>
-              </div>
-              <div class="card p-5">
-                <h3 class="m-0 mb-2">Kde je nyní vyšší kurz?</h3>
-                {prices.length === 0 ? <p class="m-0">Na „{whoOf(ev, o)}“ teď nemáme aktuální kurz žádné kanceláře.</p>
-                  : prices.length === 1 ? <p class="m-0">Aktuální kurz máme jen {BOOK[prices[0]!.book].locative}: {fmt(prices[0]!.odds)} (ověřeno {time(prices[0]!.checkedAt)}). Druhou kancelář teď porovnat nejde.</p>
-                  : prices[0]!.odds === prices[prices.length - 1]!.odds
-                    ? <p class="m-0">Cena této sázky je teď {atBooks(prices.map((x) => x.book))} stejná: {fmt(prices[0]!.odds)} (ověřeno {time(Math.min(...prices.map((x) => x.checkedAt)))}).</p>
-                    : <p class="m-0">Vyšší je {BOOK[prices[0]!.book].locative}: {fmt(prices[0]!.odds)} proti {fmt(prices[1]!.odds)} {BOOK[prices[1]!.book].locative} (ověřeno {time(Math.min(...prices.map((x) => x.checkedAt)))}).</p>}
-                {prices[0] && <p class="mt-3 mb-0">{payoutSentence(100, prices[0].odds)}</p>}
-                {!started && prices[0] && <>
-                  <a class="btn btn--sm mt-4" href={`/go/${prices[0].book}/?e=${ev.id}&p=sazka-${o}`} rel="sponsored nofollow">Zobrazit zápas {BOOK[prices[0].book].locative}<Icon name="external-link" size={15} /></a>
-                  <p class="mt-2 mb-0 text-[0.85rem] text-ink-2">Otevře se zápas na webu kanceláře. Sázku „{sel(o)}“ si tam vybereš sám, kancelář konkrétní výsledek v odkazu nepřebírá.</p>
-                </>}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </section>
-
-    {!started && topBonus && (
-      <section class="mt-10 max-w-[760px]" aria-label="Bonus pro nové hráče"><BonusCard b={topBonus} placement="bonus-detail" compact /></section>
-    )}
-
+    {/* Order: comparison and calculator above, then what happened (summary + chart), then where it is higher (partner links), the history table, and only then the commercial bonus block. */}
     {enough && (
       <section class="mt-12" aria-labelledby="h-story">
         <h2 id="h-story" class="flex items-center gap-2"><Art name="radar" size={34} />Co se s kurzy dělo od začátku našeho sledování</h2>
@@ -339,6 +294,49 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
           <p class="mt-3 mb-0 text-ink-2">Čára ukazuje jen kurzy, které jsme při kontrolách opravdu zapsali; mezi kontrolami se kurz mohl změnit i víckrát. {gaps.length ? `Šedé pásy jsou chvíle, kdy se nám data nepodařilo načíst (${gaps.length}×).` : ''}</p>
         </form>
       )}
+    </section>
+
+    <section class="mt-12" aria-labelledby="h-bet">
+      <p class="hand m-0 text-[1.3rem]">tvoje sázka</p>
+      {OUTS.map((o) => {
+        const prices = pickPricesAll[o];
+        const why = allReasons.get(`${ev.id}|${o}`) ?? [];
+        const ctx = contextLines(o);
+        return (
+          <div data-bet-panel={o} hidden={o !== pick}>
+            <h2 id={o === pick ? 'h-bet' : undefined} class="m-0 mt-1">{outcomeSentence(ev.sport, o, ev.home, ev.away, ev.market)}</h2>
+            <p class="mt-2 mb-5 text-ink-2"><strong class="text-ink">{sel(o)}.</strong> {settlement(ev.sport, ev.market)} Jinou sázku vybereš v kalkulačce nahoře nebo u grafu.</p>
+            <div class="grid gap-5 lg:grid-cols-3">
+              <div class="card p-5">
+                <h3 class="m-0 mb-2">Co musí nastat, aby sázka vyhrála?</h3>
+                <ul class="m-0 pl-5 list-disc grid gap-1.5">{winCondition(ev.sport, o, ev.home, ev.away, ev.market).map((x) => <li>{x}</li>)}</ul>
+              </div>
+              <div class="card p-5">
+                <h3 class="m-0 mb-2">Proč ji radar vybral?</h3>
+                {bs.finding && reqPeriod && o === bs.outcome && <p class="m-0 mb-2"><span class="badge badge--grey mr-1">Z radaru</span> Přišel jsi od zjištění „{FINDING_LABEL[bs.finding]}“ {periodInfo(reqPeriod).since}.</p>}
+                {ctx.length > 0 && <ul class="m-0 pl-0 list-none grid gap-2 mb-2">{ctx.map((c) => <li>{c}</li>)}</ul>}
+                {why.length ? (
+                  <ul class="m-0 pl-0 list-none grid gap-2">{why.map((r) => <li><span class:list={['badge mr-1', r.type === 'one-moved' || r.type === 'higher-elsewhere' ? 'badge--green' : 'badge--orange']}>{r.label}</span> {r.text}</li>)}</ul>
+                ) : !ctx.length ? <p class="m-0">Mezi dnešními zajímavostmi tahle sázka není: {priceAgreement(prices) === 'same' ? 'u obou kanceláří je stejný kurz' : priceAgreement(prices) === 'slight' ? `kurzy se liší jen mírně (pod ${MIN_DIFF_PCT} %)` : 'pro srovnání kanceláří nemáme dost aktuálních údajů'} a výrazně se nepohnul. Ukazujeme ji, protože sis ji otevřel.</p> : null}
+                <p class="mt-3 mb-0 text-[0.88rem] text-ink-2">Je to zjištění z dat, ne tip. Důvod změn kanceláře neuvádějí.</p>
+              </div>
+              <div class="card p-5">
+                <h3 class="m-0 mb-2">Kde je nyní vyšší kurz?</h3>
+                {prices.length === 0 ? <p class="m-0">Na „{whoOf(ev, o)}“ teď nemáme aktuální kurz žádné kanceláře.</p>
+                  : prices.length === 1 ? <p class="m-0">Aktuální kurz máme jen {BOOK[prices[0]!.book].locative}: {fmt(prices[0]!.odds)} (ověřeno {time(prices[0]!.checkedAt)}). Druhou kancelář teď porovnat nejde.</p>
+                  : priceAgreement(prices) === 'same'
+                    ? <p class="m-0">{AGREEMENT_TEXT.same} {atBooks(prices.map((x) => x.book)).replace(/^u /, 'U ')}: {fmt(prices[0]!.odds)} (ověřeno {time(Math.min(...prices.map((x) => x.checkedAt)))}).</p>
+                    : <p class="m-0">{AGREEMENT_TEXT[priceAgreement(prices)]} Vyšší je {BOOK[prices[0]!.book].locative}: {oddsPair(prices[0]!.odds, prices[1]!.odds)[0]} proti {oddsPair(prices[0]!.odds, prices[1]!.odds)[1]} {BOOK[prices[1]!.book].locative} (ověřeno {time(Math.min(...prices.map((x) => x.checkedAt)))}).</p>}
+                {prices[0] && <p class="mt-3 mb-0">{payoutSentence(100, prices[0].odds)}</p>}
+                {!started && prices[0] && <>
+                  <a class="btn btn--sm mt-4" href={`/go/${prices[0].book}/?e=${ev.id}&p=sazka-${o}`} rel="sponsored nofollow">Zobrazit zápas {BOOK[prices[0].book].locative}<Icon name="external-link" size={15} /></a>
+                  <p class="mt-2 mb-0 text-[0.85rem] text-ink-2">Otevře se zápas na webu kanceláře. Sázku „{sel(o)}“ si tam vybereš sám, kancelář konkrétní výsledek v odkazu nepřebírá.</p>
+                </>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </section>
 
     {enough && (
@@ -383,6 +381,10 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
           </details>
         </div>
       </details>
+    )}
+
+    {!started && topBonus && (
+      <section class="mt-10 max-w-[760px]" aria-label="Bonus pro nové hráče"><BonusCard b={topBonus} placement="bonus-detail" compact /></section>
     )}
 
     {related.length > 0 && (

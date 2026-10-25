@@ -32,3 +32,18 @@ Pre-existing issues found unrelated to this work: none blocking. `astro check` h
 | 13 | P1 | Notifications: the site only evaluates a target when opened ("Neposíláme e-mail ani upozornění" is stated). No server-side rule storage. | `zapas/[slug].astro`, `sledovane.ts` | – | Not implemented, see ROLLOUT (needs VAPID keys and a D1 table; design ready). Copy is honest today. |
 | 14 | P1 | GSC: property verified; 1 impression in 28 days; sitemap last read 23. 10. (22 URLs); an old WordPress `sitemap_index.xml` (404) still registered. | Search Console | Discovery lag | Resubmitted `sitemap.xml` (1 660 URLs), removed the dead sitemap. Indexing cannot be judged yet (site live since 23. 10.). |
 | 15 | P2 | Provider adapter is separate from the normalized model (`providers/platform.ts` → `normalize/*` → `store/import.ts`). | – | – | Documented in DATA-QUALITY; no fake third source added. |
+
+## UX úpravy (25. 10. 2026, druhé kolo)
+
+| Nález | Ověření | Úprava |
+|---|---|---|
+| Homepage výběr nejde omezit na sport/soutěž | potvrzeno (`index.astro`, blok `#vybrano` bez filtru) | Volby Všechny sporty · Fotbal · Hokej (`?vyber=`, noindex + canonical `/`) · Moje soutěže (JS, existující úložiště sledovaných, `/api/sledovane.json`, prázdný stav s „Vybrat soutěž“); „Vybrané soutěže“ podle slugů. Test `picks.test.ts`. |
+| Karty radaru jsou dlouhé | potvrzeno (`FindingCard.astro`) | Krátká karta (zápas, soutěž+čas, sázka, hlavní zjištění, kancelář, čas kontroly, „Detail změny“ + „Sledovat“); rozdíl dvou kanceláří vedle sebe bez šipky; základ srovnání, výplata a procentní body v `<details>`. |
+| Sledované jen v patičce | částečně opraveno už dřív (hvězdička v hlavičce) | NAV: Dnes · Pohyby kurzů · Sporty · Jak na kurzy · Bonusy + „Více“ (Všechny kurzy, Soutěže, Kde vsadit, Kalkulačky); „Moje sledované“ s textem v hlavičce (od 1100 px, pod tím ikona s popiskem), v mobilním menu první položka; menu se zavírá kliknutím mimo a Escape. |
+| Bonus před grafem na detailu | potvrzeno | Pořadí: srovnání + kalkulačka → shrnutí + graf → kde je vyšší kurz → historie → bonus → další zápasy. Test `content.test.ts`. |
+| „Stejné kurzy“ při 3,40 vs 3,43 | potvrzeno (detail, prázdný stav homepage) | `src/lib/agreement.ts` (`priceAgreement`, `AGREEMENT_TEXT`, `oddsPair`); práh radaru o shodě nerozhoduje. Test. |
+| Univerzální „domácí, remíza, hosté“ | potvrzeno v `/kurzy/` | `marketsRule()` v `lib/market.ts` podle trhů ve výpisu (`/kurzy/`, `/dnes/`, sporty). Test. |
+| Tlačítka „Na co“ uřezávala jména | opraveno dříve (`5317c20`) | – |
+| Opakovaná hláška o překrytí v grafu | neopakuje se: jedna na viditelný graf, skryté panely nejsou v accessibility tree | beze změny |
+
+Ověřeno v Chromiu (puppeteer) na živém webu: 360/390/768/1024/1280 px bez vodorovného posunu; volby na homepage mění karty; „Moje soutěže“ prázdný stav i po sledování NHL (8 zápasů); karta radaru se rozbalí klávesou Enter, focus je viditelný; tok sledování detail → počet v hlavičce → /oblibene/ → obnovení → odebrání. Neověřeno: čtečka obrazovky (VoiceOver/TalkBack), skutečný dotykový telefon, Safari.

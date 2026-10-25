@@ -94,3 +94,16 @@ export function payoutSentence(stake: number, oddsMilli: number): string {
   const pay = (stake * oddsMilli) / 1000;
   return `Pokud sázka vyhraje, ze ${kc(stake)} dostaneš ${kc(pay)} včetně vkladu. Čistý zisk je ${kc(pay - stake)}.`;
 }
+
+/**
+ * One sentence on what a listing's bets settle on, derived from the markets actually in it (never from the sport name alone): a two-way
+ * market never mentions a draw. `sport` only adds the known regular-time rule for football and hockey three-way results.
+ */
+export function marketsRule(markets: Set<Market>, sport?: string): string {
+  if (markets.has('1x2') && markets.has('12')) return 'U většiny zápasů sázíš na výsledek v základní hrací době (remíza je možná), u některých jen na vítěze zápasu.';
+  if (markets.has('12')) return 'Sázíš na vítěze zápasu. Remíza tu není a o skreči či nedohraném zápase rozhodují pravidla kanceláře.';
+  if (!markets.size) return '';
+  if (sport === 'fotbal') return 'Počítá se výsledek po 90 minutách a nastavení, prodloužení ani penalty ne.';
+  if (sport === 'hokej') return 'Počítá se výsledek po 60 minutách. Když je po třetí třetině remíza, vyhrává sázka na remízu, i když pak někdo vyhraje v prodloužení.';
+  return 'Sázíš na výsledek v základní hrací době, remíza je možný výsledek. Přesná pravidla určuje kancelář.';
+}

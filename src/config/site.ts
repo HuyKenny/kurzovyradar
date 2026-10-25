@@ -20,11 +20,18 @@ export const HELP = {
   linka: { name: 'Národní linka pro odvykání', phone: '800 350 000', tel: '+420800350000', note: 'všední dny 10–18 h, zdarma' },
 };
 
+/** Main navigation. "Moje sledované" (/oblibene/) sits next to it as the star link in the header, with the real count. */
 export const NAV = [
-  { href: '/kurzy/', label: 'Kurzy' },
-  { href: '/sporty/', label: 'Sporty' },
+  { href: '/dnes/', label: 'Dnes' },
   { href: '/radar/', label: 'Pohyby kurzů' },
-  { href: '/sazkove-kancelare/', label: 'Kde vsadit' },
+  { href: '/sporty/', label: 'Sporty' },
   { href: '/pruvodce/', label: 'Jak na kurzy' },
   { href: '/bonusy/', label: 'Bonusy', accent: true },
+];
+/** Secondary pages, in the "Více" menu (desktop) and below the main items (mobile). */
+export const NAV_MORE = [
+  { href: '/kurzy/', label: 'Všechny kurzy' },
+  { href: '/souteze/', label: 'Soutěže' },
+  { href: '/sazkove-kancelare/', label: 'Kde vsadit' },
+  { href: '/kalkulacky/', label: 'Kalkulačky' },
 ];

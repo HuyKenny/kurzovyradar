@@ -103,3 +103,14 @@ describe('picks: wording', () => {
     expect(picks(up([e]), r, NOW, cfg)[0]!.reason.text).toContain('u Tipsportu i Chance klesl');
   });
 });
+
+describe('homepage quick choice', () => {
+  it('a sport filter really changes the picks', () => {
+    const f = ev([2000, 3400, 3600], [2100, 3400, 3600]);
+    const h = ev([2000, 3400, 3600], [2100, 3400, 3600], { sport: 'hokej' });
+    const snap = up([f, h]);
+    expect(picks(snap, null, NOW, cfg).map((p) => p.ev.sport).sort()).toEqual(['fotbal', 'hokej']);
+    expect(picks(snap, null, NOW, cfg, undefined, { filter: (e) => e.sport === 'hokej' }).map((p) => p.ev.sport)).toEqual(['hokej']);
+    expect(picks(snap, null, NOW, cfg, undefined, { filter: (e) => e.sport === 'fotbal' }).map((p) => p.ev.sport)).toEqual(['fotbal']);
+  });
+});

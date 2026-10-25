@@ -100,3 +100,18 @@ describe('radar card wording', () => {
     expect(t).toContain('ne skutečná šance');
   });
 });
+
+describe('price agreement (one wording everywhere)', () => {
+  it('equal, slightly different, different, one book, none: never "same" for different numbers', async () => {
+    const { priceAgreement, AGREEMENT_TEXT, oddsPair } = await import('../src/lib/agreement');
+    expect(priceAgreement([{ odds: 3400 }, { odds: 3400 }])).toBe('same');
+    expect(priceAgreement([{ odds: 3430 }, { odds: 3400 }])).toBe('slight'); // 0,9 % < 1 % radar threshold, still not "same"
+    expect(priceAgreement([{ odds: 2200 }, { odds: 2000 }])).toBe('differ');
+    expect(priceAgreement([{ odds: 3400 }])).toBe('single');
+    expect(priceAgreement([])).toBe('none');
+    expect(AGREEMENT_TEXT.slight).toBe('Kurzy se mírně liší.');
+    expect(AGREEMENT_TEXT.single).toContain('chybí');
+    expect(oddsPair(3400, 3430)).toEqual(['3,40', '3,43']);
+    expect(oddsPair(3401, 3404)).toEqual(['3,401', '3,404']); // would round to the same text: show three decimals
+  });
+});
