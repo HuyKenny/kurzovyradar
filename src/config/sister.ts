@@ -51,3 +51,13 @@ export const REVIEW_ON_KRATKERECENZE: Record<string, { url: string; anchor: stri
   fortuna: { url: `${KRATKERECENZE}/recenze-fortuna/`, anchor: 'recenze Fortuny na KrátkýchRecenzích' },
   betano: { url: `${KRATKERECENZE}/betano-recenze-komplexni-predstaveni-online-kasina-a-sazkove-kancelare-v-cr/`, anchor: 'recenze Betana a jeho casina' },
 };
+
+/**
+ * FreeSpiny.eu (casino free spins, same owner, 25. 10. 2026). The site is about casino, so only two deep, on-topic links exist:
+ * the bonus page (sport bonus vs. casino free spins) and one competition page (bonus while watching a match).
+ */
+export const FREESPINY = 'https://freespiny.eu';
+export const FREESPINY_BONUS = { url: `${FREESPINY}/pruvodce/free-spiny-vs-bonus/`, anchor: 'rozdíl mezi free spiny, bonusem a freebetem' };
+export const ON_FREESPINY: Record<string, { url: string; anchor: string }> = {
+  'chance-liga': { url: `${FREESPINY}/pruvodce/bonus-pri-sledovani-zapasu/`, anchor: 'free spiny, nebo sázka zdarma' },
+};

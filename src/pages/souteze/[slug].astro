@@ -6,7 +6,7 @@ import Icon from '../../components/Icon.astro';
 import { SPORTS, competitionBySlug, stubColor, isSport, type Sport } from '../../config/competitions';
 import { competitionsIn } from '../../lib/catalog';
 import { COMP_EXTRA } from '../../config/comp-extra';
-import { ON_SPORTSTREAMY, ON_ZIVEPRENOSY, SPORTSTREAMY, ZIVEPRENOSY } from '../../config/sister';
+import { ON_SPORTSTREAMY, ON_ZIVEPRENOSY, SPORTSTREAMY, ZIVEPRENOSY, ON_FREESPINY } from '../../config/sister';
 import PicksStrip from '../../components/PicksStrip.astro';
 import { picks as pickList } from '../../lib/picks';
 import { E, upcoming, radar, listable, cfg as getCfg, now as getNow, cacheHeader } from '../../lib/data';
@@ -54,6 +54,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
         {ON_ZIVEPRENOSY[c.slug] && <>Slovenské vysielanie: <a href={`${ZIVEPRENOSY}${ON_ZIVEPRENOSY[c.slug]}`} rel="nofollow noopener" hreflang="sk" lang="sk">ziveprenosy.sk</a>.</>}
       </p>
     )}
+    {ON_FREESPINY[c.slug] && <p class="mt-4 max-w-[64ch]">Láká tě při zápase nabídka bonusu? Než kliknete, přečti si, jak se liší <a href={ON_FREESPINY[c.slug]!.url}>{ON_FREESPINY[c.slug]!.anchor}</a> (sesterský web FreeSpiny.eu).</p>}
     {extra && (
       <section class="mt-10 max-w-[72ch] prose" aria-labelledby="h-about">
         <h2 id="h-about">O soutěži {c.name}</h2>

@@ -10,6 +10,7 @@ import { BONUSES } from '../../config/bonuses';
 import { czDate, isFresh, minDays, rank, wagerMultiple } from '../../lib/bonus';
 import { kc } from '../../lib/format';
 import { cacheHeader } from '../../lib/data';
+import { FREESPINY_BONUS } from '../../config/sister';
 
 const ranked = rank();
 const nowMs = Date.now();
@@ -88,6 +89,7 @@ Astro.response.headers.set('Cache-Control', cacheHeader());
   <div class="prose max-w-[72ch] mt-2">
   <h2>Co tu není</h2>
   <p>Oficiální podmínky bonusu na sázky u MerkurXtipu jsme nepřečetli, proto je tady neuvádíme. Jeho přehled najdeš v sekci <a href="/sazkove-kancelare/">Kde vsadit</a>. Jak bonus funguje, vysvětluje <a href="/pruvodce/vstupni-bonus-jak-funguje/">průvodce</a>.</p>
+  <p>Bonus na sázky je něco jiného než free spiny v casinu. Jak se obě nabídky liší, vysvětluje sesterský web FreeSpiny.eu: <a href={FREESPINY_BONUS.url}>{FREESPINY_BONUS.anchor}</a>.</p>
   </div>
   <div class="max-w-[72ch] mt-8"><BonusNotice checked={checked} /></div>
   </div>
