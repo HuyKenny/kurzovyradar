@@ -188,3 +188,21 @@
     summary { display: flex; align-items: center; min-height: 44px; }
   }
 }
+
+/* Outcome picker of the match calculator: equal columns, full team names that wrap (never cut), the price under the name. */
+@layer components {
+  .pick { display: grid; gap: 0.5rem; }
+  .pick--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pick--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pick > label { position: relative; display: flex; }
+  .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pick > label > span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; min-height: 56px;
+    padding: 0.4rem 0.35rem; border: 2px solid var(--color-ink); border-radius: 12px; background: var(--color-ticket); cursor: pointer; text-align: center; }
+  .pick__who { font-weight: 700; font-size: 0.9rem; line-height: 1.15; overflow-wrap: anywhere; hyphens: auto; }
+  .pick__odds { font-size: 0.85rem; color: var(--color-ink-2); }
+  .pick > label:hover > span { background: var(--color-green-soft); }
+  .pick input:checked + span { background: var(--color-ink); color: #fff; }
+  .pick input:checked + span .pick__odds { color: #d6e4dc; }
+  .pick input:focus-visible + span { outline: 3px solid var(--color-sky); outline-offset: 2px; }
+  .pick input:disabled + span { opacity: 0.5; cursor: not-allowed; }
+}

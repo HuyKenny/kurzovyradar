@@ -230,8 +230,8 @@ Astro.response.headers.set('Cache-Control', q.has('zjisteni') || q.has('obdobi')
           <label class="grid gap-1 font-bold text-[0.95rem]">Vsadím (Kč)<input class="field num" name="vklad" inputmode="decimal" value={String(stake)} data-bet-stake autocomplete="off" /></label>
           <fieldset class="m-0 p-0 border-0">
             <legend class="font-bold text-[0.95rem] mb-1">Na co</legend>
-            <div class="seg">
-              {v.outcomes.map((o) => <label><input type="radio" name="vysledek" value={o.outcome} checked={o.outcome === pick} disabled={!o.best} data-bet-outcome /><span class="truncate max-w-[12ch]">{o.who}</span></label>)}
+            <div class:list={['pick', v.outcomes.length === 2 ? 'pick--2' : 'pick--3']}>
+              {v.outcomes.map((o) => <label><input type="radio" name="vysledek" value={o.outcome} checked={o.outcome === pick} disabled={!o.best} data-bet-outcome /><span><span class="pick__who">{o.who}</span><span class="pick__odds num">{o.best ? fmt(o.best.odds) : '–'}</span></span></label>)}
             </div>
           </fieldset>
           <p class="m-0 text-[0.95rem]"><span class="text-ink-2">Vybraná sázka:</span> <strong data-bind="name">{sel(pick)}</strong>{' '}<span class="text-ink-2" data-bind="who-wrap">({whoOf(ev, pick)})</span>, kurz <strong class="num" data-bind="odds">{oddsOf(pick) ? fmt(oddsOf(pick)!) : '–'}</strong></p>
