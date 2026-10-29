@@ -20,7 +20,7 @@ Na každém legálním webu je v patičce nebo v obchodních podmínkách název
 
 ## 2. Porovnej se seznamem Ministerstva financí
 
-Ministerstvo financí ČR zveřejňuje seznam provozovatelů hazardních her s platným povolením. U každého provozovatele je vidět, které hry smí nabízet, tedy zvlášť kurzové sázky a zvlášť třeba technické hry. Sázková kancelář musí mít povolení na tu hru, kterou nabízí. Seznam najdeš na webu mf.gov.cz v sekci hazardní hry.
+Ministerstvo financí ČR zveřejňuje seznam provozovatelů hazardních her s platným povolením. U každého provozovatele je vidět, které hry smí nabízet, tedy zvlášť kurzové sázky a zvlášť třeba technické hry. Sázková kancelář musí mít povolení na tu hru, kterou nabízí. Seznam najdeš na webu mf.gov.cz v sekci hazardní hry. Stejně se ověřuje i online casino; postup krok za krokem včetně domény popisuje [návod, jak ověřit české povolení online casina](https://casinoportal.cz/pruvodce/jak-overit-ceske-povoleni/) na sesterském Casinoportal.cz.
 
 ## 3. Rozlišuj značku a provozovatele
 

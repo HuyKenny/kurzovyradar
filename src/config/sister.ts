@@ -61,3 +61,6 @@ export const FREESPINY_BONUS = { url: `${FREESPINY}/pruvodce/free-spiny-vs-bonus
 export const ON_FREESPINY: Record<string, { url: string; anchor: string }> = {
   'chance-liga': { url: `${FREESPINY}/pruvodce/bonus-pri-sledovani-zapasu/`, anchor: 'free spiny, nebo sázka zdarma' },
 };
+
+/** casinoportal.cz (sister site, wave 30. 10. 2026): linked from the guide jak-poznat-legalni-sazkovou-kancelar.md (body text). */
+export const CASINOPORTAL = 'https://casinoportal.cz';
