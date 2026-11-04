@@ -2,8 +2,10 @@
 import Article from '../../components/Article.astro';
 import { SITE } from '../../config/site';
 import photos from '../../data/photos.json';
+import { settings } from '../../server/types';
 export const prerender = true;
 const d = new Date('2026-10-23');
+const cfg = settings({});
 ---
 <Article title="O nás a kontakt" metaTitle="O nás a kontakt | KurzovýRadar" description="Kdo provozuje KurzovýRadar, jak nás kontaktovat a kdo připravuje obsah webu."
   crumbs={[{ name: 'O nás', url: '/o-nas/' }]} published={d} updated={d}>
@@ -16,7 +18,7 @@ const d = new Date('2026-10-23');
     <tr><th scope="row">E-mail</th><td><a href={`mailto:${SITE.email}`}>{SITE.email}</a></td></tr>
   </tbody></table>
   <h2>Kdo za webem stojí</h2>
-  <p>KurzovýRadar vytvořil Ha Duy Huy (Kenny), SEO konzultant z Prahy. Kurzy kontrolujeme každých 15 minut. Víc o autorovi najdete na <a href="https://huy.cz/" rel="nofollow">huy.cz</a>.</p>
+  <p>KurzovýRadar vytvořil Ha Duy Huy (Kenny), SEO konzultant z Prahy. Kurzy kontrolujeme každých {cfg.importIntervalMin} minut. Víc o autorovi najdete na <a href="https://huy.cz/" rel="nofollow">huy.cz</a>.</p>
   <h2>Sesterské weby</h2>
   <p>Stejný provozovatel provozuje také <a href="https://sportstreamy.cz">sportstreamy.cz</a> (program a výsledky sportovních přenosů) a slovenský <a href="https://ziveprenosy.sk" hreflang="sk" lang="sk">ziveprenosy.sk</a>. Odkazujeme na ně tam, kde se téma překrývá, třeba u soutěží. Recenze kanceláří píšeme i na <a href="https://kratkerecenze.cz">kratkerecenze.cz</a>. Všechny tři weby mohou dostat provizi od stejných kanceláří, proto je to tady uvedené.</p>
   <h2>Kdo připravuje obsah</h2>
