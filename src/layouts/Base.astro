@@ -27,7 +27,7 @@ const canonical = new URL(canon ?? path, SITE.url).href;
 const ogUrl = new URL(og ?? '/og/default.png', SITE.url).href;
 const graph = [
   { '@type': 'WebSite', '@id': `${SITE.url}/#web`, url: `${SITE.url}/`, name: SITE.name, inLanguage: 'cs', publisher: { '@id': `${SITE.url}/#org` } },
-  { '@type': 'Organization', '@id': `${SITE.url}/#org`, name: SITE.name, url: `${SITE.url}/`, logo: `${SITE.url}/icon-512.png`, email: SITE.email },
+  { '@type': 'Organization', '@id': `${SITE.url}/#org`, name: SITE.name, url: `${SITE.url}/`, logo: `${SITE.url}/icon-512.png`, email: SITE.email, founder: { '@type': 'Person', '@id': 'https://huy.cz/#kenny', name: 'Ha Duy Huy', alternateName: 'Kenny', url: 'https://huy.cz/', jobTitle: 'SEO konzultant' } },
   ...(crumbs.length
     ? [{ '@type': 'BreadcrumbList', itemListElement: [{ name: 'Úvod', url: '/' }, ...crumbs].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: new URL(c.url, SITE.url).href })) }]
     : []),
