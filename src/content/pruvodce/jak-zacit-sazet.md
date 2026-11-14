@@ -4,7 +4,7 @@ description: "Jak začít se sázením v ČR: věk, ověření licence kancelá�
 lead: "Pět kroků od výběru kanceláře po první sázku. Hlavní je ověřit licenci a nastavit si limity dřív, než vložíš první korunu."
 order: 6
 published: 2026-10-24
-updated: 2026-10-24
+updated: 2026-11-14
 checked: 2026-10-24
 ---
 
@@ -20,7 +20,7 @@ Dřív než něco otevřeš, urči částku, kterou si dovolíš prosázet, a dr
 
 ## 2. Vyber kancelář s povolením
 
-Kancelář pro české hráče potřebuje povolení Ministerstva financí. Jak ho zkontrolovat, popisuje článek [Jak poznat legální sázkovou kancelář](/pruvodce/jak-poznat-legalni-sazkovou-kancelar/). Přehled kanceláří s ověřenými údaji je v sekci [Kde vsadit](/sazkove-kancelare/) a v [srovnání](/sazkove-kancelare/srovnani/).
+Kancelář pro české hráče potřebuje povolení Ministerstva financí. Jak ho zkontrolovat, popisuje článek [Jak poznat legální sázkovou kancelář](/pruvodce/jak-poznat-legalni-sazkovou-kancelar/). Přehled kanceláří s ověřenými údaji je v sekci [Kde vsadit](/sazkove-kancelare/) a v [srovnání](/sazkove-kancelare/srovnani/). Kdo chce před výběrem číst i delší recenze s osobním pohledem autora, najde je v [přehledu recenzí sázkových kanceláří na KrátkýchRecenzích](https://kratkerecenze.cz/finance/sazkova-kancelar/).
 
 ## 3. Zaregistruj se
 

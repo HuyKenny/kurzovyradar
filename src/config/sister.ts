@@ -62,5 +62,8 @@ export const ON_FREESPINY: Record<string, { url: string; anchor: string }> = {
   'chance-liga': { url: `${FREESPINY}/pruvodce/bonus-pri-sledovani-zapasu/`, anchor: 'free spiny, nebo sázka zdarma' },
 };
 
-/** casinoportal.cz (sister site, wave 30. 10. 2026): linked from the guide jak-poznat-legalni-sazkovou-kancelar.md (body text). */
+/**
+ * casinoportal.cz (sister site, wave 30. 10. 2026): linked from the guide jak-poznat-legalni-sazkovou-kancelar.md (body text);
+ * wave 14. 11. 2026: sazeni-z-mobilu.md → /casino-aplikace/. KrátkéRecenze category /finance/sazkova-kancelar/ ← jak-zacit-sazet.md.
+ */
 export const CASINOPORTAL = 'https://casinoportal.cz';
