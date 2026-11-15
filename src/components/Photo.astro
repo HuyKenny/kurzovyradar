@@ -1,8 +1,9 @@
 ---
 // Pexels photo (generic atmosphere, never presented as a specific match). AVIF + WebP, fixed 16:9 box.
 import photos from '../data/photos.json';
-type Slot = keyof typeof photos;
-const ALT: Record<Slot, string> = {
+type Slot = string;
+const META = photos as Record<string, { altCs?: string }>;
+const ALT: Record<string, string> = {
   hero: 'Prázdný osvětlený fotbalový stadion večer',
   fotbal: 'Fotbalové hřiště při pohledu shora',
   hokej: 'Prázdná hokejová hala s barevnými sedačkami',
@@ -14,6 +15,6 @@ const set = (ext: string) => [480, 800, 1280].map((w) => `/img/foto/${slot}-${w}
 ---
 <picture>
   <source type="image/avif" srcset={set('avif')} sizes={sizes} />
-  <img src={`/img/foto/${slot}-800.webp`} srcset={set('webp')} sizes={sizes} width="1280" height="720" alt={alt ?? ALT[slot]}
+  <img src={`/img/foto/${slot}-800.webp`} srcset={set('webp')} sizes={sizes} width="1280" height="720" alt={alt ?? ALT[slot] ?? META[slot]?.altCs ?? ''}
     loading={priority ? 'eager' : 'lazy'} fetchpriority={priority ? 'high' : undefined} decoding="async" class={`w-full h-auto object-cover ${cls}`} />
 </picture>
