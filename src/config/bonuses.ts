@@ -67,7 +67,7 @@ export const BONUSES: Bonus[] = [
     maxBonus: 2000,
     tier: { deposit: 1000, bonus: 1000, wager: 14_000, minOdds: 2.0, dailyCap: 2000, payEvery: 1400, pay: 100 },
     sources: [{ label: 'Chance – Vstupní bonus', url: 'https://www.chance.cz/bonusy/vstupni-bonus' }],
-    verifiedAt: '2026-10-24',
+    verifiedAt: '2026-11-19',
   },
 ];
 
@@ -83,7 +83,7 @@ export const ALLWYN: Bonus = {
     { label: 'Allwyn – Vstupní bonus Sazkabet', url: 'https://www.allwyn.cz/kurzove-sazky/vyhody/bonusy' },
     { label: 'Allwyn – pravidla akce (PDF, 30. 1. 2026)', url: 'https://sazkacdn.imagelance.com/vyhody/d_sb_bonusy-podminky_26_allwyn-3500.pdf' },
   ],
-  verifiedAt: '2026-10-24',
+  verifiedAt: '2026-11-19',
 };
 BONUSES.push(ALLWYN);
 
