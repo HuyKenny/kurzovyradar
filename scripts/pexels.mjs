@@ -32,6 +32,7 @@ const GUIDES = {
   'jak-poznat-legalni-sazkovou-kancelar': [36740854, 'Ruka drží mosazný visací zámek'],
   'jak-zacit-sazet': [4777979, 'Ovladač v ruce před televizí s fotbalovým přenosem'],
   'jak-ziskavame-data': [265087, 'Notebook s grafy a tabulkami vedle tabletu'],
+  'kde-sledovat-zapas-a-jak-cist-kurzy': [36766078, 'Skupina přátel sleduje doma fotbalový zápas s vlajkami a občerstvením'],
   'kurzy-pro-zacatecniky': [38105639, 'Fotbalový míč na trávníku večer'],
   'marze-sazkove-kancelare': [6120170, 'Kalkulačka, znak procenta a telefon s grafem na stole'],
   'pohyb-kurzu': [4604639, 'Graf vývoje hodnoty na obrazovce počítače'],
