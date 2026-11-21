@@ -26,6 +26,7 @@ const PICKS = { hero: 28827841, fotbal: 33210166, hokej: 6539276, pruvodce: 4346
 /** Feature photo per guide (/pruvodce/<slug>/): slot `g-<slug>`, Czech alt. Kenny 15. 11. 2026: every article gets a feature photo.
  *  `node scripts/pexels.mjs guides` downloads only the missing ones and merges them into src/data/photos.json. */
 const GUIDES = {
+  'boxing-day-kurzy': [4036040, 'Zasněžená fotbalová branka na hřišti v noci'],
   'cashout-predcasna-vyplata': [32285225, 'Dva fotbalisté v souboji o míč během zápasu'],
   'desetinne-kurzy': [5466814, 'Ruka píše výpočty do sešitu vedle kalkulačky'],
   'handicap-v-sazeni': [11097680, 'Fotbalista padá po souboji na trávníku'],
