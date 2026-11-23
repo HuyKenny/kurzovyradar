@@ -88,6 +88,11 @@ def dev_vars():
         if 'ENVIRONMENT=' not in txt:
             txt += 'ENVIRONMENT="production"\n'
         p.write_text(txt)
+    # wrangler dev reads .dev.vars from the directory of the config it runs (dist/server/), and the build is cached in CI:
+    # the copy the Astro build made (if any) is stale or missing, so write it there as well.
+    q = DIST / 'server' / '.dev.vars'
+    q.write_text(p.read_text())
+    q.chmod(0o600)
 
 
 def prepare_db():
@@ -295,6 +300,7 @@ def render(args):
     with Server():
         imported = True
         if not args.no_import:
+            t_import = int(time.time()) - 5
             imported = run_import()
         now = int(time.time())
         # the server keeps writing WAL; read a consistent copy
@@ -305,6 +311,13 @@ def render(args):
         src.close()
         dst.close()
         db = sqlite3.connect(snap)
+        if not args.no_import:
+            ok = db.execute("SELECT COUNT(*) FROM import_runs WHERE started_at >= ? AND status = 'ok'", (t_import,)).fetchone()[0]
+            errs = [r[0][:200] for r in db.execute("SELECT book || ': ' || COALESCE(error, '') FROM import_runs WHERE started_at >= ? AND status != 'ok'", (t_import,))]
+            log(f'import: {ok} book(s) ok' + (f', errors: {errs}' if errs else ''))
+            if not ok:
+                # Nothing fresh: deploying would only turn every price stale on the site. Keep the last deploy and the last state.
+                sys.exit('import failed for every bookmaker: not deploying')
 
         static = {str(p.relative_to(DIST / 'client')).replace(os.sep, '/') for p in (DIST / 'client').rglob('*') if p.is_file()}
         prerendered = {'/' + s[:-len('index.html')] for s in static if s.endswith('index.html')}
