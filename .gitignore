@@ -7,3 +7,5 @@ node_modules/
 .wrangler/
 __pycache__/
 dist-demo/
+tmp-static/
+data/

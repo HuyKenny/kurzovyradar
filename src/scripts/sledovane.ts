@@ -2,7 +2,7 @@
 // "Co se změnilo" compares today's highest price with what the visitor saw last (or when they saved it), then
 // moves that point to now. DOM is built with createElement only (no innerHTML of stored or fetched data).
 import { load, save, nowS, swapped, type FollowBet, type FollowState, type Odds3 } from './follow';
-import { evaluateTarget, parseTarget } from '../lib/target';
+import { evaluateTarget, historyReach, parseTarget } from '../lib/target';
 import { betTarget } from '../lib/market';
 import { SPORTS, type Sport } from '../config/competitions';
 import type { Outcome } from '../server/types';
@@ -81,18 +81,31 @@ function followBtn(kind: 'bet' | 'event' | 'comp' | 'sport', data: Record<string
 async function render(markSeen: boolean) {
   const s: FollowState = load();
   const ids = [...new Set([...s.events.map((e) => e.id), ...s.bets.map((b) => b.id)])];
-  const [cur, feed] = await Promise.all([
-    ids.length ? getJson(`/api/events.json?ids=${ids.join(',')}`) : Promise.resolve({ events: [] as Ev[] }),
-    s.comps.length || s.sports.length ? getJson(`/api/sledovane.json?souteze=${s.comps.map((c) => c.slug).join(',')}&sporty=${s.sports.join(',')}`) : Promise.resolve({ events: [] as Ev[] }),
-  ]);
+  // One static file with every match of the snapshot (rebuilt with each import); followed ids and competitions are picked here.
+  const all = ids.length || s.comps.length || s.sports.length ? await getJson('/api/events.json') : { events: [] as Ev[] };
+  const idSet = new Set(ids);
+  const cur = { events: all.events.filter((e) => idSet.has(e.id)) };
+  const comps = new Set(s.comps.map((c) => c.slug));
+  const sports = new Set<string>(s.sports);
+  // Next matches of followed competitions and sports: not started, at least one current price, at most 20 (as /api/sledovane.json did).
+  const feed = { events: all.events.filter((e) => e.startAt * 1000 > Date.now() && Object.values(e.outcomes).some((o) => o.odds !== null) && (comps.has(e.comp) || sports.has(e.sport)))
+    .sort((a, b) => a.startAt - b.startAt || a.id - b.id).slice(0, 20) };
   const byId = new Map(cur.events.map((e) => [e.id, e]));
-  // What the recorded history proves about targets (positive evidence only, see lib/target.ts).
+  // What the recorded history proves about targets (positive evidence only, see lib/target.ts). The history is in static shards
+  // /api/historie/<id % 256>.json: { "<id>": { "<outcome>": [[at, odds, enabled], …] } } (books that pass the pairing checks).
   const reach = new Map<string, { atStart: boolean; firstAt: number | null }>();
-  const withTarget = s.bets.filter((b) => b.target && b.targetAt && b.startAt * 1000 > Date.now());
+  const withTarget = s.bets.filter((b) => b.target && b.targetAt && b.startAt * 1000 > Date.now()).slice(0, 30);
   if (withTarget.length) {
     try {
-      const r = (await (await fetch(`/api/cile.json?b=${withTarget.map((b) => `${b.id}:${b.outcome}:${b.targetAt}:${b.target}`).join(',')}`)).json()) as { items: { id: number; outcome: string; atStart: boolean; firstAt: number | null }[] };
-      for (const i of r.items) reach.set(`${i.id}-${i.outcome}`, i);
+      const shards = new Map<number, Promise<Record<string, Record<string, [number, number, number][]>>>>();
+      for (const b of withTarget) {
+        const k = b.id % 256;
+        if (!shards.has(k)) shards.set(k, fetch(`/api/historie/${k}.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+      }
+      for (const b of withTarget) {
+        const rows = (await shards.get(b.id % 256)!)[String(b.id)]?.[b.outcome];
+        if (rows) reach.set(`${b.id}-${b.outcome}`, historyReach(rows.map(([at, odds, en]) => ({ at, odds, enabled: !!en })), b.targetAt!, b.target!));
+      }
     } catch { /* without history the check still works on the current price */ }
   }
 

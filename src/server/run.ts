@@ -79,7 +79,8 @@ export async function runImport(env: Env, db: Db = env.DB as unknown as Db, now 
   const stamp = Math.max(now, ...fetched.map((r) => (r.status === 'fulfilled' ? r.value.fetchedAt : 0)));
   const d = await derive(db, cfg, stamp);
   report.derived = { events: d.events, rowsRead: d.meter.read, rowsWritten: d.meter.written };
-  // Once a day (the 03:xx UTC run): detail history older than HISTORY_DAYS goes.
-  if (new Date(now * 1000).getUTCHours() === 3 && new Date(now * 1000).getUTCMinutes() < cfg.importIntervalMin) await cleanup(db, cfg, now);
+  // Once a day (the runs in the 03:xx UTC hour; GitHub Actions schedules drift, so the whole hour counts and a repeat is a no-op):
+  // detail history older than HISTORY_DAYS goes.
+  if (new Date(now * 1000).getUTCHours() === 3) await cleanup(db, cfg, now);
   return report;
 }

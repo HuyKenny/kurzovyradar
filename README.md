@@ -4,9 +4,24 @@ Srovnání kurzů sledovaných sázkových kanceláří a vlastní historie jeji
 Design „Sportovní tiket“ (od 23. 10. 2026): zápasy jako sázkové tikety, srozumitelné texty (tykání), viz `docs/ASSETS.md`.
 Živě na **https://kurzovyradar.cz** od 23. 10. 2026.
 
-- **Stack:** Astro 7 SSR na Cloudflare Workers (`@astrojs/cloudflare` 14), TypeScript, Tailwind 4, D1. Vlastní entry `src/worker.ts`: `fetch` → Astro + edge cache (stale-while-revalidate nad Cache API), `scheduled` → import kurzů.
-- **Data:** cron `4,19,34,49 * * * *` (à 15 min, posunutý proti sportstreamy). Každý běh na kancelář: OAuth token + jeden hromadný dotaz `GET /rest/external/offer/v1/matches` (okno −3 h … +7 dní, ~2,7 MB). Návštěva webu nikdy nespouští načítání feedu.
-- **Repo:** lokální git v `apps/kurzovyradar/` (Tailwind 4 potřebuje vlastní `.git`, jinak prohledává celý workspace).
+- **Stack:** Astro 7 SSR (`@astrojs/cloudflare` 14), TypeScript, Tailwind 4, SQLite se schématem D1. **Od 23. 11. 2026 statický web na Workers Free:** SSR aplikace běží jen lokálně v GitHub Actions (`wrangler dev --local`), vyrenderované stránky jdou na Cloudflare jako statické soubory a produkční Worker je jen malý `edge/worker.js` (`/go/`, `/tipsport-zapas/`, varianty filtrů, staré zápasy). Žádný cron, D1 ani KV na Cloudflare.
+- **Data:** GitHub Actions `build.yml` à 15 min (`4,19,34,49 * * * *`, Actions běh posouvá o minuty, web proto říká „každých 20 minut“). Každý běh na kancelář: OAuth token + jeden hromadný dotaz `GET /rest/external/offer/v1/matches` (okno −3 h … +7 dní, ~2,7 MB). Návštěva webu nikdy nespouští načítání feedu.
+- **Stav:** `data/state.db` (SQLite, historie kurzů 30 dní) + `data/static-manifest.json` (hashe nasazených stránek zápasů) — šifrovaně jako release asset `state` (`scripts/state.sh`, klíč `STATE_KEY`). Repo je VEŘEJNÉ (minuty Actions zdarma); klíče jen v GitHub secrets.
+- **Repo:** `apps/kurzovyradar/` = github.com/HuyKenny/kurzovyradar (Tailwind 4 potřebuje vlastní `.git`, jinak prohledává celý workspace).
+
+## Provoz od 23. 11. 2026 (Cloudflare Workers Free)
+
+Jeden běh `scripts/static.py run` (v Actions, lokálně jde taky):
+1. `pnpm build` (cache podle commitu), obnovení stavu, `.dev.vars` z GitHub secrets.
+2. `wrangler dev --local` nad `data/state.db` → `/cdn-cgi/handler/scheduled` spustí import (`src/worker.ts` ho čeká).
+3. Stažení všech stránek z lokálního serveru do `tmp-static/out/`: sitemap + odkazované stránky, `/api/search.json`, `/api/priklad.json`, `/api/events.json` (všechny zápasy, prohlížeč si vybere), `/api/historie/<id % 256>.json` (historie pro cílové kurzy na `/oblibene/`), `/_data/e|tz/<n>.json` (lookupy pro edge Worker), `404.html`.
+   - **Zápasy** se drží `PAST_DAYS` (7) dní po výkopu; renderují se jen při změně dat (otisk z DB + názvy klientských balíčků `/_astro/`), při výkopu a nejpozději po `MAX_AGE_S` (2 h). Změna šablony zápasu bez změny JS/CSS → spustit s `all`. Nezměněné stránky se nasazují jen hashem (`scripts/cf-deploy.mjs`), nic se znovu nenahrává. Starší zápas → edge Worker 301 na soutěž.
+   - **Varianty filtrů a stránkování** (`?pohled=`, `?obdobi=`, `?sport=`, `?den=`, `?strana=`…) na `/`, `/kurzy/`, `/radar/`, `/dnes/` a stránkách sportů: předrenderované do `/_v/<id>/` podle odkazů na stránkách (+ jednotlivé sporty a dny); edge Worker je servíruje pro `?…` (přesná shoda, jinak největší podmnožina parametrů, jinak základní stránka). Kombinace z formuláře, které nejsou předrenderované, ukážou nejbližší variantu.
+   - `/hledat/?q=` hledá v prohlížeči nad `/api/search.json` (`src/scripts/hledat.ts`); detail zápasu čte `?vysledek=&vklad=&obdobi=` v prohlížeči (`src/scripts/bet.ts`).
+4. `scripts/cf-deploy.mjs` nahraje změněné soubory + `edge/worker.js` jako Worker `kurzovyradar` (vazby: `CLICKS` Analytics Engine, partnerské URL jako vars; `run_worker_first` jen `/go/*`, `/tipsport-zapas/*` a stránky s variantami; `not_found_handling: none`, aby Worker u chybějících souborů udělal 301 starého zápasu / malých písmen, jinak vrátí `404.html` se stavem 404) a smaže cron triggery.
+5. Kontrola tajemství ve výstupu (`scripts/verify_no_secrets.py`), uložení stavu.
+
+Rychlá cesta pro opravy (CSS/JS/šablona/text): Actions → build → Run workflow s `quick` = bez dotazu na feed, jen render + nasazení (~5 min). `all` = přerenderovat všechny zápasy.
 
 ## Skutečně připojené zdroje
 
@@ -60,14 +75,13 @@ run.ts                  jeden běh importu (obě kanceláře nezávisle)
 
 | Proměnná | Výchozí | Význam |
 |---|---|---|
-| `IMPORT_INTERVAL_MIN` | 15 | interval importu (musí odpovídat cronu; text na webu se bere odsud) |
-| `CACHE_TTL_S` | 600 | `s-maxage` stránek; worker drží stale kopii 3× déle (30 min) a obnovuje na pozadí; po každém importu je klíčové stránky předrenderuje druhý cron do KV `HTML` (`src/server/warm.ts`) |
-| `STALE_AFTER_MIN` | 45 | po této době bez úspěšné kontroly kurz nesoutěží o „nejvyšší“ |
-| `HISTORY_DAYS` | 30 | podrobná historie po začátku zápasu, pak úklid (běh ve 03:xx UTC) |
+| `IMPORT_INTERVAL_MIN` | 20 | interval importu (text na webu; Actions běží à 15 min s posunem) |
+| `STALE_AFTER_MIN` | 60 | po této době bez úspěšné kontroly kurz nesoutěží o „nejvyšší“ |
+| `HISTORY_DAYS` | 30 | podrobná historie po začátku zápasu, pak úklid (běhy ve 03:xx UTC) |
 | `START_TOLERANCE_MIN` | 0 | tolerance začátku při párování |
 | `WINDOW_DAYS` | 7 | okno importu |
 
-Secrets: `TIPSPORT_CLIENT_ID`, `TIPSPORT_CLIENT_SECRET`, `CHANCE_API_USER`, `CHANCE_API_PASS` (hodnoty v `~/ai/credentials/.kurzovyradar-credentials.env`; vzor `.dev.vars.example` / `.env.example` jen s názvy).
+GitHub secrets (prostředí `production`): `TIPSPORT_CLIENT_ID`, `TIPSPORT_CLIENT_SECRET`, `CHANCE_API_USER`, `CHANCE_API_PASS`, `STATE_KEY`, `CLOUDFLARE_API_TOKEN` (scoped Workers Scripts Write), `CLOUDFLARE_ACCOUNT_ID`; hodnoty v `~/ai/credentials/.kurzovyradar-credentials.env` (`CF_API_TOKEN_KURZOVYRADAR`). Vzor `.dev.vars.example` / `.env.example` jen s názvy.
 
 ## Spuštění
 
@@ -88,14 +102,9 @@ PROBE_DIR=… pnpm exec vitest run tests/probe.test.ts   # suchý běh nad ulož
 
 ## Nasazení
 
-```bash
-~/ai/bin/kurzovyradar-deploy.sh            # testy → build → D1 migrace → deploy → ověří build na webu
-~/ai/bin/kurzovyradar-deploy.sh --secrets  # + nahraje secrets z credentials
-```
+Nasazuje jen GitHub Actions (`build.yml`, à 15 min a ručně). Lokálně: `pnpm build && python3 scripts/static.py run --worker kurzovyradar-static-test` (zkušební Worker na workers.dev; bez `--worker` = produkce). `bin/kurzovyradar-deploy.sh` ve workspace jen spustí workflow.
 
-⚠️ **Vždy `-c dist/server/wrangler.json`.** Astro po každém buildu přesměruje `.wrangler/deploy/config.json` na poslední build. Po `pnpm demo` by holý `wrangler deploy` nasadil demo. Skript to hlídá (kontroluje `ENVIRONMENT=production`).
-
-Zóna: SSL strict, `browser_cache_ttl` 0, WAF (blok CN, skenerů a bezcenných crawlerů) a rate limit `/api/` + `/hledat/` zkopírované ze sportstreamy. Email Routing `info@` → napis@sbalit.cz (od 24. 10. 2026), DMARC `p=reject`, GSC ověřeno DNS TXT (`scripts/kurzovyradar/gsc-setup.py`), IndexNow z Maliny (`bin/indexnow.py kurzovyradar`, cron :55).
+⚠️ `wrangler.jsonc` je konfigurace **lokálního rendereru** (`kurzovyradar-render`, bez rout): holý `wrangler deploy` produkci nepřepíše. D1 `kurzovyradar` na Cloudflare se od 23. 11. 2026 nepoužívá (stav je v release).
 
 ## Zbývající podklady (pro Kennyho)
 
@@ -146,9 +155,9 @@ GA4 `G-1CXMKBC3YF` (`SITE.ga4`) se načte jen po souhlasu: `src/components/Souhl
 
 ## Bezpečnost a rychlost (24. 10. 2026)
 - **Hlavičky:** CSP, Permissions-Policy a COOP i na statických a předrenderovaných stránkách (`public/_headers`, test `tests/security.test.ts` hlídá shodu s `src/lib/security.ts`).
-- **Worker:** jen GET/HEAD (ostatní 405), 301 na koncové lomítko, do klíče cache i do renderu jen známé query parametry (`KNOWN_PARAMS` ve `worker.ts`; neznámý parametr už nemůže uložit noindex variantu pod klíč základní stránky), sloučené souběžné rendery, cache záznam i KV kopie jsou vázané na build (`X-KR-Build`), prázdný snapshot se nekešuje (`no-store`).
+- **Worker (`edge/worker.js`):** jen GET/HEAD (ostatní 405), varianty jen ze známých query parametrů (`KNOWN_PARAMS`, `tests/edge.test.ts` hlídá shodu se `src/lib/params.ts`), security hlavičky i na odpovědích Workeru; statické soubory je mají z `_headers`.
 - **`/go/`:** partnerský odkaz se vydá jen při kliku z naší stránky (`Sec-Fetch-Site`/Referer) a ne-botovi; ostatní jdou na naši stránku kanceláře a v Analytics Engine se zapíšou jako `bot` (`src/lib/go-guard.ts`).
 - **Cloudflare (zóna):** WAF: blok čínských IP, skenerů, SEO crawlerů a trénovacích AI botů (GPTBot, CCBot, ClaudeBot…), Managed Challenge pro prázdný UA, headless prohlížeče a HTTP knihovny (vynechaní: ověření boti, `MalinaCron`, `SeznamBot`); rate limit `/api/`, `/hledat/`, `/go/` (60/10 s); www → apex Redirect Rule; DMARC reject, SPF -all; DNSSEC zapnuté v CF, čeká na DS u WEDOS (`reports/kurzovyradar-dnssec-ds-2026-10-24.md`). **Bot Fight Mode nezapínat** (na Free nejde obejít pravidlem a trefí `/api/`). Skripty bez prohlížečového UA (curl, python) dostanou challenge: vlastní nástroje používají UA `MalinaCron/…`.
-- **Rychlost:** `src/server/warm.ts` + druhý cron (`9,24,39,54 * * * *`) předrenderuje ~25 klíčových stránek do KV `HTML`; první návštěva v nové lokalitě čte KV místo renderu. Snapshot se v warm isolate drží v paměti podle `derived.at`, `reasons()` se počítá jednou za minutu, `Intl` formátovače jsou na úrovni modulu. `CACHE_TTL_S` 600.
+- **Rychlost:** od 23. 11. 2026 statické soubory (žádný render při návštěvě). KV cache stránek a druhý cron (`warm.ts`) zrušeny.
 - **Mobil:** prefetch místo prerender, dotykové plochy ≥ 44 px (`pointer: coarse`), `content-visibility: auto` na dlouhých seznamech (`.cv-list`).
 - **Zatím neuděláno:** rozdělení snapshotu na menší záznamy (při 80 % limitu 1,8 MB se do logu píše varování), sprite ikon (úspora jen ~1–2 KB po kompresi), CAA záznam (hrozí rozbít obnovu certifikátů Cloudflare).

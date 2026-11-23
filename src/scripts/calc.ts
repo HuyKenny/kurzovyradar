@@ -46,6 +46,23 @@ for (const f of document.querySelectorAll<HTMLFormElement>('[data-calc] form[dat
   });
 }
 
+// The page is a static file since 23. 11. 2026: values from the URL (the no-JS form, shared links) are applied here, then recalculated.
+const asked = new URLSearchParams(location.search);
+for (const f of document.querySelectorAll<HTMLFormElement>('[data-calc] form[data-form]')) {
+  let hit = false;
+  for (const el of f.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
+    const v = asked.get(el.name);
+    if (v === null) continue;
+    el.value = v.slice(0, 40);
+    hit = true;
+  }
+  if (hit) f.dispatchEvent(new Event('input'));
+}
+if (['kf', 'ff', 'ds', 'o1', 'o2', 'o3', 'o4', 'vo', 'vp'].some((k) => asked.has(k))) {
+  const d = document.getElementById('pokrocile') as HTMLDetailsElement | null;
+  if (d) d.open = true;
+}
+
 // Links to #h-c4 … #h-c6 (guides, glossary) open the advanced part first.
 const advanced = document.getElementById('pokrocile') as HTMLDetailsElement | null;
 const openAdvanced = () => {

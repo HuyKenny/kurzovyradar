@@ -10,6 +10,8 @@ export const ROBOTS = [
   'Disallow: /hledat/',
   'Disallow: /oblibene/',
   'Disallow: /tipsport-zapas/',
+  'Disallow: /_v/',
+  'Disallow: /_data/',
   '',
   ...AI_TRAINING_BOTS.flatMap((b) => [`User-agent: ${b}`, 'Disallow: /', '']),
   'Sitemap: https://kurzovyradar.cz/sitemap.xml',

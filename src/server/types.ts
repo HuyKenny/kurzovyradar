@@ -73,8 +73,6 @@ export interface Env {
   MAX_NEW_EVENTS?: string;
   MAX_SKEW_MIN?: string;
   CLICKS?: AnalyticsEngineDataset;
-  /** Pre-rendered HTML of the busiest pages (server/warm.ts); optional, the Worker works without it. */
-  HTML?: KVNamespace;
 }
 
 export function settings(env: Partial<Env>): Settings {

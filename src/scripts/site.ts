@@ -242,7 +242,7 @@ if (strip) {
   const s = load();
   const ids = [...new Set([...s.events.map((e) => e.id), ...s.bets.map((b) => b.id)])];
   if (ids.length) {
-    fetch(`/api/events.json?ids=${ids.join(',')}`).then((r) => r.json() as Promise<{ events: { id: number; started: boolean; outcomes: Record<string, { odds: number | null }> }[] }>).then((d: { events: { id: number; started: boolean; outcomes: Record<string, { odds: number | null }> }[] }) => {
+    fetch('/api/events.json').then((r) => r.json() as Promise<{ events: { id: number; started: boolean; outcomes: Record<string, { odds: number | null }> }[] }>).then((d: { events: { id: number; started: boolean; outcomes: Record<string, { odds: number | null }> }[] }) => {
       const by = new Map(d.events.map((e) => [e.id, e]));
       let n = 0;
       for (const b of s.bets) { const e = by.get(b.id); const now = e?.outcomes[b.outcome]?.odds; if (e && !e.started && b.seen && now && b.seen.odds && now !== b.seen.odds) n++; }

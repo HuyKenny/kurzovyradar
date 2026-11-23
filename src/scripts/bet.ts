@@ -19,12 +19,16 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-bet-root]')) {
   const stakeInputs = $$<HTMLInputElement>('input[data-bet-stake]');
   const initial = parseBetState(sync ? new URLSearchParams(location.search) : new URLSearchParams(), cfg.defaultOutcome);
   const checked = (sel: string) => root.querySelector<HTMLInputElement>(`${sel}:checked`)?.value;
+  // The page is a static file rendered without a query (since 23. 11. 2026): what the URL asks for wins over the rendered default.
+  const asked = sync ? new URLSearchParams(location.search) : new URLSearchParams();
+  const periods = $$<HTMLInputElement>('input[data-bet-period]').map((r) => r.value);
   let st: BetState = {
-    outcome: (checked('input[data-bet-outcome]') as O | undefined) ?? initial.outcome,
-    stake: parseStake(stakeInputs[0]?.value) ?? initial.stake,
-    period: (checked('input[data-bet-period]') as PeriodKey | undefined) ?? initial.period,
+    outcome: (asked.has('vysledek') || asked.has('tip')) && cfg.outcomes[initial.outcome] ? initial.outcome : (checked('input[data-bet-outcome]') as O | undefined) ?? initial.outcome,
+    stake: asked.has('vklad') ? initial.stake : parseStake(stakeInputs[0]?.value) ?? initial.stake,
+    period: initial.period && periods.includes(initial.period) ? initial.period : (checked('input[data-bet-period]') as PeriodKey | undefined) ?? initial.period,
     finding: initial.finding,
   };
+  if (asked.has('vklad')) for (const i of stakeInputs) i.value = String(st.stake);
 
   function paint() {
     const c = cfg.outcomes[st.outcome] ?? cfg.outcomes[cfg.defaultOutcome]!;

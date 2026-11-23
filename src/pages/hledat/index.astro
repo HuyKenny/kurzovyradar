@@ -26,6 +26,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=120');
         <input id="q-page" name="q" type="search" value={q} minlength="2" required placeholder="Např. Sparta" class="field pl-10" /></div>
       <button class="btn" type="submit">Hledat</button>
     </form>
+    <div data-hledat data-rendered={q ? '1' : undefined}></div>
     {q && f.length < 2 && <p class="mt-6 text-ink-2">Napiš aspoň 2 znaky.</p>}
     {comps.length > 0 && (
       <section class="mt-8"><h2 class="text-lg">Soutěže</h2>
@@ -39,3 +40,4 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=120');
     )}
   </div>
 </Base>
+<script src="../../scripts/hledat.ts"></script>
